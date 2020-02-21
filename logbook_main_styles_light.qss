@@ -20,11 +20,11 @@ QDateEdit::up-arrow, QDateEdit::down-arrow {
 }
 
 QDateEdit::down-arrow {
-    border-image: url(downarrow.png);
+    border-image: url(images\downarrow.png);
 }
 
 QDateEdit::up-arrow {
-    border-image: url(uparrow.png);
+    border-image: url(images\uparrow.png);
 }
 
 QDateEdit::up-button, QDateEdit::down-button {
@@ -55,7 +55,7 @@ QListView::item{
 
 QComboBox::down-arrow{
     background:transparent;
-    border-image: url(downarrow.png);
+    border-image: url(images\downarrow.png);
 }
 
 QComboBox::drop-down:on { /* shift the arrow when popup is open */
