@@ -32,8 +32,8 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self):
         super(LogBook, self).__init__()
 
-        self.server_string = 'DESKTOP-B2TFENN\SQLEXPRESS' #change this to your server name
-        #self.server_string = 'LAPTOP-L714M249\SQLEXPRESS;'
+        #self.server_string = 'DESKTOP-B2TFENN\SQLEXPRESS' #change this to your server name
+        self.server_string = 'LAPTOP-L714M249\SQLEXPRESS;'
 
         # using the default setupUi function of the super class
         self.setupUi(self)
@@ -390,7 +390,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def Clock (self):
         t = time.localtime() #local system time
-        d = date.today() #local system date
+        d = datetime.date.today() #local system date
         tFormat24hr = "%H:%M:%S"
         tFormat12hr = "%I:%M:%S %p"
 
@@ -411,7 +411,6 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         #convert seconds to string format
         difference = time.strftime(tFormat24hr, time.gmtime(difference.seconds))
-        print(difference)
 
         if (self.comboBoxSettingsTimeFormat.currentText() == '12 HR'):
             timeConvert = time.strftime(tFormat12hr, t)

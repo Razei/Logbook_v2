@@ -6,8 +6,8 @@ USE ReportLog;
 DROP TABLE dbo.Reports;
 DROP TABLE dbo.LostAndFound;
 DROP TABLE dbo.Schedule;
-DROP TABLE dbo.Rooms;
 DROP TABLE dbo.Courses;
+DROP TABLE dbo.Rooms;
 
 CREATE TABLE dbo.Rooms (
 	ROOM NCHAR(6) PRIMARY KEY,
