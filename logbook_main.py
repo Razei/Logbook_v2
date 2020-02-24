@@ -1,5 +1,6 @@
 import os
 import sys
+from lab_checker import labChecker
 import time
 import datetime
 import pyodbc
@@ -32,8 +33,8 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self):
         super(LogBook, self).__init__()
 
-        #self.server_string = 'DESKTOP-B2TFENN\SQLEXPRESS' #change this to your server name
-        self.server_string = 'LAPTOP-L714M249\SQLEXPRESS;'
+        #self.server_string = 'DESKTOP-B2TFENN\\SQLEXPRESS' #change this to your server name
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS;'
 
         # using the default setupUi function of the super class
         self.setupUi(self)
@@ -51,6 +52,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         #you're going to have to change the server name for it to work on your comp
         self.getAllData()
 
+        #new lab checker object
+        self.labchecker = labChecker()
+
         #set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive') 
 
@@ -67,6 +71,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         #show initial frame linked to dashboard button
         self.showLinkedFrame(self.pushButtonDashboard)
 
+
+
     #reusable query function
     def executeQuery(self, query):
         
@@ -78,6 +84,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             conn=pyodbc.connect(conn_str, timeout=2)
         except pyodbc.Error as err:
             print("Couldn't connect (Connection timed out)")
+            print(err)
 
         cursor = conn.cursor()
         cursor.execute(query)
@@ -141,7 +148,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         table.setWordWrap(True)
         table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
         table.horizontalHeader().setStretchLastSection(True)
-        table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft);
+        table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
 
         #set table header labels with column names from database
         table.setHorizontalHeaderLabels(headerNames)
@@ -157,7 +164,7 @@ class LogBook(MainWindowBase, MainWindowUI):
     
     def populateComboBox(self, comboBox, items):
         comboBox.clear()
-        comboBox.setView(QtWidgets.QListView());
+        comboBox.setView(QtWidgets.QListView())
         comboBox.addItems(items)
         comboBox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
@@ -396,6 +403,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         #print(time.strftime("%H:%M:%S", t)) #testing time output
 
+        schedules = self.labchecker.roomCountdown(self.labchecker.getTodaySchedule()[0])
+        print(schedules[0])
+
         #assign labels with current time and date
         #current date
         self.labelCurrentDate.setText(d.strftime("%B %d, %Y"))
@@ -410,7 +420,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         difference = later_time - first_time
 
         #convert seconds to string format
-        difference = time.strftime(tFormat24hr, time.gmtime(difference.seconds))
+        #difference = time.strftime(tFormat24hr, time.gmtime(difference.seconds))
+        difference = str(schedules[0])
 
         if (self.comboBoxSettingsTimeFormat.currentText() == '12 HR'):
             timeConvert = time.strftime(tFormat12hr, t)
