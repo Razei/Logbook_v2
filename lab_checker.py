@@ -8,16 +8,15 @@ from scheduleObj import scheduleObj
 #the schedule object holds the room number, day, start time, and end time
 #the schedule list holds all the schedules for all the rooms for the current day
 class labChecker():
-    def __init__(self):
-        #self.server_string = 'DESKTOP-B2TFENN\\SQLEXPRESS' #change this to your server name
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS;'
+    def __init__(self, serverString):
+        self.server_string = serverString #change this to your server name
+        #self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS;'
         self.tFormat = "%H:%M:%S" #24hr by default
-        self.date = datetime.datetime.today() #local system date
-        self.weekday_string = self.weekday_switch(self.date.weekday())
+        self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())
         #self.todaySchedule = self.getTodaySchedule()
     
     def getLocalDate(self):
-        return datetime.datetime.today()
+        return datetime.datetime.today() #local system date
 
     def setTimeFormat(self, tFormat):
         #local variables
@@ -42,7 +41,7 @@ class labChecker():
         #loop through the cursor and add data to the scheduleObj class
         for time in schedules:
             schedule.append(scheduleObj(time.ROOM, time.DAY,time.START_TIME,time.END_TIME))
-            print (time)
+            #print (time)
 
         return schedule
 
@@ -92,38 +91,49 @@ class labChecker():
 
         return tdelta
 
+
+    def compareTimes(self,time_stamp):
+        if datetime.datetime.strptime(time_stamp, "%H:%M:%S").time() > self.getLocalDate().time():
+            return True
+        return False
+
     def roomCountdown(self, schedule):
         current_time = self.getLocalDate().time().isoformat(timespec='seconds') #return the 'time' part of the date as a string with seconds precision level
         times = []
-
-        print (f'Current time: {current_time}')
-        print(f'Weekday: {self.weekday_string}')
+        time_left = None
+        #print (f'Current time: {current_time}')
+        #print(f'Weekday: {self.weekday_string}')
 
         #if the start time is still in the future
-        if datetime.datetime.strptime(schedule.getStartTime(), "%H:%M:%S").time() > self.date.time():
+        if self.compareTimes(schedule.getStartTime()):
             tdelta = self.calculateCountdown(schedule.getStartTime())    
-            print(f'Time left: {tdelta}')
+            #print(f'Time left: {tdelta}')
+            time_left = tdelta
             times.append(tdelta)
-                
+
+        #if the end time is still in the future
+        elif self.compareTimes(schedule.getEndTime()):
+            tdelta = self.calculateCountdown(schedule.getEndTime())
+            #print(f'Time left (end): {tdelta}')
+            time_left = tdelta
+            times.append(tdelta)
+            
+        '''        
         #start time has passed
         else:
             tdelta = self.calculateCountdown(schedule.getStartTime())
             print(f'Start Time passed {abs(tdelta)} ago')
-            times.append(abs(tdelta))
+            times.append(abs(tdelta))'''
 
-        #if the end time is still in the future
-        if datetime.datetime.strptime(schedule.getEndTime(), "%H:%M:%S").time() > self.date.time():
-            tdelta = self.calculateCountdown(schedule.getEndTime())
-            print(f'Time left (end): {tdelta}')
-            times.append(tdelta)
-
+        '''
         #end time has passed
         else:
             tdelta = self.calculateCountdown(schedule.getEndTime())
             print(f'End Time passed {abs(tdelta)} ago') # amount of time since it passed
-            times.append(abs(tdelta))
+            times.append(abs(tdelta))'''
 
-        return times
+        return time_left
+
         '''del tdelta 
         del schedule
         del first_time
@@ -148,8 +158,7 @@ if __name__ == '__main__':
     schedules = labChk.getTodaySchedule()
 
     for schedule in schedules:
-        for time in labChk.roomCountdown(schedule):
-            print (time)
+        print (labChk.roomCountdown(schedule))
 
     
 

@@ -175,6 +175,7 @@ QScrollBar::sub-line:vertical {
 
 QCheckBox[accessibleDescription ="checkBoxRoom"]{
     color:black;
+    font-size:48 px; 
 }
 
 QCheckBox::indicator:unchecked{
