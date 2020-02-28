@@ -50,6 +50,7 @@ class labChecker():
         server = self.server_string
         conn_str = 'Driver={SQL Server};Server=' + server + ';Database=ReportLog;Trusted_Connection=yes;'
 
+        conn = pyodbc.Connection
         # connect with 5 second timeout
         try:
             conn = pyodbc.connect(conn_str, timeout=2)
@@ -61,8 +62,6 @@ class labChecker():
         cursor = conn.cursor()
         cursor.execute(query)
         return cursor
-
-
 
     def weekday_switch(self, argument):  # python doesn't have switch case so this is an alternative
         switcher = {
