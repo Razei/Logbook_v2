@@ -129,6 +129,7 @@ INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Monday',
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Monday','22:00','00:30');
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Wednesday','13:00','13:30');
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Monday','0:00','23:59'); --for testing countdowns
-INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','0:00','23:59'); --for testing countdowns
+--INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','0:00','23:59'); --for testing countdowns
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','19:00','19:23'); --for testing countdowns
 
 SELECT * FROM dbo.Schedule;
