@@ -8,7 +8,6 @@ import pandas as pd
 import urllib
 import qtmodern.windows
 import qtmodern.styles
-from datetime import date
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from pathlib import Path
 
@@ -34,12 +33,13 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self):
         super(LogBook, self).__init__()
 
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS;'
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
 
         # using the default setupUi function of the super class
         self.setupUi(self)
 
+        self.staticDate = datetime.datetime.now()
         # get the directory of this script
         self.path = os.path.dirname(os.path.abspath(__file__))
 
@@ -151,7 +151,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         lostAndFoundQuery = 'SELECT * FROM ReportLog.dbo.LostAndFound'
 
         cursor = self.executeQuery(roomsQuery)
-        if cursor.rowcount == -1 and cursor == None:
+        if cursor.rowcount == -1 and cursor is None:
             return
 
         rooms = cursor.fetchall()
@@ -186,7 +186,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         headerNames = []
 
         cursor = self.executeQuery(query)
-        if cursor.rowcount == -1 and cursor == None:
+        if cursor.rowcount == -1 and cursor is None:
             return
 
         if cursor.rowcount == 0:
@@ -393,11 +393,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.showDialog()
         # if a row is selected (having no rows selected returns -1)
         if table.currentRow() != -1 and table.item(0, 0) is not None:
-            rowIndex = table.currentRow()  # get index of current row
+            row_index = table.currentRow()  # get index of current row
             data = []  # data list
 
             for i in range(table.columnCount()):  # loop through all columns
-                data.append(table.item(rowIndex, i).text())  # add each field to the list
+                data.append(table.item(row_index, i).text())  # add each field to the list
 
             # output to widgets
             self.labelViewDataReportNum.setText(data[0])
@@ -412,16 +412,16 @@ class LogBook(MainWindowBase, MainWindowUI):
             # change to view page
             self.changePage(self.pageViewData)
 
-    def deleteSelection(self, table, tableName):
+    def deleteSelection(self, table, table_name):
         self.showDialog()
         # if a row is selected (having no rows selected returns -1)
         if table.currentRow() != -1:
-            rowIndex = table.currentRow()  # get index of current row
-            columnIndex = table.item(rowIndex, 0).text()
-            firstColumn = self.executeQuery(f"SELECT column_name from information_schema.columns where table_name = '{tableName}' and ordinal_position = 1").fetchone()
-            deleteQuery = f'DELETE FROM dbo.{tableName} WHERE {str(firstColumn[0])} = {columnIndex};'
+            row_index = table.currentRow()  # get index of current row
+            column_index = table.item(row_index, 0).text()
+            first_column = self.executeQuery(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
+            delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
 
-            self.executeQuery(deleteQuery).commit()
+            self.executeQuery(delete_query).commit()
             self.refreshTables()
 
     def changePage(self, name):
@@ -431,21 +431,21 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(widget))
 
     @staticmethod
-    def validateEmptyForm(textEdit):
-        if textEdit.text() == '':
-            textEdit.setPlaceholderText('Cannot be blank')
+    def validateEmptyForm(text_edit):
+        if text_edit.text() == '':
+            text_edit.setPlaceholderText('Cannot be blank')
             return False
 
         return True
 
     def refreshTables(self):
-        reportsQuery = 'SELECT * FROM ReportLog.dbo.Reports'
-        problemsQuery = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
-        lostAndFoundQuery = 'SELECT * FROM ReportLog.dbo.LostAndFound'
+        reports_query = 'SELECT * FROM ReportLog.dbo.Reports'
+        problems_query = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+        lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
 
-        self.populateTable(self.tableWidgetReports, reportsQuery)
-        self.populateTable(self.tableWidgetProblems, problemsQuery)
-        self.populateTable(self.tableWidgetLostAndFound, lostAndFoundQuery)
+        self.populateTable(self.tableWidgetReports, reports_query)
+        self.populateTable(self.tableWidgetProblems, problems_query)
+        self.populateTable(self.tableWidgetLostAndFound, lost_and_found_query)
 
     def saveNewLog(self):
 
@@ -503,22 +503,49 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.changePage(self.pageReports)
 
     def countdownHandler(self):
+        for i in range(len(self.schedules)):  # loop through all of today's schedules
+            countdown = self.labchecker.roomCountdown(self.schedules[i])  # calculate the countdown using the current schedule object
+            room_name = self.schedules[i].getRoom().strip()  # get the room name for label
+            search = self.schedules[i].getRoom().strip() + str(i)  # room name + i (for multiple open times in the same room)
+            print(countdown)
 
-        # loop through all of today's schedules
-        for i in range(len(self.schedules)):
-
-            countdown = self.labchecker.roomCountdown(self.schedules[i])  # get the room countdown for the current room
-            room_name = self.schedules[i].getRoom().strip()  # test string for searching
-            search = self.schedules[i].getRoom().strip() + str(i)  # room name + i
-
+            # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
             if countdown is not None:
+                if countdown < datetime.timedelta(hours=4):  # only show countdown if it's 2 hours away
+                    if self.frame.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
+                        checkBox = QtWidgets.QCheckBox(room_name + '         ' + str(countdown), self)  # create a new checkbox and append the room name + countdown
+                        checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
+                        checkBox.setObjectName(search)
+
+                        self.frame.layout().addWidget(checkBox)  # add the checkbox to the frame
+                    else:  # if the widget exists already, update it
+                        self.frame.findChild(QtWidgets.QCheckBox, search).setText(room_name + '         ' + str(countdown))
+
+                    if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
+                        self.frame.findChild(QtWidgets.QCheckBox, search).setVisible(False)
+                        self.frame.findChild(QtWidgets.QCheckBox, search).deleteLater()
+
+    def durationHandler(self):
+        for i in range(len(self.schedules)):  # loop through all of today's schedules
+            countdown = self.labchecker.calculateDuration(self.schedules[i])  # calculate the countdown using the current schedule object
+            room_name = self.schedules[i].getRoom().strip()  # get the room name for label
+            search = self.schedules[i].getRoom().strip() + 'duration'  # room name + i (for multiple open times in the same room)
+            print(countdown)
+
+            # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
+            if countdown is not None:
+                label = room_name + '         ' + 'Vacant for: ' + str(countdown)
                 if self.frame.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
-                    checkBox = QtWidgets.QCheckBox(room_name + '         ' + str(countdown), self)  # check to see if the widget exists already
-                    checkBox.setAccessibleDescription('checkBoxRoom')
+                    checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
+                    checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                     checkBox.setObjectName(search)
-                    self.frame.layout().addWidget(checkBox)
-                else:
-                    self.frame.findChild(QtWidgets.QCheckBox, search).setText(room_name + '         ' + str(countdown))
+                    self.frame.layout().addWidget(checkBox)  # add the checkbox to the frame
+                else:  # if the widget exists already, update it
+                    self.frame.findChild(QtWidgets.QCheckBox, search).setText(label)
+
+                if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
+                    self.frame.findChild(QtWidgets.QCheckBox, search).setVisible(False)
+                    self.frame.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
     def Clock(self):
         t = time.localtime()  # local system time
@@ -533,6 +560,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.labelCurrentDate3.setText(d.strftime("%B %d, %Y"))
 
         self.countdownHandler()
+        self.durationHandler()
 
         # convert time to string format
         timeConvert = time.strftime(tFormat24hr, t)
