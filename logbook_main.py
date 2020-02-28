@@ -144,31 +144,45 @@ class LogBook(MainWindowBase, MainWindowUI):
         status = ['Fixed', 'Not Fixed']
         themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
         formats = ['24 HR', '12 HR']
-        roomList = []
-        reportsQuery = 'SELECT * FROM ReportLog.dbo.Reports'
-        roomsQuery = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
-        problemsQuery = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
-        lostAndFoundQuery = 'SELECT * FROM ReportLog.dbo.LostAndFound'
+        room_list = []
+        reports_query = 'SELECT * FROM ReportLog.dbo.Reports'
+        rooms_query = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
+        problems_query = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+        lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
+        reports_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports'
+        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
 
-        cursor = self.executeQuery(roomsQuery)
+        cursor = self.executeQuery(rooms_query)
         if cursor.rowcount == -1 and cursor is None:
             return
 
         rooms = cursor.fetchall()
 
         for room in rooms:
-            roomList.append(room[0])
+            room_list.append(room[0])
 
-        self.populateComboBox(self.comboBoxRoom, roomList)
+        self.populateComboBox(self.comboBoxRoom, room_list)
+
+        cursor = self.executeQuery(problems_count_query)
+        if cursor.rowcount == -1 and cursor is None:
+            return
+
+        self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
+
+        cursor = self.executeQuery(reports_count_query)
+        if cursor.rowcount == -1 and cursor is None:
+            return
+
+        self.labelNumberReports.setText(str(cursor.fetchone()[0]))
 
         # hide the row numbers in the tables
         self.tableWidgetReports.verticalHeader().setVisible(False)
         self.tableWidgetProblems.verticalHeader().setVisible(False)
         self.tableWidgetLostAndFound.verticalHeader().setVisible(False)
 
-        self.populateTable(self.tableWidgetProblems, problemsQuery)
-        self.populateTable(self.tableWidgetReports, reportsQuery)
-        self.populateTable(self.tableWidgetLostAndFound, lostAndFoundQuery)
+        self.populateTable(self.tableWidgetProblems, problems_query)
+        self.populateTable(self.tableWidgetReports, reports_query)
+        self.populateTable(self.tableWidgetLostAndFound, lost_and_found_query)
 
         self.populateComboBox(self.comboBoxMonth, months)
         self.populateComboBox(self.comboBoxStatus, status)
@@ -183,7 +197,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # new array variables for holding data and column names
         data = []
-        headerNames = []
+        header_names = []
 
         cursor = self.executeQuery(query)
         if cursor.rowcount == -1 and cursor is None:
@@ -192,11 +206,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         if cursor.rowcount == 0:
             return
         data = cursor.fetchall()
-        cursorDesc = cursor.description
+        cursor_desc = cursor.description
 
         # get all column names from the database
-        for column in cursorDesc:
-            headerNames.append(column[0])
+        for column in cursor_desc:
+            header_names.append(column[0])
 
         # QTableWidget requires you to set the amount of rows/columns needed before you populate it
         table.horizontalHeader().setMaximumSectionSize(200)
@@ -208,7 +222,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
 
         # set table header labels with column names from database
-        table.setHorizontalHeaderLabels(headerNames)
+        table.setHorizontalHeaderLabels(header_names)
 
         # populate the table
         for i, row in enumerate(data):
@@ -229,9 +243,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # clears all the QT Creator styles in favour of the QSS stylesheet
     def clearStyleSheets(self):
-        widgetChild = self.centralwidget.findChildren(QtWidgets.QWidget)
+        widget_child = self.centralwidget.findChildren(QtWidgets.QWidget)
 
-        for widget in widgetChild:
+        for widget in widget_child:
             widget.setStyleSheet('')
 
     # use the button's name to find the linked frame (deliberately named this way)
@@ -273,8 +287,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # add all click events
     def addClickEvents(self):
-        problemsQuery = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
-        lostAndFoundQuery = 'SELECT * FROM ReportLog.dbo.LostAndFound'
+        problems_query = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+        lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
 
         # reports
         self.pushButtonNew.clicked.connect(self.newLog)
@@ -282,7 +296,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # problems
         self.pushButtonRefreshProblems.clicked.connect(
-            lambda: self.populateTable(self.tableWidgetProblems, problemsQuery))
+            lambda: self.populateTable(self.tableWidgetProblems, problems_query))
         self.pushButtonDelete.clicked.connect(lambda: self.deleteSelection(self.tableWidgetReports, 'Reports'))
         self.pushButtonReportsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetReports))
         self.pushButtonProblemsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetProblems))
@@ -298,7 +312,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
         self.pushButtonFormCancelLAF.clicked.connect(self.showLostAndFoundFrame)
         self.pushButtonFormSaveLAF.clicked.connect(self.saveLostAndFoundForm)
-        self.pushButtonRefreshLAF.clicked.connect(lambda: self.populateTable(self.tableWidgetLostAndFound, lostAndFoundQuery))
+        self.pushButtonRefreshLAF.clicked.connect(lambda: self.populateTable(self.tableWidgetLostAndFound, lost_and_found_query))
         self.pushButtonDeleteLAF.clicked.connect(lambda: self.deleteSelection(self.tableWidgetLostAndFound, 'LostAndFound'))
         self.checkBoxNewLostAndFoundReturned.clicked.connect(self.showFrameReturnedLAF)
 
@@ -331,13 +345,13 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
-        roomList = []
+        room_list = []
         query = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
         cursor = self.executeQuery(query)
         rooms = cursor.fetchall()
         for room in rooms:
-            roomList.append(room[0])
-        self.populateComboBox(self.comboBoxNewLostAndFoundRoom, roomList)
+            room_list.append(room[0])
+        self.populateComboBox(self.comboBoxNewLostAndFoundRoom, room_list)
 
         self.frameReturnedLAF.hide()
         self.refreshTables()
@@ -357,19 +371,19 @@ class LogBook(MainWindowBase, MainWindowUI):
     def saveLostAndFoundForm(self):
         date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
         room = self.comboBoxNewLostAndFoundRoom.currentText()
-        foundBy = self.comboBoxNewLostAndFoundBy.text()
-        itemDescription = self.textBoxNewLostAndFoundItemDescription.text()
+        found_by = self.comboBoxNewLostAndFoundBy.text()
+        item_description = self.textBoxNewLostAndFoundItemDescription.text()
         note = self.textBoxNewLostAndFoundNote.text()
         if self.checkBoxNewLostAndFoundReturned.isChecked():
             returned = 'YES'
-            returnedDate = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
-            studentName = self.textBoxNewLostAndFoundStudentName.text()
-            studentNumber = self.textBoxNewLostAndFoundStudentNumber.text()
-            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{foundBy}\',\'{itemDescription}\',\'{note}\',\'{studentName}\',\'{studentNumber}\',\'{returnedDate}\',\'{returned}\');'
+            returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
+            student_name = self.textBoxNewLostAndFoundStudentName.text()
+            student_number = self.textBoxNewLostAndFoundStudentNumber.text()
+            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'
 
         else:
             returned = 'NO'
-            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{foundBy}\',\'{itemDescription}\',\'{note}\',\'{returned}\');'
+            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{returned}\');'
 
         cursor = self.executeQuery(query)
         cursor.commit()
@@ -390,7 +404,6 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.frameReturnedLAF.hide()
 
     def viewSelection(self, table):
-        self.showDialog()
         # if a row is selected (having no rows selected returns -1)
         if table.currentRow() != -1 and table.item(0, 0) is not None:
             row_index = table.currentRow()  # get index of current row
@@ -512,18 +525,18 @@ class LogBook(MainWindowBase, MainWindowUI):
             # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
             if countdown is not None:
                 if countdown < datetime.timedelta(hours=4):  # only show countdown if it's 2 hours away
-                    if self.frame.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
+                    if self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
                         checkBox = QtWidgets.QCheckBox(room_name + '         ' + str(countdown), self)  # create a new checkbox and append the room name + countdown
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
 
-                        self.frame.layout().addWidget(checkBox)  # add the checkbox to the frame
+                        self.frameUpcomingRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
                     else:  # if the widget exists already, update it
-                        self.frame.findChild(QtWidgets.QCheckBox, search).setText(room_name + '         ' + str(countdown))
+                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setText(room_name + '         ' + str(countdown))
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
-                        self.frame.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-                        self.frame.findChild(QtWidgets.QCheckBox, search).deleteLater()
+                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
+                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
     def durationHandler(self):
         for i in range(len(self.schedules)):  # loop through all of today's schedules
@@ -535,17 +548,17 @@ class LogBook(MainWindowBase, MainWindowUI):
             # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
             if countdown is not None:
                 label = room_name + '         ' + 'Vacant for: ' + str(countdown)
-                if self.frame.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
+                if self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
                     checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
                     checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                     checkBox.setObjectName(search)
-                    self.frame.layout().addWidget(checkBox)  # add the checkbox to the frame
+                    self.frameEmptyRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
                 else:  # if the widget exists already, update it
-                    self.frame.findChild(QtWidgets.QCheckBox, search).setText(label)
+                    self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setText(label)
 
                 if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
-                    self.frame.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-                    self.frame.findChild(QtWidgets.QCheckBox, search).deleteLater()
+                    self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
+                    self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
     def Clock(self):
         t = time.localtime()  # local system time
