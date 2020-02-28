@@ -124,12 +124,13 @@ CREATE TABLE dbo.Schedule(
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','12:00','15:00');
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','16:00','17:00');
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-15','Friday','11:30','13:30');
-INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Tuesday','8:30','10:30');
-INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Monday','20:00','22:30');
-INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Monday','22:00','00:30');
-INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Wednesday','13:00','13:30');
-INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-17','Monday','0:00','23:59'); --for testing countdowns
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-15','Tuesday','8:30','10:30');
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-11','Monday','20:00','22:30');
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-13','Monday','22:00','00:30');
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-21','Wednesday','13:00','13:30');
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-22','Monday','0:00','23:59'); --for testing countdowns
 --INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','0:00','23:59'); --for testing countdowns
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','19:00','19:23'); --for testing countdowns
+INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Monday','23:00','00:30');
 
 SELECT * FROM dbo.Schedule;
