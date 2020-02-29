@@ -15,6 +15,15 @@ class labChecker():
         self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())
         # self.todaySchedule = self.getTodaySchedule()
 
+    def validateCursor(self, cursor):
+        if cursor is None:
+            return False
+
+        if cursor.rowcount == 0:
+            return False
+
+        return True
+
     def getLocalDate(self):
         return datetime.datetime.today()  # local system date
 
@@ -36,6 +45,11 @@ class labChecker():
         # query stuff
         query = f"SELECT ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule WHERE DAY = '{self.weekday_string}'"
         cursor = self.executeQuery(query)
+
+        # validate the cursor for empty results
+        if not self.validateCursor(cursor):
+            return
+
         schedule_data = cursor.fetchall()
 
         # loop through the cursor and add data to the scheduleObj class
@@ -46,24 +60,21 @@ class labChecker():
 
     # reusable query function
     def executeQuery(self, query):
-        # local variables
-        server = self.server_string
-        conn_str = 'Driver={SQL Server};Server=' + server + ';Database=ReportLog;Trusted_Connection=yes;'
-
-        conn = pyodbc.Connection
-        # connect with 5 second timeout
         try:
-            conn = pyodbc.connect(conn_str, timeout=2)
-
+            conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=self.server_string,
+                                      database='ReportLog', timeout=2,
+                                      trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
+            conn = conn_str
+            cursor = conn.cursor()
+            cursor.execute(query)
+            return cursor
         except pyodbc.Error as err:
             print("Couldn't connect (Connection timed out)")
             print(err)
+            return
 
-        cursor = conn.cursor()
-        cursor.execute(query)
-        return cursor
-
-    def weekday_switch(self, argument):  # python doesn't have switch case so this is an alternative
+    @staticmethod
+    def weekday_switch(argument):  # python doesn't have switch case so this is an alternative
         switcher = {
             0: "Monday",
             1: "Tuesday",
