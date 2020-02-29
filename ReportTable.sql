@@ -20,6 +20,7 @@ INSERT INTO
 VALUES 
 	('Other','Not a room'),
 	('A1-61', 'Software Gaming Lab'),
+	('A3-11','Software Engineering'),
 	('A3-13','Software Engineering'),
 	('A3-15','Software Engineering'),
 	('A3-17','Software/Mobile Dev. Lab'),
