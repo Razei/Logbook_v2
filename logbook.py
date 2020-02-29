@@ -22,8 +22,8 @@ MainWindowUI, MainWindowBase = uic.loadUiType(
 class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
 
         # using the default setupUi function of the super class
         self.setupUi(self)
@@ -113,7 +113,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if cursor is None:
             return False
 
-        if cursor.rowcount == -1:
+        if cursor.rowcount == 0:
             return False
 
         return True
@@ -123,26 +123,18 @@ class LogBook(MainWindowBase, MainWindowUI):
         # conn_str ='Trusted_Connection=yes;DRIVER={ODBC Driver 17 for SQL Server};SERVER='+self.server_string+';DATABASE=ReportLog;UID=Helpdesk;PWD=b1pa55'
         # conn_str = 'Driver={SQL Server};Server='+ self.server_string + ';Database=ReportLog;Trusted_Connection=yes;'
         # connect with 5 second timeout
-        while True:
-            try:
-                conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=self.server_string,
-                                          database='ReportLog', timeout=2,
-                                          trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
-                conn = conn_str
-                cursor = conn.cursor()
-                cursor.execute(query)
-                return cursor
-            except pyodbc.Error as err:
-                print("Couldn't connect (Connection timed out)")
-                print(err)
-                return
-            except Exception as ex:
-                print(ex)
-                return
-            except:
-                return
-            finally:
-                return
+        try:
+            conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=self.server_string,
+                                      database='ReportLog', timeout=2,
+                                      trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
+            conn = conn_str
+            cursor = conn.cursor()
+            cursor.execute(query)
+            return cursor
+        except pyodbc.Error as err:
+            print("Couldn't connect (Connection timed out)")
+            print(err)
+            return
 
     def getAllData(self):
         months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -592,13 +584,15 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                 if countdown is not None and countdown < datetime.timedelta(hours=4): # only show countdown if it's not empty and 2 hours away
+                    label = room_name + '         ' + 'In: ' + str(countdown)
                     if self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
-                        checkBox = QtWidgets.QCheckBox(room_name + '         ' + 'In: ' + str(countdown), self)  # create a new checkbox and append the room name + countdown
+                        checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
+                        checkBox.stateChanged.connect(self.removeCountdown)
                         self.frameUpcomingRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
                     else:  # if the widget exists already, update it
-                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setText(room_name + '         ' + str(countdown))
+                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setText(label)
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
                         self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
                         self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
@@ -617,6 +611,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
+                        checkBox.stateChanged.connect(self.removeCountdown)
                         self.frameEmptyRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
                     else:  # if the widget exists already, update it
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setText(label)
@@ -626,8 +621,8 @@ class LogBook(MainWindowBase, MainWindowUI):
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
     def removeCountdown(self):
-        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
+        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, self.sender().objectName()).setVisible(False)
+        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, self.sender().objectName()).deleteLater()
 
     def Clock(self):
         t = time.localtime()  # local system time

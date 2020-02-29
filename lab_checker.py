@@ -40,7 +40,7 @@ class labChecker():
 
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
-            schedule_objects.append(scheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME, sch_time.END_TIME))
+            schedule_objects.append(scheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
 
         return schedule_objects
 
