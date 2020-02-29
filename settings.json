@@ -1,0 +1,28 @@
+{
+  "theme_choice": {
+    "name": "classic_light"
+  },
+  "time_format": "12 HR",
+  "theme": {
+    "classic_light": {
+      "theme_name": "Classic Light",
+      "base_theme": "light",
+      "theme_path": "themes\\logbook_main_styles_light.qss"
+    },
+    "classic_dark": {
+      "theme_name": "Classic Dark",
+      "base_theme": "dark",
+      "theme_path": "themes\\logbook_main_styles_dark.qss"
+    },
+    "centennial_light": {
+      "theme_name": "Centennial Light",
+      "base_theme": "light",
+      "theme_path": "themes\\logbook_main_styles_centennial_light.qss"
+    },
+    "centennial_dark": {
+      "theme_name": "Centennial Dark",
+      "base_theme": "dark",
+      "theme_path": "themes\\logbook_main_styles_centennial_dark.qss"
+    }
+  }
+}
