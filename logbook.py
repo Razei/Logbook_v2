@@ -8,8 +8,8 @@ import pandas as pd
 import urllib
 import qtmodern.windows
 import qtmodern.styles
-from PyQt5 import QtCore, QtWidgets, uic
-
+from PyQt5 import QtCore, QtWidgets, uic, Qt
+from PyQt5.Qt import QDialog
 
 # get path of this python file
 path = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +17,14 @@ path = os.path.dirname(os.path.abspath(__file__))
 # get type from ui file
 MainWindowUI, MainWindowBase = uic.loadUiType(
     os.path.join(path, 'logbook_design.ui'))
+
+DialogUI, DialogBase = uic.loadUiType(os.path.join(path, 'dialog.ui'))
+
+
+class Dialog(DialogBase, DialogUI):
+    def __init__(self, parent=None):
+        super(Dialog, self).__init__(parent)
+        self.setupUi(self)
 
 
 class LogBook(MainWindowBase, MainWindowUI):
@@ -64,50 +72,44 @@ class LogBook(MainWindowBase, MainWindowUI):
         # show initial frame linked to dashboard button
         self.showLinkedFrame(self.pushButtonDashboard)
 
-    @staticmethod
-    def showDialog():
-        # create new window of type LogBook (calls __init__ constructor to do the rest)
-        windowDialog = QtWidgets.QDialog()
+    def showDialog(self):
 
-        flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        windowDialog.setWindowFlags(flags)
-        windowDialog.setGeometry(QtCore.QRect(0, 0, 300, 200))  # arbitrary size/location
-
-        # center the window
-        windowGeometryDialog = windowDialog.frameGeometry()
-        centerPoint = QtWidgets.QDesktopWidget().availableGeometry().center()
-        windowGeometryDialog.moveCenter(centerPoint)
-        windowDialog.move(windowGeometryDialog.topLeft())
-
-        yesBtn = QtWidgets.QPushButton("Yes", windowDialog)
-        noBtn = QtWidgets.QPushButton("No", windowDialog)
-
-        yesBtn.clicked.connect(lambda: windowDialog.close())
-        noBtn.clicked.connect(lambda: windowDialog.close())
-
-        yesBtn.move(50, 50)
-        noBtn.move(150, 50)
-        QtWidgets.QLabel("Are you sure?", windowDialog)
-        windowDialog.setWindowTitle("Confirm Delete")
-        windowDialog.setWindowModality(QtCore.Qt.ApplicationModal)
-
-        mwDialog = qtmodern.windows.ModernWindow(windowDialog)  # qtmodern
-
+        dialog = Dialog()
+        flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        state = True
+        '''
+        mwDialog = qtmodern.windows.ModernWindow(dialog)  # qtmodern
+        mwDialog.setWindowFlags(flags)
+        
         minimizeBtn = mwDialog.findChild(QtWidgets.QToolButton, "btnMinimize")
         minimizeBtn.deleteLater()
         minimizeBtn.setVisible(False)
 
         maximizeBtn = mwDialog.findChild(QtWidgets.QToolButton, "btnMaximize")
         maximizeBtn.deleteLater()
-        maximizeBtn.setVisible(False)
+        maximizeBtn.setVisible(False)'''
 
-        '''closeBtn = mwDialog.findChild(QtWidgets.QToolButton, "btnbtnClose")
-        closeBtn.deleteLater()
-        closeBtn.setVisible(False)'''
+        # create new window of type LogBook (calls __init__ constructor to do the rest)
 
-        mwDialog.show()
+        dialog.setWindowFlags(flags)
+        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setAccessibleDescription('successButton')
+        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setAccessibleDescription('dangerButton')
 
-        windowDialog.exec_()
+        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setMinimumSize(100, 20)
+        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setMinimumSize(100, 20)
+
+        dialog.setStyleSheet(self.theme)
+        # center the window
+        windowGeometryDialog = dialog.frameGeometry()
+        centerPoint = QtWidgets.QDesktopWidget().availableGeometry().center()
+        windowGeometryDialog.moveCenter(centerPoint)
+        dialog.move(windowGeometryDialog.topLeft())
+        # create new window of type LogBook (calls __init__ constructor to do the rest)
+        #state = dialog.buttonBox.accepted.connect(self.dialog_accept())
+
+        if not dialog.exec_() == 1:
+            state = False
+        return state
 
     def validateCursor(self, cursor):
         if cursor is None:
@@ -406,16 +408,17 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.changePage(self.pageViewData)
 
     def deleteSelection(self, table, table_name):
-        self.showDialog()
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1:
-            row_index = table.currentRow()  # get index of current row
-            column_index = table.item(row_index, 0).text()
-            first_column = self.executeQuery(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
-            delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
+        if self.showDialog():
 
-            self.executeQuery(delete_query).commit()
-            self.refreshTables()
+            # if a row is selected (having no rows selected returns -1)
+            if table.currentRow() != -1:
+                row_index = table.currentRow()  # get index of current row
+                column_index = table.item(row_index, 0).text()
+                first_column = self.executeQuery(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
+                delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
+
+                self.executeQuery(delete_query).commit()
+                self.refreshTables()
 
     def changePage(self, name):
         widget = name
@@ -646,3 +649,5 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # current time
         self.labelCurrentTime.setText(timeConvert)
+
+
