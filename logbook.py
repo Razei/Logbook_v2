@@ -1,6 +1,5 @@
 import json
 import os
-from lab_checker import labChecker
 import time
 import datetime
 import pyodbc
@@ -8,8 +7,11 @@ import pandas as pd
 import urllib
 import qtmodern.windows
 import qtmodern.styles
-from PyQt5 import QtCore, QtWidgets, uic, Qt
-from PyQt5.Qt import QDialog
+from PyQt5 import QtCore, QtWidgets, uic
+from PyQt5.QtCore import Qt
+from PyQt5.QtSql import QSqlDatabase
+
+from lab_checker import labChecker
 
 # get path of this python file
 path = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +42,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         # get the directory of this script
         self.path = os.path.dirname(os.path.abspath(__file__))
 
+        self.ignoreList = []
         # build a window object from the .ui file
         self.window = uic.loadUi(os.path.join(self.path, 'logbook_design.ui'))
 
@@ -59,6 +62,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         # set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
 
+        self.labelSettingsWarning.setVisible(False)
+
         # fetches the qss stylesheet path
         theme_path = os.path.join(os.path.split(__file__)[0], theme['theme_path'])
 
@@ -77,19 +82,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         dialog = Dialog()
         flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         state = True
-        '''
-        mwDialog = qtmodern.windows.ModernWindow(dialog)  # qtmodern
-        mwDialog.setWindowFlags(flags)
-        
-        minimizeBtn = mwDialog.findChild(QtWidgets.QToolButton, "btnMinimize")
-        minimizeBtn.deleteLater()
-        minimizeBtn.setVisible(False)
-
-        maximizeBtn = mwDialog.findChild(QtWidgets.QToolButton, "btnMaximize")
-        maximizeBtn.deleteLater()
-        maximizeBtn.setVisible(False)'''
-
-        # create new window of type LogBook (calls __init__ constructor to do the rest)
 
         dialog.setWindowFlags(flags)
         dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setAccessibleDescription('successButton')
@@ -99,13 +91,13 @@ class LogBook(MainWindowBase, MainWindowUI):
         dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setMinimumSize(100, 20)
 
         dialog.setStyleSheet(self.theme)
+
         # center the window
         windowGeometryDialog = dialog.frameGeometry()
-        centerPoint = QtWidgets.QDesktopWidget().availableGeometry().center()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
         windowGeometryDialog.moveCenter(centerPoint)
         dialog.move(windowGeometryDialog.topLeft())
-        # create new window of type LogBook (calls __init__ constructor to do the rest)
-        #state = dialog.buttonBox.accepted.connect(self.dialog_accept())
 
         if not dialog.exec_() == 1:
             state = False
@@ -119,6 +111,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             return False
 
         return True
+
     # reusable query function
     def executeQuery(self, query):
 
@@ -173,12 +166,11 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # if you want to test something else and get a database error comment out this function and the function call(I'll do exception handling later lol)
     def populateTable(self, table, query):
-        table.clear()
 
+        table.clear()
         table.setSortingEnabled(False)  # this is necessary to avoid confusing the table widget (blank rows)
 
-        # new array variables for holding data and column names
-        data = []
+        # new array variables for holding column names
         header_names = []
 
         cursor = self.executeQuery(query)
@@ -194,25 +186,34 @@ class LogBook(MainWindowBase, MainWindowUI):
         for column in cursor_desc:
             header_names.append(column[0])
 
+        table.horizontalHeader().setMaximumSectionSize(200)  # max size per column
+
         # QTableWidget requires you to set the amount of rows/columns needed before you populate it
-        table.horizontalHeader().setMaximumSectionSize(200)
         table.setRowCount(len(data))
         table.setColumnCount(len(data[0]))
+
         table.setWordWrap(True)
         table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
         table.horizontalHeader().setStretchLastSection(True)
         table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
+        table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
+        table.horizontalHeader().setResizeContentsPrecision(2000)
         # set table header labels with column names from database
         table.setHorizontalHeaderLabels(header_names)
 
         # populate the table
         for i, row in enumerate(data):
             for j, col in enumerate(row):
-                item = QtWidgets.QTableWidgetItem(str(col).strip())
+                item = QtWidgets.QTableWidgetItem()
+
+                if type(col) is int:  # if the column is a number
+                    item.setData(Qt.EditRole, col)  # set correct role so sorting works properly
+                else:
+                    item = QtWidgets.QTableWidgetItem(str(col).strip())
                 table.setItem(i, j, item)
 
-        table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         table.resizeColumnsToContents()
         table.setSortingEnabled(True)
         table.sortItems(0, QtCore.Qt.DescendingOrder)
@@ -273,6 +274,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         # reports
         self.pushButtonNew.clicked.connect(self.newLog)
         self.pushButtonFormCancel.clicked.connect(self.cancelNewLog)
+        self.pushButtonExportData.clicked.connect(self.exportData)
 
         # problems
         self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
@@ -369,7 +371,6 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         cursor = self.executeQuery(query)
         cursor.commit()
-        self.exportData()
         self.showLostAndFoundFrame()
 
     def showLostAndFoundFrame(self):
@@ -408,15 +409,14 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.changePage(self.pageViewData)
 
     def deleteSelection(self, table, table_name):
-        if self.showDialog():
 
-            # if a row is selected (having no rows selected returns -1)
-            if table.currentRow() != -1:
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1:
+            if self.showDialog():
                 row_index = table.currentRow()  # get index of current row
                 column_index = table.item(row_index, 0).text()
                 first_column = self.executeQuery(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
                 delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
-
                 self.executeQuery(delete_query).commit()
                 self.refreshTables()
 
@@ -476,10 +476,10 @@ class LogBook(MainWindowBase, MainWindowUI):
             return
 
         date = self.dateEditNewLog.date().toString('yyyy-MM-dd')
-        issue = self.textBoxNewLogIssue.text()
+        issue = self.textBoxNewLogIssue.text().strip()
         note = self.textBoxNewLogNote.toPlainText()
-        name = self.textBoxNewLogName.text()
-        room = self.comboBoxRoom.currentText()
+        name = self.textBoxNewLogName.text().strip()
+        room = self.comboBoxRoom.currentText().strip()
         fixed = ' '
 
         if self.checkBoxFixed.isChecked():
@@ -487,7 +487,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         else:
             fixed = 'NO'
 
-        resolution = self.textBoxNewLogResolution.text()
+        resolution = self.textBoxNewLogResolution.toPlainText().strip()
 
         query = f'INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'
 
@@ -500,7 +500,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         cursor.commit()
 
-        self.exportData()
+
         self.refreshTables()
         self.changePage(self.pageReports)
         self.clearForm()
@@ -558,6 +558,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         with open("settings.json", "w") as jsonFile:
             json.dump(data, jsonFile, indent=2)
 
+        self.labelSettingsWarning.setVisible(True)
+
     def exportData(self):
 
         server = self.server_string
@@ -567,7 +569,13 @@ class LogBook(MainWindowBase, MainWindowUI):
         conn_str = "mssql+pyodbc:///?odbc_connect=%s" % conn_str  # to stop sqlalchemy from complaining
         data = pd.read_sql_query('SELECT * FROM dbo.Reports', conn_str)
 
-        data.to_excel('Reports.xlsx')
+        data_obj = data.select_dtypes(['object'])
+        data[data_obj.columns] = data_obj.apply(lambda x: x.str.strip())
+
+        # data.columns.apply(lambda x: x.str.strip())
+
+        test = str(datetime.datetime.now().year)
+        data.to_excel(f'Reports{test}.xlsx')
 
     def newLog(self):
         self.clearForm()
@@ -602,30 +610,40 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def durationHandler(self):
         if self.schedules is not None and range(len(self.schedules) != 0):
+
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.calculateDuration(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].getRoom().strip()  # get the room name for label
                 search = self.schedules[i].getRoom().strip() + 'duration'  # room name + i (for multiple open times in the same room)
 
-                # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
+                # countdown = (datetime.timedelta(seconds=2230) + self.staticDate) - datetime.datetime.now()  # for testing (will countdown from 30 seconds)
                 if countdown is not None:
                     label = room_name + '         ' + 'Vacant for: ' + str(countdown)
+
                     if self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
                         checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
                         checkBox.stateChanged.connect(self.removeCountdown)
                         self.frameEmptyRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
+
                     else:  # if the widget exists already, update it
+
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setText(label)
+                        if countdown < datetime.timedelta(minutes=30):
+                            if countdown.seconds % 2 == 0:
+                                self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setAccessibleDescription('timerDanger')
+                            else:
+                                self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setAccessibleDescription('checkBoxRoom')
+                            self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setStyleSheet('')  # force a stylesheet recalculation (faster than reapplying the style sheet)
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
     def removeCountdown(self):
-        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, self.sender().objectName()).setVisible(False)
-        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, self.sender().objectName()).deleteLater()
+        self.findChild(QtWidgets.QCheckBox, self.sender().objectName()).setVisible(False)
+        self.findChild(QtWidgets.QCheckBox, self.sender().objectName()).deleteLater()
 
     def Clock(self):
         t = time.localtime()  # local system time
@@ -636,6 +654,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         # assign labels with current time and date
         # current date
         self.labelCurrentDate.setText(d.strftime("%B %d, %Y"))
+        self.labelCurrentDate2.setText(d.strftime("%B %d, %Y"))
         self.labelCurrentDate3.setText(d.strftime("%B %d, %Y"))
 
         self.countdownHandler()
