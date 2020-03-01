@@ -2,10 +2,10 @@ import os
 import sys
 import json
 from logbook import LogBook
-import qtmodern.windows
-import qtmodern.styles
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from pathlib import Path
+import qtmodern.windows
+import qtmodern.styles
 
 # Logbook v2 written in Python 3.8
 # by Jarod Lavine and Shaniquo McKenzie
