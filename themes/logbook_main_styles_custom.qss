@@ -1,0 +1,307 @@
+QDialog{
+    border-radius:10px;
+}
+
+QMainWindow{
+    border: 0; /*remove all the line borders around the frames*/
+}
+
+QWidget#centralwidget {
+    /*background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,stop: 0 #2C2C2C, stop: 1 #D2DA50);*/
+}
+
+QDateEdit{
+    height:30px;
+    width:100px;
+    border:0;
+    border-radius:0px;
+    color: text_colour;
+    background-color: background_colour;
+}
+
+QDateEdit::up-arrow, QDateEdit::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+QDateEdit::down-arrow {
+    border-image: url(images/downarrow.png);
+}
+
+QDateEdit::up-arrow {
+    border-image: url(images/uparrow.png);
+}
+
+QDateEdit::up-button, QDateEdit::down-button {
+    background-color: background_colour;
+    border-radius:0px;
+    width:20px;
+}
+
+QDateEdit::up-button:pressed, QDateEdit::down-button:pressed {
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+}
+
+QComboBox {
+    font-weight:bold;
+    color:text_colour;
+    background: background_colour;
+    border-radius:0px;
+    padding:8px;
+}
+
+QComboBox::drop-down:button{
+    background-color: #454547;
+}
+
+QListView::item{
+    padding:8px;
+    color:text_colour;
+}
+
+QListView {
+    show-decoration-selected: 1;
+    selection-color: text_colour;
+    selection-background-color: accent;
+}
+
+QListView::item:selected:active:hover{
+    background-color:accent; 
+    color: text_colour;
+}
+QListView::item:selected:active:!hover{
+    background-color: accent; 
+    color: text_colour;
+}
+
+QListView::item:selected:!active{
+    background-color:yellow; 
+    color: text_colour;
+}
+
+QListView::item:!selected:hover{
+    background-color:green; 
+    color: text_colour;
+}
+
+QComboBox::down-arrow{
+    background:transparent;
+    border-image: url(images/downarrow.png);
+}
+
+QComboBox::drop-down:on { /* shift the arrow when popup is open */
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+}
+
+
+QFrame{
+    border:0;
+}
+
+QFrame[accessibleDescription ="menuFrame"]{  
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0.5, y2: 0.5,stop: 0 background_colour, stop: 1 background_colour2);
+    border-radius: 10px;
+    border: 0; 
+}
+
+QFrame[accessibleDescription ="backgroundFrame"]{
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0.5, y2: 0.5,stop: 0 background_colour, stop: 1 background_colour2);
+    border-radius: 10px;
+    border: 0; 
+}
+
+
+QTableWidget{
+    color: text_colour;
+    background-color:background_colour3;
+    border-radius: 10px;
+    padding:8px;
+}
+
+QTableView::item:selected
+{
+    background-color: background_colour;
+}
+
+QTableWidget::item{
+    color: text_colour;
+    background-color:background_colour3;
+    border-bottom : 0.5px solid #454547;
+}
+
+/* table header */
+QHeaderView::section {
+    font-weight:bold;
+    text-align:left;
+    background-color:background_colour3;
+    padding-top:8px;
+    padding-bottom:8px;
+    padding-right:8px;
+}
+
+QTableCornerButton, QTableCornerButton::section,QHeaderView,QHeaderView::section {
+    color:text_colour;
+    border:0;
+    background: background_colour3;
+}
+
+QScrollBar:horizontal {
+    border: 0;
+    border-radius: 10px;
+    background: background_colour2;
+    height: 10px;
+    margin: 0px 20px 0px 20px;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+    min-width: 0px;
+    height:10px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:horizontal {
+    background: transparent;
+    width: 5px;
+    subcontrol-position: right;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal {
+    background-color: transparent;
+    width: 5px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
+
+
+QScrollBar:vertical {
+    border: 0;
+    border-radius: 10px;
+    background: background_colour2;
+    width: 10px;
+    margin: 20px 0px 20px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+    min-height: 20px;
+    width:10px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical {
+    background: transparent;
+    height: 0px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:vertical {
+    background-color: transparent;
+    height: 0px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
+
+
+QCheckBox[accessibleDescription ="checkBoxRoom"]{
+    color:text_colour;
+    font-size: 16px; 
+}
+
+QCheckBox[accessibleDescription ="timerDanger"]{
+    color:danger;
+    font-size: 16px; 
+}
+
+
+QCheckBox::indicator:unchecked{
+    color:text_colour;
+    background-color:#F9F9F9;
+}
+
+QCheckBox::indicator:checked{
+    color:text_colour;
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+}
+
+QTextEdit[accessibleDescription ="textEdit"]{
+    background-color:transparent;
+    color:text_colour;
+    padding:0;
+    border:0;
+}
+
+QLabel[accessibleDescription ="normalLabel"]{
+    color:text_colour;
+}
+
+QLabel[accessibleDescription ="formLabel"]{
+    color:text_colour;
+    margin-left:1px;
+}
+
+QLabel[accessibleDescription ="titleLabel"]{
+    color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+}
+
+QLabel[accessibleDescription ="timerLabelNormal"]{
+    color: text_colour;
+}
+
+QLabel[accessibleDescription ="timerLabelDanger"]{
+    color: danger_colour;
+}
+
+
+QPushButton[accessibleDescription ="menuButton"]{
+    color: text_colour;
+    border-radius: 10px;
+    text-align: left;
+    padding-left:16px;
+    margin:0;
+}
+
+QPushButton[accessibleDescription ="menuButtonActive"]{
+    color: active_text_colour;
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+    border-bottom-right-radius: 36px;
+    padding:8px;
+    padding-left:24px;
+    text-align: left;
+}
+
+QPushButton[accessibleDescription ="successButton"]{
+    color: active_text_colour;
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+    border-radius: 12.5px;
+    font-weight:bold;
+}
+
+QPushButton[accessibleDescription ="neutralButton"]{
+    background-color:background_colour;
+    color: text_colour;
+    border-radius: 12.5px;
+    font-weight:bold;
+}
+
+QPushButton[accessibleDescription ="dangerButton"]{
+    color: text_colour;
+    background-color: danger_gradient;
+    border-radius: 12.5px; 
+    font-weight:bold;
+}
+
+
+QLineEdit,QTextEdit{
+    background-color:background_colour;
+    padding:4px;
+    border: 0px;
+}
+
+QLabel[accessibleDescription ="LCDNumber"]{
+    color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+    font-size: 128px;
+    padding:8px;
+}
