@@ -42,6 +42,7 @@ VALUES
 	('D1-22','Digital Electronics Lab'),
 	('E2-16','Flex Lab');
 
+
 CREATE TABLE dbo.Reports (
 	REPORT_ID INT IDENTITY(1,1) PRIMARY KEY,
     DATE DATE NOT NULL,

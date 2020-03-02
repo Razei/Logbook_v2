@@ -34,6 +34,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         super(LogBook, self).__init__()
         # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
         self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.lastPage = ''
 
         # using the default setupUi function of the super class
         self.setupUi(self)
@@ -281,13 +282,14 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonDelete.clicked.connect(lambda: self.deleteSelection(self.tableWidgetReports, 'Reports'))
         self.pushButtonReportsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetReports))
         self.pushButtonProblemsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetProblems))
-        self.pushButtonViewDataBack.clicked.connect(lambda: self.changePage(self.pageReports))
+        self.pushButtonViewDataBack.clicked.connect(self.change_to_last_page)
 
         # new log
         self.pushButtonFormSave.clicked.connect(self.saveNewLog)
         self.pushButtonFormClear.clicked.connect(self.clearForm)
 
         # lost and found
+        self.pushButtonViewLAF.clicked.connect(lambda: self.viewSelection(self.tableWidgetLostAndFound))
         self.pushButtonLostAndFound.clicked.connect(self.showLostAndFoundFrame)
         self.pushButtonNewLAF.clicked.connect(self.newLostAndFound)
         self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
@@ -387,26 +389,74 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.frameReturnedLAF.hide()
 
     def viewSelection(self, table):
+
         # if a row is selected (having no rows selected returns -1)
         if table.currentRow() != -1 and table.item(0, 0) is not None:
+            self.lastPage = table.objectName()
             row_index = table.currentRow()  # get index of current row
             data = []  # data list
+            labels = []
+            layout = self.frameViewDataForm.layout()
 
             for i in range(table.columnCount()):  # loop through all columns
                 data.append(table.item(row_index, i).text())  # add each field to the list
+                labels.append(table.horizontalHeaderItem(i).text())
 
-            # output to widgets
-            self.labelViewDataReportNum.setText(data[0])
-            self.labelViewDataDate.setText(data[1])
-            self.labelViewDataName.setText(data[2])
-            self.labelViewDataRoom.setText(data[3])
-            self.labelViewDataIssue.setText(data[4])
-            self.textEditViewDataNote.setText(data[5])
-            self.textEditViewDataResolution.setText(data[6])
-            self.labelViewDataFixed.setText(data[7])
+            if layout is not None:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.deleteLater()
+                        widget.setParent(None)
+
+            for j in range(len(data)):
+
+                replaced = labels[j].replace('_', ' ')
+                data_widget = None
+
+                if replaced == 'NOTE' or replaced == 'RESOLUTION':
+                    data_widget = QtWidgets.QTextEdit(f"{data[j]}")
+                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                    data_widget.setAccessibleDescription('textEdit')
+                    data_widget.setReadOnly(True)
+                    data_widget.setTextInteractionFlags(Qt.NoTextInteraction)
+                    data_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+                    data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                    data_widget.setAcceptRichText(False)
+
+                    # QtCore.QObject.connect(data_widget, SIGNAL("textChanged()"), lambda: self.txtInputChanged(data_widget, 255))
+                else:
+                    data_widget = QtWidgets.QLabel(f"{data[j]}")
+                    data_widget.setScaledContents(True)
+                    data_widget.setWordWrap(True)
+                    data_widget.setAccessibleDescription('formLabelNormal')
+                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+                data_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                data_widget.setMaximumSize(500, 150)
+
+                label_widget = QtWidgets.QLabel(f"{replaced}:")
+                label_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_widget.setAccessibleDescription('formLabel')
+                label_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_widget.setMinimumSize(200, 0)
+                label_widget.setMaximumSize(500, 100)
+
+                self.frameViewDataForm.layout().addRow(label_widget, data_widget)
 
             # change to view page
             self.changePage(self.pageViewData)
+
+    def txtInputChanged(self, txtInput, maxInputLen):
+        if txtInput.toPlainText().length() > maxInputLen:
+            text = txtInput.toPlainText()
+            text = text[:maxInputLen]
+            txtInput.setPlainText(text)
+
+            cursor = txtInput.textCursor()
+        cursor.setPosition(maxInputLen)
+        txtInput.setTextCursor(cursor)
 
     def deleteSelection(self, table, table_name):
 
@@ -420,11 +470,18 @@ class LogBook(MainWindowBase, MainWindowUI):
                 self.executeQuery(delete_query).commit()
                 self.refreshTables()
 
+    def change_to_last_page(self):
+        # remove the 'tableWidget' from the string (this is why everything is named this way lol)
+        name = self.lastPage.replace('tableWidget', '')
+        page_name = 'page' + name  # add page to the modified string
+        self.changePage(self.findChild(QtWidgets.QWidget, page_name))  # change to last page
+
     def changePage(self, name):
         widget = name
 
+        # if the widget is in the stackedWidget
         if self.stackedWidget.indexOf(widget) != -1:
-            self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(widget))
+            self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(widget))  # change the page to the widget
 
     @staticmethod
     def validateEmptyForm(text_edit):
@@ -500,7 +557,6 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         cursor.commit()
 
-
         self.refreshTables()
         self.changePage(self.pageReports)
         self.clearForm()
@@ -526,6 +582,18 @@ class LogBook(MainWindowBase, MainWindowUI):
         # in dictionary otherwise second argument will
         # be assigned as default value of passed argument
         return switcher.get(argument, 'classic_light')
+
+    @staticmethod
+    def time_switch(argument):  # python doesn't have switch case so this is an alternative
+        switcher = {
+        }
+
+        # taken from https://www.geeksforgeeks.org/
+        # get() method of dictionary data type returns
+        # value of passed argument if it is present
+        # in dictionary otherwise second argument will
+        # be assigned as default value of passed argument
+        return switcher.get(argument, '')
 
     def set_settings(self, theme, time_format):
         if theme == "Classic Light":
@@ -589,6 +657,7 @@ class LogBook(MainWindowBase, MainWindowUI):
     def countdownHandler(self):
         if self.schedules is not None and range(len(self.schedules) != 0):
             for i in range(len(self.schedules)):  # loop through all of today's schedules
+
                 countdown = self.lab_checker.roomCountdown(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].getRoom().strip()  # get the room name for label
                 search = self.schedules[i].getRoom().strip() + str(i)  # room name + i (for multiple open times in the same room)
@@ -642,6 +711,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
     def removeCountdown(self):
+        print(self.sender().text())
         self.findChild(QtWidgets.QCheckBox, self.sender().objectName()).setVisible(False)
         self.findChild(QtWidgets.QCheckBox, self.sender().objectName()).deleteLater()
 
@@ -668,5 +738,3 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # current time
         self.labelCurrentTime.setText(timeConvert)
-
-

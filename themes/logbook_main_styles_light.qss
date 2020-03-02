@@ -1,3 +1,6 @@
+QDialog{
+    border-radius:10px;
+}
 
 QMainWindow{
     border: 0; /*remove all the line borders around the frames*/
@@ -12,6 +15,8 @@ QDateEdit{
     width:100px;
     border:0;
     border-radius:0px;
+    color: #454547;
+    background-color: white;
 }
 
 QDateEdit::up-arrow, QDateEdit::down-arrow {
@@ -105,6 +110,7 @@ QHeaderView::section {
     background-color:#F9F9F9;
     padding-top:8px;
     padding-bottom:8px;
+    padding-right:8px;
 }
 
 QTableCornerButton, QTableCornerButton::section,QHeaderView,QHeaderView::section {
@@ -178,6 +184,12 @@ QCheckBox[accessibleDescription ="checkBoxRoom"]{
     font-size: 16px; 
 }
 
+QCheckBox[accessibleDescription ="timerDanger"]{
+    color:red;
+    font-size: 16px; 
+}
+
+
 QCheckBox::indicator:unchecked{
     color:black;
     background-color:#F9F9F9;
@@ -191,6 +203,7 @@ QCheckBox::indicator:checked{
 QTextEdit[accessibleDescription ="textEdit"]{
     background-color:transparent;
     color:#454547;
+    padding:0;
     border:0;
 }
 
@@ -253,7 +266,7 @@ QPushButton[accessibleDescription ="dangerButton"]{
 }
 
 
-QLineEdit{
+QLineEdit,QTextEdit{
     background-color:white;
     padding:4px;
     border: 0px;

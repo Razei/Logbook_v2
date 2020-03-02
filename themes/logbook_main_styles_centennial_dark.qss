@@ -228,7 +228,10 @@ QCheckBox::indicator:checked{
 
 QTextEdit[accessibleDescription ="textEdit"]{
     background-color:transparent;
+    font-family: Segoe UI;
+    font-size:12pt;
     color:#FFFFFF;
+    margin-left:0;
     padding:0;
     border:0;
 }
@@ -239,7 +242,15 @@ QLabel[accessibleDescription ="normalLabel"]{
 
 QLabel[accessibleDescription ="formLabel"]{
     color:#FFFFFF;
-    margin-left:1px;
+    font-weight:bold;
+    font-family: Segoe UI;
+    font-size:12pt;
+}
+
+QLabel[accessibleDescription ="formLabelNormal"]{
+    color:#FFFFFF;
+    font-family: Segoe UI;
+    font-size:12pt;
 }
 
 QLabel[accessibleDescription ="titleLabel"]{
@@ -275,21 +286,21 @@ QPushButton[accessibleDescription ="menuButtonActive"]{
 QPushButton[accessibleDescription ="successButton"]{
     color: #454547;
     background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
-    border-radius: 12px;
+    border-radius: 12.4px;
     font-weight:bold;
 }
 
 QPushButton[accessibleDescription ="neutralButton"]{
     background-color:#454547;
     color: #FFFFFF;
-    border-radius: 12px;
+    border-radius: 12.4px;
     font-weight:bold;
 }
 
 QPushButton[accessibleDescription ="dangerButton"]{
     color: #FFFFFF;
     background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #FF0505, stop: 1 #FF5959);
-    border-radius: 12px; 
+    border-radius: 12.4px; 
     font-weight:bold;
 }
 

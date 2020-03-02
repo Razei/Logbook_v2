@@ -78,7 +78,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>8</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -3088,19 +3088,22 @@ color: rgb(0, 0, 0);</string>
                <enum>QLayout::SetDefaultConstraint</enum>
               </property>
               <property name="fieldGrowthPolicy">
-               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+               <enum>QFormLayout::ExpandingFieldsGrow</enum>
               </property>
               <property name="rowWrapPolicy">
                <enum>QFormLayout::DontWrapRows</enum>
               </property>
+              <property name="labelAlignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+              </property>
               <property name="formAlignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
               </property>
               <property name="horizontalSpacing">
                <number>16</number>
               </property>
               <property name="verticalSpacing">
-               <number>16</number>
+               <number>24</number>
               </property>
               <property name="leftMargin">
                <number>16</number>
@@ -3153,57 +3156,6 @@ color: rgb(0, 0, 0);</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                </property>
-                <property name="openExternalLinks">
-                 <bool>false</bool>
-                </property>
-                <property name="textInteractionFlags">
-                 <set>Qt::LinksAccessibleByMouse</set>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="labelViewDataReportNum">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>500</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Segoe UI</family>
-                  <pointsize>12</pointsize>
-                  <weight>50</weight>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="cursor">
-                 <cursorShape>ArrowCursor</cursorShape>
-                </property>
-                <property name="accessibleDescription">
-                 <string>formLabel</string>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">color:white;</string>
-                </property>
-                <property name="text">
-                 <string>n\a</string>
-                </property>
-                <property name="scaledContents">
-                 <bool>true</bool>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                </property>
-                <property name="wordWrap">
-                 <bool>true</bool>
                 </property>
                 <property name="openExternalLinks">
                  <bool>false</bool>
@@ -3367,6 +3319,12 @@ color: rgb(0, 0, 0);</string>
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
                 </property>
                 <property name="maximumSize">
                  <size>
@@ -3911,6 +3869,57 @@ color: rgb(0, 0, 0);</string>
                 </property>
                 <property name="textInteractionFlags">
                  <set>Qt::NoTextInteraction</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="labelViewDataReportNum">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>500</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Segoe UI</family>
+                  <pointsize>12</pointsize>
+                  <weight>50</weight>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="cursor">
+                 <cursorShape>ArrowCursor</cursorShape>
+                </property>
+                <property name="accessibleDescription">
+                 <string>formLabel</string>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">color:white;</string>
+                </property>
+                <property name="text">
+                 <string>n\a</string>
+                </property>
+                <property name="scaledContents">
+                 <bool>true</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+                <property name="openExternalLinks">
+                 <bool>false</bool>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByMouse</set>
                 </property>
                </widget>
               </item>
@@ -5318,339 +5327,6 @@ background-color: rgb(255, 255, 255);</string>
          </widget>
         </item>
        </layout>
-      </widget>
-      <widget class="QWidget" name="pageViewLostAndFound">
-       <widget class="QFrame" name="frameViewLostAndFound">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>0</y>
-          <width>1032</width>
-          <height>698</height>
-         </rect>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="accessibleDescription">
-         <string>backgroundFrame</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: rgb(55,55,55);</string>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_27">
-         <property name="leftMargin">
-          <number>24</number>
-         </property>
-         <property name="topMargin">
-          <number>24</number>
-         </property>
-         <property name="rightMargin">
-          <number>24</number>
-         </property>
-         <property name="bottomMargin">
-          <number>24</number>
-         </property>
-         <property name="horizontalSpacing">
-          <number>6</number>
-         </property>
-         <property name="verticalSpacing">
-          <number>24</number>
-         </property>
-         <item row="0" column="0" colspan="2">
-          <widget class="QLabel" name="labelViewLAFData">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>12</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
-           </property>
-           <property name="accessibleDescription">
-            <string>titleLabel</string>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">
-	color: rgb(0, 255, 108);</string>
-           </property>
-           <property name="text">
-            <string>VIEW LOST AND FOUND</string>
-           </property>
-           <property name="scaledContents">
-            <bool>true</bool>
-           </property>
-           <property name="openExternalLinks">
-            <bool>false</bool>
-           </property>
-           <property name="textInteractionFlags">
-            <set>Qt::LinksAccessibleByMouse</set>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QPushButton" name="pushButtonViewDataBack_2">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="accessibleDescription">
-            <string>neutralButton</string>
-           </property>
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(255, 255, 255);
-color: rgb(0, 0, 0);</string>
-           </property>
-           <property name="text">
-            <string>Back</string>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QFrame" name="frameViewLAF">
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-           <widget class="QLabel" name="label_2">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>40</y>
-              <width>151</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Date Found</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_3">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>440</y>
-              <width>151</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Student Number</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_5">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>240</y>
-              <width>141</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Notes</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_6">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>190</y>
-              <width>161</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Item Description</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_7">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>140</y>
-              <width>161</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Name</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_8">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>290</y>
-              <width>141</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Returned</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_9">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>340</y>
-              <width>141</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Return Date</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_10">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>390</y>
-              <width>141</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Student Name</string>
-            </property>
-           </widget>
-           <widget class="QLabel" name="label_11">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>90</y>
-              <width>161</width>
-              <height>41</height>
-             </rect>
-            </property>
-            <property name="font">
-             <font>
-              <family>Segoe UI</family>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Room</string>
-            </property>
-           </widget>
-          </widget>
-         </item>
-        </layout>
-       </widget>
       </widget>
      </widget>
     </item>
