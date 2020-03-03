@@ -179,14 +179,14 @@ QScrollBar::sub-line:vertical {
 }
 
 
-QCheckBox[accessibleDescription ="checkBoxRoom"]{
+[accessibleDescription ="checkBoxRoom"]{
     color:black;
-    font-size: 16px; 
+    font-size: 12pt; 
 }
 
 QCheckBox[accessibleDescription ="timerDanger"]{
     color:red;
-    font-size: 16px; 
+    font-size: 12pt; 
 }
 
 
@@ -202,7 +202,10 @@ QCheckBox::indicator:checked{
 
 QTextEdit[accessibleDescription ="textEdit"]{
     background-color:transparent;
+    font-family: Segoe UI;
+    font-size:12pt;
     color:#454547;
+    margin-left:0;
     padding:0;
     border:0;
 }
@@ -213,7 +216,15 @@ QLabel[accessibleDescription ="normalLabel"]{
 
 QLabel[accessibleDescription ="formLabel"]{
     color:#454547;
-    margin-left:1px;
+    font-weight:bold;
+    font-family: Segoe UI;
+    font-size:12pt;
+}
+
+QLabel[accessibleDescription ="formLabelNormal"]{
+    color:#454547;
+    font-family: Segoe UI;
+    font-size:12pt;
 }
 
 QLabel[accessibleDescription ="titleLabel"]{
@@ -274,6 +285,6 @@ QLineEdit,QTextEdit{
 
 QLabel[accessibleDescription ="LCDNumber"]{
     color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,stop: 0 #0055FF, stop: 1 #0083FF);
-    font-size: 128px;
+    font-size: 96pt;
     padding:8px;
 }

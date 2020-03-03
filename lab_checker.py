@@ -43,7 +43,7 @@ class labChecker():
         self.weekday_string = 'Monday'  # get weekday string of today
 
         # query stuff
-        query = f"SELECT ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule WHERE DAY = '{self.weekday_string}'"
+        query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule WHERE DAY = '{self.weekday_string}'"
         cursor = self.executeQuery(query)
 
         # validate the cursor for empty results
@@ -54,7 +54,7 @@ class labChecker():
 
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
-            schedule_objects.append(scheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
+            schedule_objects.append(scheduleObj(sch_time.SCHEDULE_ID, sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
 
         return schedule_objects
 
@@ -114,25 +114,6 @@ class labChecker():
             t_delta = self.calculateCountdown(schedule_input.getStartTime())
             # print(f'Time left: {t_delta}')
             time_left = t_delta
-
-        '''        
-        #start time has passed
-        else:
-            t_delta = self.calculateCountdown(schedule.getStartTime())
-            print(f'Start Time passed {abs(t_delta)} ago')
-            times.append(abs(t_delta))'''
-
-        '''
-        #end time has passed
-        else:
-            t_delta = self.calculateCountdown(schedule.getEndTime())
-            print(f'End Time passed {abs(t_delta)} ago') # amount of time since it passed
-            times.append(abs(t_delta))'''
-
-        '''timeConvert = time.strftime(self.tFormat,time.gmtime(t_delta.seconds))# for converting time if necessary
-        print (timeConvert)
-        
-        #timeConvert = datetime.datetime.strptime(self.tFormat, t_delta)'''
 
         return time_left
 

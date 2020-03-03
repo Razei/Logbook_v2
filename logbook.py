@@ -5,12 +5,8 @@ import datetime
 import pyodbc
 import pandas as pd
 import urllib
-import qtmodern.windows
-import qtmodern.styles
 from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt
-from PyQt5.QtSql import QSqlDatabase
-
 from lab_checker import labChecker
 
 # get path of this python file
@@ -583,18 +579,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         # be assigned as default value of passed argument
         return switcher.get(argument, 'classic_light')
 
-    @staticmethod
-    def time_switch(argument):  # python doesn't have switch case so this is an alternative
-        switcher = {
-        }
-
-        # taken from https://www.geeksforgeeks.org/
-        # get() method of dictionary data type returns
-        # value of passed argument if it is present
-        # in dictionary otherwise second argument will
-        # be assigned as default value of passed argument
-        return switcher.get(argument, '')
-
     def set_settings(self, theme, time_format):
         if theme == "Classic Light":
             self.comboBoxSettingsTheme.setCurrentIndex(0)
@@ -654,31 +638,32 @@ class LogBook(MainWindowBase, MainWindowUI):
     def cancelNewLog(self):
         self.changePage(self.pageReports)
 
-    def countdownHandler(self):
+    # for handling creation and deletion of labels for labs that are soon going to be vacant
+    def countdown_handler(self):
         if self.schedules is not None and range(len(self.schedules) != 0):
             for i in range(len(self.schedules)):  # loop through all of today's schedules
-
                 countdown = self.lab_checker.roomCountdown(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].getRoom().strip()  # get the room name for label
                 search = self.schedules[i].getRoom().strip() + str(i)  # room name + i (for multiple open times in the same room)
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
-                if countdown is not None and countdown < datetime.timedelta(hours=4): # only show countdown if it's not empty and 2 hours away
-                    label = room_name + '         ' + 'In: ' + str(countdown)
-                    if self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
-                        checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
-                        checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
-                        checkBox.setObjectName(search)
-                        checkBox.stateChanged.connect(self.removeCountdown)
-                        self.frameUpcomingRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
-                    else:  # if the widget exists already, update it
-                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setText(label)
-                    if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
-                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-                        self.frameUpcomingRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
+                if countdown is not None and countdown < datetime.timedelta(hours=3):  # only show countdown if it's not empty and 2 hours away
+                    label = room_name + '         ' + 'In: ' + str(countdown)  # text for the label
+                    if self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
+                        label_upcoming = QtWidgets.QLabel(label, self)  # create a new checkbox and append the room name + countdown
+                        label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
+                        label_upcoming.setObjectName(search)  # set the object name so it's searchable later
+                        self.frameUpcomingRooms.layout().addWidget(label_upcoming)  # add the checkbox to the frame
+                    else:  # the widget exists already so just update it
+                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).setText(label)
 
-    def durationHandler(self):
-        if self.schedules is not None and range(len(self.schedules) != 0):
+                    if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
+                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).setVisible(False)
+                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).deleteLater()
+
+    # for handling creation and deletion of checkboxes for labs that are vacant
+    def duration_handler(self):
+        if self.schedules is not None and range(len(self.schedules) != 0):  # ensuring we're not looping an empty list
 
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.calculateDuration(self.schedules[i])  # calculate the countdown using the current schedule object
@@ -693,7 +678,8 @@ class LogBook(MainWindowBase, MainWindowUI):
                         checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + countdown
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
-                        checkBox.stateChanged.connect(self.removeCountdown)
+                        checkBox.stateChanged.connect(self.remove_countdown)
+                        checkBox.setAccessibleName(str(self.schedules[i].getScheduleID())) # to link the schedule ID
                         self.frameEmptyRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
 
                     else:  # if the widget exists already, update it
@@ -710,31 +696,34 @@ class LogBook(MainWindowBase, MainWindowUI):
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
-    def removeCountdown(self):
-        print(self.sender().text())
-        self.findChild(QtWidgets.QCheckBox, self.sender().objectName()).setVisible(False)
-        self.findChild(QtWidgets.QCheckBox, self.sender().objectName()).deleteLater()
+    def remove_countdown(self):
+        for schedule in self.schedules:
+            if schedule.getScheduleID() == int(self.sender().accessibleName()):  # if the schedule ID is the same as the sender's accessibleName field
+                schedule.setEndTime(datetime.datetime.now().time().isoformat(timespec='seconds'))  # expire the time
+
+        self.sender().setVisible(False)  # hide the widget
+        self.sender().deleteLater()  # schedule the widget for deletion
 
     def Clock(self):
         t = time.localtime()  # local system time
         d = datetime.date.today()  # local system date
-        tFormat24hr = "%H:%M:%S"
-        tFormat12hr = "%I:%M:%S %p"
+        t_format_24hr = "%H:%M:%S"
+        t_format_12hr = "%I:%M:%S %p"
+
+        # convert time to string format
+        time_convert = time.strftime(t_format_24hr, t)
+
+        if self.comboBoxSettingsTimeFormat.currentText() == '12 HR':
+            time_convert = time.strftime(t_format_12hr, t)
+
+        # current time
+        self.labelCurrentTime.setText(time_convert)
 
         # assign labels with current time and date
-        # current date
         self.labelCurrentDate.setText(d.strftime("%B %d, %Y"))
         self.labelCurrentDate2.setText(d.strftime("%B %d, %Y"))
         self.labelCurrentDate3.setText(d.strftime("%B %d, %Y"))
 
-        self.countdownHandler()
-        self.durationHandler()
-
-        # convert time to string format
-        timeConvert = time.strftime(tFormat24hr, t)
-
-        if self.comboBoxSettingsTimeFormat.currentText() == '12 HR':
-            timeConvert = time.strftime(tFormat12hr, t)
-
-        # current time
-        self.labelCurrentTime.setText(timeConvert)
+        # call the handlers for the countdowns
+        self.countdown_handler()
+        self.duration_handler()

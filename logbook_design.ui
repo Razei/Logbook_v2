@@ -78,7 +78,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>8</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -582,7 +582,7 @@ border-radius: 10px;</string>
 	color: rgb(0, 255, 108);</string>
                 </property>
                 <property name="text">
-                 <string>TOTAL REPORTS</string>
+                 <string>ROOMS CHECKED</string>
                 </property>
                 <property name="scaledContents">
                  <bool>true</bool>
