@@ -67,20 +67,19 @@ QListView {
 
 QListView::item:selected:active:hover{
     background-color:accent; 
-    color: text_colour;
+    color: background_colour;
+    font-weight:bold;
 }
 QListView::item:selected:active:!hover{
     background-color: accent; 
-    color: text_colour;
+    color: background_colour;
 }
 
 QListView::item:selected:!active{
-    background-color:yellow; 
     color: text_colour;
 }
 
 QListView::item:!selected:hover{
-    background-color:green; 
     color: text_colour;
 }
 
@@ -204,6 +203,12 @@ QScrollBar::sub-line:vertical {
     subcontrol-origin: margin;
 }
 
+[accessibleDescription ="frameBox"]{
+    border-style:solid;
+    border-radius: 5px;
+    border-width: 0.5px;
+    border-color: text_colour;
+}
 
 [accessibleDescription ="checkBoxRoom"]{
     color:text_colour;
@@ -211,7 +216,7 @@ QScrollBar::sub-line:vertical {
 }
 
 QCheckBox[accessibleDescription ="timerDanger"]{
-    color:danger;
+    color:danger_colour;
     font-size: 12pt; 
 }
 
@@ -246,6 +251,7 @@ QLabel[accessibleDescription ="formLabel"]{
     font-family: Segoe UI;
     font-size:12pt;
 }
+
 
 QLabel[accessibleDescription ="formLabelNormal"]{
     color:text_colour;
@@ -307,6 +313,7 @@ QPushButton[accessibleDescription ="dangerButton"]{
 
 QLineEdit,QTextEdit{
     background-color:background_colour;
+    color:text_colour;
     padding:4px;
     border: 0px;
 }
