@@ -205,7 +205,7 @@ QScrollBar::sub-line:vertical {
 }
 
 
-QCheckBox[accessibleDescription ="checkBoxRoom"]{
+[accessibleDescription ="checkBoxRoom"]{
     color:text_colour;
     font-size: 12pt; 
 }

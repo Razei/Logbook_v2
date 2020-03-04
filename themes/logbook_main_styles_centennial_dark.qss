@@ -205,14 +205,14 @@ QScrollBar::sub-line:vertical {
 }
 
 
-QCheckBox[accessibleDescription ="checkBoxRoom"]{
+[accessibleDescription ="checkBoxRoom"]{
     color:#FFFFFF;
-    font-size: 16px; 
+    font-size: 12pt; 
 }
 
 QCheckBox[accessibleDescription ="timerDanger"]{
     color:danger;
-    font-size: 16px; 
+    font-size: 12pt; 
 }
 
 
@@ -313,6 +313,6 @@ QLineEdit,QTextEdit{
 
 QLabel[accessibleDescription ="LCDNumber"]{
     color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
-    font-size: 128px;
+    font-size: 128pt;
     padding:8px;
 }
