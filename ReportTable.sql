@@ -7,13 +7,14 @@ DROP TABLE dbo.Reports;
 DROP TABLE dbo.LostAndFound;
 DROP TABLE dbo.Schedule;
 DROP TABLE dbo.Courses;
+DROP TABLE dbo.OpenLabSchedule;
 DROP TABLE dbo.Rooms;
+
 
 CREATE TABLE dbo.Rooms (
 	ROOM NCHAR(6) PRIMARY KEY,
 	NAME NCHAR(70),
 );
-
 
 INSERT INTO 
 	dbo.Rooms(ROOM, NAME) 
@@ -42,7 +43,6 @@ VALUES
 	('D1-22','Digital Electronics Lab'),
 	('E2-16','Flex Lab');
 
-
 CREATE TABLE dbo.Reports (
 	REPORT_ID INT IDENTITY(1,1) PRIMARY KEY,
     DATE DATE NOT NULL,
@@ -64,9 +64,6 @@ INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES ('202
 --INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES ('2020-01-02','Shaniquo','A3-55','Lab Check','Computers are working ok','','YES');
 
 SELECT * FROM dbo.Reports;
-
-
-
 
 CREATE TABLE dbo.Courses (
 	COURSE_ID NCHAR(70) PRIMARY KEY,
@@ -98,7 +95,6 @@ VALUES
 	('CNET231','WAN Technologies'),
 	('CNET232','Introduction to Programming'),
 	('CNET239','Computer Forensics');
-
 
 CREATE TABLE dbo.LostAndFound (
 	ENTRY_ID INT IDENTITY(1,1) PRIMARY KEY,
@@ -136,3 +132,19 @@ INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday',
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Monday','23:00','00:30');
 
 SELECT * FROM dbo.Schedule;
+
+
+CREATE TABLE dbo.OpenLabSchedule(
+	SCHEDULE_ID INT IDENTITY(1,1) PRIMARY KEY,
+	ROOM NCHAR(6) FOREIGN KEY REFERENCES ROOMS(ROOM) ON DELETE CASCADE,
+	DAY NCHAR(10),
+	START_TIME TIME(0),
+	END_TIME TIME(0)
+);
+
+INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-22','Wednesday','17:30','21:30');
+INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-22','Friday','12:30','16:30');
+INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-24','Thursday','19:00','22:00');
+INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-55','Monday','17:30','21:30');
+INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Monday','9:30','12:30');
+INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Sunday','12:30','14:30');
