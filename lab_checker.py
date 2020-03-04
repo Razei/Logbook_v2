@@ -55,7 +55,28 @@ class labChecker():
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
             schedule_objects.append(scheduleObj(sch_time.SCHEDULE_ID, sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
+        cursor.close()
+        return schedule_objects
 
+    def getTodayOpenLabSchedule(self):
+        # local variables
+        schedule_objects = []  # for holding a list of schedule objects
+        self.weekday_string = 'Monday'  # get weekday string of today
+
+        # query stuff
+        query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule WHERE DAY = '{self.weekday_string}'"
+        cursor = self.executeQuery(query)
+
+        # validate the cursor for empty results
+        if not self.validateCursor(cursor):
+            return
+
+        schedule_data = cursor.fetchall()
+
+        # loop through the cursor and add data to the scheduleObj class
+        for sch_time in schedule_data:
+            schedule_objects.append(scheduleObj(sch_time.SCHEDULE_ID, sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
+        cursor.close()
         return schedule_objects
 
     # reusable query function
