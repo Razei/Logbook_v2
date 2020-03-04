@@ -16,7 +16,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 MainWindowUI, MainWindowBase = uic.loadUiType(
     os.path.join(path, 'logbook_design.ui'))
 
-DialogUI, DialogBase = uic.loadUiType(os.path.join(path, 'dialog.ui'))
+DialogUI, DialogBase = uic.loadUiType(os.path.join(path, 'logbook_dialog.ui'))
 
 
 class Dialog(DialogBase, DialogUI):
@@ -28,9 +28,11 @@ class Dialog(DialogBase, DialogUI):
 class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
+        # local variables
         # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
         self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
+        self.stored_id = 0
 
         # using the default setupUi function of the super class
         self.setupUi(self)
@@ -533,7 +535,10 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         resolution = self.textBoxNewLogResolution.toPlainText().strip()
 
-        query = f'INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'
+        if self.stored_id == 0:
+            query = f'INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'
+        else:
+            query = f'UPDATE dbo.Reports SET DATE = \'{date}\', NAME = \'{name}\', ROOM = \'{room}\', ISSUE = \'{issue}\', NOTE = \'{note}\', RESOLUTION = \'{resolution}\', FIXED = \'{fixed}\' WHERE REPORT_ID = {self.stored_id};'
 
         cursor = self.executeQuery(query)
 
@@ -555,6 +560,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if table.currentRow() != -1 and table.item(0, 0) is not None:
             row_index = table.currentRow()  # get index of current row
             report_id = table.item(row_index, 0).text()
+            self.stored_id = report_id
 
             query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from dbo.Reports WHERE REPORT_ID = {report_id};'
             cursor = self.executeQuery(query)
@@ -660,6 +666,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def newLog(self):
         self.clearForm()
+        self.stored_id = 0
         self.labelNewLog.setText('NEW LOG')
         self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLog.setCurrentSectionIndex(2)
