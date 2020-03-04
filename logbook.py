@@ -5,7 +5,6 @@ import datetime
 import pyodbc
 import pandas as pd
 import urllib
-import scheduleObj
 from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt
 from lab_checker import labChecker
@@ -31,7 +30,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         super(LogBook, self).__init__()
         # local variables
         # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+
+        '''Shaniquo's Laptop, DO NOT DELETE'''
+        self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
+        #self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
