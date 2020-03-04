@@ -7,7 +7,7 @@ from pathlib import Path
 
 package_imports = [['qtmodern', ['resources/frameless.qss', 'resources/style.qss']]]
 
-added_file = ['logbook_design.ui','logbook_main_styles_custom.qss']
+added_file = [('logbook_design.ui','logbook_design.ui'),('logbook_dialog.ui','logbook_dialog.ui'), ('themes', 'themes'), ('images', 'images') ]
 for package, files in package_imports:
     proot = Path(importlib.import_module(package).__file__).parent
     added_file.extend((proot / f, package) for f in files)
@@ -39,7 +39,7 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='appicon.ico')
+          console=False , icon='images/appicon.ico')
           
 '''
 coll = COLLECT(exe,
