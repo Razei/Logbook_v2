@@ -775,7 +775,7 @@ border-radius: 10px;</string>
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QFrame" name="frame_6">
+               <widget class="QFrame" name="frameOpenLabs">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                   <horstretch>0</horstretch>
@@ -1671,7 +1671,7 @@ color: rgb(255, 255, 255);</string>
             </spacer>
            </item>
            <item row="3" column="1">
-            <widget class="QPushButton" name="pushButtonEdit">
+            <widget class="QPushButton" name="pushButtonEditReports">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
