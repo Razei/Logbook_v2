@@ -13,7 +13,7 @@ import qtmodern.styles
 # this is for exe making (don't touch lmao)
 root = Path()
 if getattr(sys, 'frozen', False):
-    root = Path(sys._MEIPASS)
+    #root = Path(sys._MEIPASS)
     qtmodern.styles._STYLESHEET = root / 'qtmodern/style.qss'
     qtmodern.windows._FL_STYLESHEET = root / 'qtmodern/frameless.qss'
 
