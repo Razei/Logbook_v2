@@ -78,7 +78,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>9</number>
+       <number>10</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -4543,7 +4543,7 @@ color: rgb(255, 255, 255);</string>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pageNewLostAndFound">
+      <widget class="QWidget" name="pageNewLAF">
        <layout class="QGridLayout" name="gridLayout_25">
         <property name="leftMargin">
          <number>0</number>
@@ -5058,7 +5058,7 @@ background-color: rgb(255, 255, 255);</string>
                </widget>
               </item>
               <item row="2" column="1">
-               <widget class="QLineEdit" name="comboBoxNewLostAndFoundBy">
+               <widget class="QLineEdit" name="textBoxNewLostAndFoundBy">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
