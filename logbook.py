@@ -154,6 +154,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             room_list.append(room[0])
 
         self.populateComboBox(self.comboBoxRoom, room_list)
+        self.populateComboBox(self.comboBoxNewLostAndFoundRoom, room_list)
 
         # hide the row numbers in the tables
         self.tableWidgetReports.verticalHeader().setVisible(False)
@@ -197,7 +198,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
-        table.horizontalHeader().setResizeContentsPrecision(2000)
+        # table.horizontalHeader().setResizeContentsPrecision(2000)
         # set table header labels with column names from database
         table.setHorizontalHeaderLabels(header_names)
 
@@ -271,7 +272,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # reports
         self.pushButtonNew.clicked.connect(self.newLog)
-        self.pushButtonFormCancel.clicked.connect(self.cancelNewLog)
+        self.pushButtonFormCancel.clicked.connect(lambda: self.changePage(self.pageReports))
         self.pushButtonExportData.clicked.connect(self.exportData)
         self.pushButtonEditReports.clicked.connect(self.editLog)
 
@@ -288,10 +289,10 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # lost and found
         self.pushButtonViewLAF.clicked.connect(lambda: self.viewSelection(self.tableWidgetLostAndFound))
-        self.pushButtonLostAndFound.clicked.connect(self.showLostAndFoundFrame)
         self.pushButtonNewLAF.clicked.connect(self.newLostAndFound)
+        self.pushButtonEditLAF.clicked.connect(self.edit_laf_form)
         self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
-        self.pushButtonFormCancelLAF.clicked.connect(self.showLostAndFoundFrame)
+        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.changePage(self.pageLostAndFound))
         self.pushButtonFormSaveLAF.clicked.connect(self.saveLostAndFoundForm)
         self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
         self.pushButtonDeleteLAF.clicked.connect(lambda: self.deleteSelection(self.tableWidgetLostAndFound, 'LostAndFound'))
@@ -324,28 +325,20 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.comboBoxRoom.setCurrentIndex(0)
 
     def newLostAndFound(self):
+        self.stored_id = 0
         self.clearLostAndFoundForm()
-
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
-        room_list = []
-        query = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
-        cursor = self.executeQuery(query)
-        rooms = cursor.fetchall()
-        for room in rooms:
-            room_list.append(room[0])
-        self.populateComboBox(self.comboBoxNewLostAndFoundRoom, room_list)
-
         self.frameReturnedLAF.hide()
         self.refreshTables()
-        self.changePage(self.pageNewLostAndFound)
+        self.changePage(self.pageNewLAF)
 
     def clearLostAndFoundForm(self):
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
         self.comboBoxNewLostAndFoundRoom.setCurrentIndex(0)
-        self.comboBoxNewLostAndFoundBy.clear()
+        self.textBoxNewLostAndFoundBy.clear()
         self.textBoxNewLostAndFoundItemDescription.clear()
         self.textBoxNewLostAndFoundNote.clear()
         self.checkBoxNewLostAndFoundReturned.setCheckState(False)
@@ -355,28 +348,120 @@ class LogBook(MainWindowBase, MainWindowUI):
     def saveLostAndFoundForm(self):
         date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
         room = self.comboBoxNewLostAndFoundRoom.currentText()
-        found_by = self.comboBoxNewLostAndFoundBy.text()
+        found_by = self.textBoxNewLostAndFoundBy.text()
         item_description = self.textBoxNewLostAndFoundItemDescription.text()
         note = self.textBoxNewLostAndFoundNote.text()
-        if self.checkBoxNewLostAndFoundReturned.isChecked():
-            returned = 'YES'
-            returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
-            student_name = self.textBoxNewLostAndFoundStudentName.text()
-            student_number = self.textBoxNewLostAndFoundStudentNumber.text()
-            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'
 
-        else:
-            returned = 'NO'
-            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{returned}\');'
+        state = True
+
+        # empty field validation
+        if not (self.validateField(self.textBoxNewLostAndFoundBy)):
+            state = False
+
+        if not state:
+            return
+
+        if self.stored_id == 0:  # id of 0 means it's a new entry
+            if self.checkBoxNewLostAndFoundReturned.isChecked():
+                returned = 'YES'
+                returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
+                student_name = self.textBoxNewLostAndFoundStudentName.text()
+                student_number = self.textBoxNewLostAndFoundStudentNumber.text()
+                query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'
+
+            else:
+                returned = 'NO'
+                query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{returned}\');'
+        else:  # already has an id, meaning it's an update
+            if self.checkBoxNewLostAndFoundReturned.isChecked():
+                returned = 'YES'
+                returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
+                student_name = self.textBoxNewLostAndFoundStudentName.text()
+                student_number = self.textBoxNewLostAndFoundStudentNumber.text()
+
+                query = f'''
+                UPDATE dbo.LostAndFound 
+                SET 
+                    DATE_FOUND = \'{date}\', 
+                    ROOM = \'{room}\', NAME = \'{found_by}\', 
+                    ITEM_DESC = \'{item_description}\', 
+                    NOTE = \'{note}\', 
+                    STUDENT_NAME = \'{student_name}\', 
+                    STUDENT_NUMBER = \'{student_number}\', 
+                    RETURNED_DATE = \'{returned_date}\', 
+                    RETURNED = \'{returned}\' 
+                WHERE 
+                    ENTRY_ID = {self.stored_id};'''
+
+            else:
+                returned = 'NO'
+                query = f'''
+                UPDATE dbo.LostAndFound 
+                SET 
+                    DATE_FOUND = \'{date}\', 
+                    ROOM = \'{room}\', NAME = \'{found_by}\', 
+                    ITEM_DESC = \'{item_description}\', 
+                    NOTE = \'{note}\', 
+                    RETURNED = \'{returned}\' 
+                WHERE 
+                    ENTRY_ID = {self.stored_id};'''
 
         cursor = self.executeQuery(query)
-        cursor.commit()
-        self.showLostAndFoundFrame()
 
-    def showLostAndFoundFrame(self):
-        # dQuery = 'SELECT * FROM ReportLog.dbo.LostAndFound'
-        # self.populateTable(self.tableWidgetLostAndFound,lostAndFoundQuery)
+        # validate the cursor for empty results
+        if not self.validateCursor(cursor):
+            self.change_to_last_page()
+            return
+
+        cursor.commit()
+        self.refreshTables()
         self.changePage(self.pageLostAndFound)
+
+    def edit_laf_form(self):
+        table = self.tableWidgetLostAndFound
+
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            row_index = table.currentRow()  # get index of current row
+            entry_id = table.item(row_index, 0).text()
+            self.stored_id = entry_id
+
+            query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM dbo.LostAndFound WHERE ENTRY_ID = {entry_id};'
+            cursor = self.executeQuery(query)
+
+            # validate the cursor for empty results
+            if not self.validateCursor(cursor):
+                self.change_to_last_page()
+                return
+
+            laf = cursor.fetchall()
+            self.clearForm()
+            self.labelNewLostAndFound.setText('EDIT LOST AND FOUND')
+            self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
+            self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
+
+            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
+            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+
+            self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
+            self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
+            self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
+
+            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
+            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
+
+            index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.comboBoxNewLostAndFoundRoom.setCurrentIndex(index)
+
+            if str(laf[0].RETURNED).strip() == 'YES':
+                self.checkBoxNewLostAndFoundReturned.setChecked(True)
+                self.frameReturnedLAF.show()
+            else:
+                self.checkBoxNewLostAndFoundReturned.setChecked(False)
+                self.frameReturnedLAF.hide()
+
+            self.changePage(self.pageNewLAF)
 
     def showFrameReturnedLAF(self):
         if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -482,7 +567,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(widget))  # change the page to the widget
 
     @staticmethod
-    def validateEmptyForm(text_edit):
+    def validateField(text_edit):
         if text_edit.text() == '':
             text_edit.setPlaceholderText('Cannot be blank')
             return False
@@ -512,10 +597,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         state = True
 
         # empty field validation
-        if not (self.validateEmptyForm(self.textBoxNewLogIssue)):
+        if not (self.validateField(self.textBoxNewLogIssue)):
             state = False
 
-        if not (self.validateEmptyForm(self.textBoxNewLogName)):
+        if not (self.validateField(self.textBoxNewLogName)):
             state = False
 
         if not state:
@@ -538,7 +623,18 @@ class LogBook(MainWindowBase, MainWindowUI):
         if self.stored_id == 0:
             query = f'INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'
         else:
-            query = f'UPDATE dbo.Reports SET DATE = \'{date}\', NAME = \'{name}\', ROOM = \'{room}\', ISSUE = \'{issue}\', NOTE = \'{note}\', RESOLUTION = \'{resolution}\', FIXED = \'{fixed}\' WHERE REPORT_ID = {self.stored_id};'
+            query = f'''
+            UPDATE dbo.Reports 
+            SET 
+                DATE = \'{date}\', 
+                NAME = \'{name}\', 
+                ROOM = \'{room}\', 
+                ISSUE = \'{issue}\', 
+                NOTE = \'{note}\', 
+                RESOLUTION = \'{resolution}\', 
+                FIXED = \'{fixed}\' 
+            WHERE 
+                REPORT_ID = {self.stored_id};'''
 
         cursor = self.executeQuery(query)
 
@@ -671,9 +767,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLog.setCurrentSectionIndex(2)
         self.changePage(self.pageNewLog)
-
-    def cancelNewLog(self):
-        self.changePage(self.pageReports)
 
     # for handling creation and deletion of labels for labs that are soon going to be vacant
     def countdown_handler(self):
