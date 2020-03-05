@@ -347,6 +347,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.checkBoxNewLostAndFoundReturned.setCheckState(False)
         self.textBoxNewLostAndFoundStudentName.clear()
         self.textBoxNewLostAndFoundStudentNumber.clear()
+        self.showFrameReturnedLAF()
+
 
     def saveLostAndFoundForm(self):
         date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
@@ -374,7 +376,11 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             else:
                 returned = 'NO'
-                query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{returned}\');'
+                student_name = ''
+                student_number = ''
+                query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\', null,\'{returned}\');'
+
+
         else:  # already has an id, meaning it's an update
             if self.checkBoxNewLostAndFoundReturned.isChecked():
                 returned = 'YES'
@@ -398,6 +404,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             else:
                 returned = 'NO'
+                student_name = ''
+                student_number = ''
                 query = f'''
                 UPDATE dbo.LostAndFound 
                 SET 
@@ -405,6 +413,9 @@ class LogBook(MainWindowBase, MainWindowUI):
                     ROOM = \'{room}\', NAME = \'{found_by}\', 
                     ITEM_DESC = \'{item_description}\', 
                     NOTE = \'{note}\', 
+                    STUDENT_NAME = \'{student_name}\', 
+                    STUDENT_NUMBER = \'{student_number}\', 
+                    RETURNED_DATE = null, 
                     RETURNED = \'{returned}\' 
                 WHERE 
                     ENTRY_ID = {self.stored_id};'''
@@ -443,15 +454,15 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
-            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
-            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+            #self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
+            #self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
 
             self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
             self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
             self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
 
-            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
-            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
+            #self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
+            #self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
 
             index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
             if index >= 0:
@@ -459,10 +470,10 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             if str(laf[0].RETURNED).strip() == 'YES':
                 self.checkBoxNewLostAndFoundReturned.setChecked(True)
-                self.frameReturnedLAF.show()
+                self.showFrameReturnedLAF()
             else:
                 self.checkBoxNewLostAndFoundReturned.setChecked(False)
-                self.frameReturnedLAF.hide()
+                self.showFrameReturnedLAF()
 
             self.changePage(self.pageNewLAF)
 
