@@ -453,7 +453,6 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.labelNewLostAndFound.setText('EDIT LOST AND FOUND')
             self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
-
             self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
             self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
             self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
@@ -465,6 +464,10 @@ class LogBook(MainWindowBase, MainWindowUI):
             if str(laf[0].RETURNED).strip() == 'YES':
                 self.checkBoxNewLostAndFoundReturned.setChecked(True)
                 self.showFrameReturnedLAF()
+                self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
+                self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+                self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
+                self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
             else:
                 self.checkBoxNewLostAndFoundReturned.setChecked(False)
                 self.showFrameReturnedLAF()
