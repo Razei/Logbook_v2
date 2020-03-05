@@ -201,7 +201,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
-        # table.horizontalHeader().setResizeContentsPrecision(2000)
         # set table header labels with column names from database
         table.setHorizontalHeaderLabels(header_names)
 
@@ -367,19 +366,16 @@ class LogBook(MainWindowBase, MainWindowUI):
             return
 
         if self.stored_id == 0:  # id of 0 means it's a new entry
+            returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
+            student_name = self.textBoxNewLostAndFoundStudentName.text()
+            student_number = self.textBoxNewLostAndFoundStudentNumber.text()
+
             if self.checkBoxNewLostAndFoundReturned.isChecked():
                 returned = 'YES'
-                returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
-                student_name = self.textBoxNewLostAndFoundStudentName.text()
-                student_number = self.textBoxNewLostAndFoundStudentNumber.text()
-                query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'
-
             else:
                 returned = 'NO'
-                student_name = ''
-                student_number = ''
-                query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\', null,\'{returned}\');'
 
+            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'
 
         else:  # already has an id, meaning it's an update
             if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -454,9 +450,15 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
+            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
+            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+
             self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
             self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
             self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
+
+            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
+            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
 
             index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
             if index >= 0:
