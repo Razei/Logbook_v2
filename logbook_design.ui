@@ -78,7 +78,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>10</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -150,7 +150,7 @@
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
-               <verstretch>2</verstretch>
+               <verstretch>3</verstretch>
               </sizepolicy>
              </property>
              <property name="accessibleDescription">
@@ -190,7 +190,7 @@ border-radius: 10px;</string>
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                   <horstretch>0</horstretch>
-                  <verstretch>1</verstretch>
+                  <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
                 <property name="minimumSize">
@@ -541,7 +541,7 @@ border-radius: 10px;</string>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
-               <verstretch>1</verstretch>
+               <verstretch>0</verstretch>
               </sizepolicy>
              </property>
              <property name="minimumSize">

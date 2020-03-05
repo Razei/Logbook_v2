@@ -238,7 +238,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         for widget in self.stackedWidget.children():
             if search in widget.objectName():
-                self.changePage(widget)
+                self.change_page(widget)
 
     # this function loops through the buttons in the menu to find the active QPushButton and set it to the active colour (green)
     def button_pressed(self):
@@ -274,9 +274,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # reports
         self.pushButtonNew.clicked.connect(self.newLog)
-        self.pushButtonFormCancel.clicked.connect(lambda: self.changePage(self.pageReports))
+        self.pushButtonFormCancel.clicked.connect(lambda: self.change_page(self.pageReports))
         self.pushButtonExportData.clicked.connect(self.exportData)
-        self.pushButtonEditReports.clicked.connect(self.editLog)
+        self.pushButtonEditReports.clicked.connect(self.edit_log)
 
         # problems
         self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
@@ -294,11 +294,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonNewLAF.clicked.connect(self.newLostAndFound)
         self.pushButtonEditLAF.clicked.connect(self.edit_laf_form)
         self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
-        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.changePage(self.pageLostAndFound))
+        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.pageLostAndFound))
         self.pushButtonFormSaveLAF.clicked.connect(self.saveLostAndFoundForm)
         self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
         self.pushButtonDeleteLAF.clicked.connect(lambda: self.deleteSelection(self.tableWidgetLostAndFound, 'LostAndFound'))
-        self.checkBoxNewLostAndFoundReturned.clicked.connect(self.showFrameReturnedLAF)
+        self.checkBoxNewLostAndFoundReturned.clicked.connect(self.returned_checkbox_changed)
 
         # save settings signal
         self.pushButtonSaveSettings.clicked.connect(lambda: self.save_settings())
@@ -334,7 +334,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.frameReturnedLAF.hide()
         self.refreshTables()
-        self.changePage(self.pageNewLAF)
+        self.change_page(self.pageNewLAF)
 
     def clearLostAndFoundForm(self):
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
@@ -425,7 +425,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         cursor.commit()
         self.refreshTables()
-        self.changePage(self.pageLostAndFound)
+        self.change_page(self.pageLostAndFound)
 
     def edit_laf_form(self):
         table = self.tableWidgetLostAndFound
@@ -471,15 +471,20 @@ class LogBook(MainWindowBase, MainWindowUI):
                 self.checkBoxNewLostAndFoundReturned.setChecked(False)
                 self.showFrameReturnedLAF()
 
-            self.changePage(self.pageNewLAF)
+            self.change_page(self.pageNewLAF)
 
     def showFrameReturnedLAF(self):
         if self.checkBoxNewLostAndFoundReturned.isChecked():
-            self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
-            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
             self.frameReturnedLAF.show()
         else:
             self.frameReturnedLAF.hide()
+
+    def returned_checkbox_changed(self):  # this way it only happens if the state was changed
+        if self.checkBoxNewLostAndFoundReturned.isChecked():
+            self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
+            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+
+        self.showFrameReturnedLAF()
 
     def viewSelection(self, table):
 
@@ -539,8 +544,9 @@ class LogBook(MainWindowBase, MainWindowUI):
                 self.frameViewDataForm.layout().addRow(label_widget, data_widget)
 
             # change to view page
-            self.changePage(self.pageViewData)
+            self.change_page(self.pageViewData)
 
+    # coming back to this later
     def txtInputChanged(self, txtInput, maxInputLen):
         if txtInput.toPlainText().length() > maxInputLen:
             text = txtInput.toPlainText()
@@ -567,9 +573,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         # remove the 'tableWidget' from the string (this is why everything is named this way lol)
         name = self.lastPage.replace('tableWidget', '')
         page_name = 'page' + name  # add page to the modified string
-        self.changePage(self.findChild(QtWidgets.QWidget, page_name))  # change to last page
+        self.change_page(self.findChild(QtWidgets.QWidget, page_name))  # change to last page
 
-    def changePage(self, name):
+    def change_page(self, name):
         widget = name
 
         # if the widget is in the stackedWidget
@@ -650,16 +656,16 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # validate the cursor for empty results
         if not self.validateCursor(cursor):
-            self.changePage(self.pageReports)
+            self.change_page(self.pageReports)
             return
 
         cursor.commit()
 
         self.refreshTables()
-        self.changePage(self.pageReports)
+        self.change_page(self.pageReports)
         self.clearForm()
 
-    def editLog(self):
+    def edit_log(self):
         table = self.tableWidgetReports
 
         # if a row is selected (having no rows selected returns -1)
@@ -673,7 +679,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             # validate the cursor for empty results
             if not self.validateCursor(cursor):
-                self.changePage(self.pageReports)
+                self.change_page(self.pageReports)
                 return
 
             log = cursor.fetchall()
@@ -695,7 +701,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             else:
                 self.checkBoxFixed.setChecked(False)
 
-            self.changePage(self.pageNewLog)
+            self.change_page(self.pageNewLog)
 
     @staticmethod
     def import_settings():
@@ -776,7 +782,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.labelNewLog.setText('NEW LOG')
         self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLog.setCurrentSectionIndex(2)
-        self.changePage(self.pageNewLog)
+        self.change_page(self.pageNewLog)
 
     # for handling creation and deletion of labels for labs that are soon going to be vacant
     def countdown_handler(self):
