@@ -454,15 +454,9 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
-            #self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
-            #self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
-
             self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
             self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
             self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
-
-            #self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
-            #self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
 
             index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
             if index >= 0:
