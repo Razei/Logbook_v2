@@ -29,10 +29,10 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
-        self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
+        # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
         # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
@@ -524,6 +524,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                     data_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
                     data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
                     data_widget.setAcceptRichText(False)
+                    data_widget.document().setDocumentMargin(0)
 
                     # QtCore.QObject.connect(data_widget, SIGNAL("textChanged()"), lambda: self.txtInputChanged(data_widget, 255))
                 else:
@@ -562,7 +563,7 @@ class LogBook(MainWindowBase, MainWindowUI):
     def deleteSelection(self, table, table_name):
 
         # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1:
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
             if self.showDialog():
                 row_index = table.currentRow()  # get index of current row
                 column_index = table.item(row_index, 0).text()
