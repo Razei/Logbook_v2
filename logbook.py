@@ -347,6 +347,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.checkBoxNewLostAndFoundReturned.setCheckState(False)
         self.textBoxNewLostAndFoundStudentName.clear()
         self.textBoxNewLostAndFoundStudentNumber.clear()
+        self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
+        self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
         self.showFrameReturnedLAF()
 
 
@@ -463,21 +465,19 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             if str(laf[0].RETURNED).strip() == 'YES':
                 self.checkBoxNewLostAndFoundReturned.setChecked(True)
-                self.showFrameReturnedLAF()
                 self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
                 self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
                 self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
                 self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
             else:
                 self.checkBoxNewLostAndFoundReturned.setChecked(False)
-                self.showFrameReturnedLAF()
+                self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
+                self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
 
             self.changePage(self.pageNewLAF)
 
     def showFrameReturnedLAF(self):
         if self.checkBoxNewLostAndFoundReturned.isChecked():
-            self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
-            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
             self.frameReturnedLAF.show()
         else:
             self.frameReturnedLAF.hide()
