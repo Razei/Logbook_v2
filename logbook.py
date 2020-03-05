@@ -29,11 +29,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
-        self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        #self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -41,6 +41,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.setupUi(self)
 
         self.staticDate = datetime.datetime.now()
+        self.default_returned_date = datetime.date(2020, 1, 1)
         # get the directory of this script
         self.path = os.path.dirname(os.path.abspath(__file__))
 
@@ -331,6 +332,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.clearLostAndFoundForm()
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
+        self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
 
         self.frameReturnedLAF.hide()
         self.refreshTables()
@@ -343,11 +345,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.textBoxNewLostAndFoundBy.clear()
         self.textBoxNewLostAndFoundItemDescription.clear()
         self.textBoxNewLostAndFoundNote.clear()
+        self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
         self.checkBoxNewLostAndFoundReturned.setCheckState(False)
         self.textBoxNewLostAndFoundStudentName.clear()
         self.textBoxNewLostAndFoundStudentNumber.clear()
         self.showFrameReturnedLAF()
-
 
     def saveLostAndFoundForm(self):
         date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
@@ -450,7 +452,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
-            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE)
+            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE or self.default_returned_date)
             self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
 
             self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
@@ -708,7 +710,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         with open('settings.json', 'r') as json_file:
             data = json.load(json_file)
             return data
-
 
     @staticmethod
     def settings_switch(argument):  # python doesn't have switch case so this is an alternative
