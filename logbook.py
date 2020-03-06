@@ -29,11 +29,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -189,18 +189,20 @@ class LogBook(MainWindowBase, MainWindowUI):
         for column in cursor_desc:
             header_names.append(column[0])
 
-        table.horizontalHeader().setMaximumSectionSize(200)  # max size per column
+        table.horizontalHeader().setMaximumSectionSize(250)  # max size per column
+        table.verticalHeader().setMinimumSectionSize(40)  # min size per row
 
         # QTableWidget requires you to set the amount of rows/columns needed before you populate it
         table.setRowCount(len(data))
         table.setColumnCount(len(data[0]))
 
         table.setWordWrap(True)
+        table.setTextElideMode(Qt.ElideRight)
         table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
         table.horizontalHeader().setStretchLastSection(True)
         table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
-        table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
 
         # set table header labels with column names from database
         table.setHorizontalHeaderLabels(header_names)
@@ -377,7 +379,11 @@ class LogBook(MainWindowBase, MainWindowUI):
             else:
                 returned = 'NO'
 
-            query = f'INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'
+            query = f'''
+            INSERT INTO dbo.LostAndFound
+                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
+            VALUES 
+                (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'''
 
         else:  # already has an id, meaning it's an update
             if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -640,7 +646,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         resolution = self.textBoxNewLogResolution.toPlainText().strip()
 
         if self.stored_id == 0:
-            query = f'INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'
+            query = f'''
+            INSERT INTO dbo.Reports
+                (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) 
+            VALUES 
+                (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'''
         else:
             query = f'''
             UPDATE dbo.Reports 

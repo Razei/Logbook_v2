@@ -146,29 +146,31 @@ QTableCornerButton, QTableCornerButton::section,QHeaderView,QHeaderView::section
 
 QScrollBar:horizontal {
     border: 0;
-    border-radius: 10px;
+    border-radius: 6px;
     background: background_colour2;
-    height: 10px;
+    height: 15px;
     margin: 0px 20px 0px 20px;
 }
 
 QScrollBar::handle:horizontal {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
     min-width: 0px;
-    height:10px;
-    border-radius: 4px;
+    height: 7px;
+    border-radius: 3px;
 }
 
 QScrollBar::add-line:horizontal {
-    background: transparent;
-    width: 5px;
+    border: none;
+    background: none;
+    width: 0;
     subcontrol-position: right;
     subcontrol-origin: margin;
 }
 
 QScrollBar::sub-line:horizontal {
-    background-color: transparent;
-    width: 5px;
+    border: none;
+    background: none;
+    width: 0;
     subcontrol-position: left;
     subcontrol-origin: margin;
 }
@@ -176,31 +178,38 @@ QScrollBar::sub-line:horizontal {
 
 QScrollBar:vertical {
     border: 0;
-    border-radius: 10px;
+    border-radius: 6px;
     background: background_colour2;
-    width: 10px;
+    width: 15px;
     margin: 20px 0px 20px 0px;
 }
 
 QScrollBar::handle:vertical {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
     min-height: 20px;
-    width:10px;
-    border-radius: 4px;
+    width:7px;
+    border-radius: 3px;
 }
 
 QScrollBar::add-line:vertical {
-    background: transparent;
-    height: 0px;
+    border: none;
+    background: none;
+    height: 0;
     subcontrol-position: top;
     subcontrol-origin: margin;
 }
 
 QScrollBar::sub-line:vertical {
-    background-color: transparent;
-    height: 0px;
+    border: none;
+    background: none;
+    height: 0;
     subcontrol-position: left;
     subcontrol-origin: margin;
+}
+
+QAbstractScrollArea::corner {
+    background: none;
+    border: none;
 }
 
 [accessibleDescription ="frameBox"]{
