@@ -29,11 +29,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -89,8 +89,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setAccessibleDescription('successButton')
         dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setAccessibleDescription('dangerButton')
 
-        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setMinimumSize(100, 20)
-        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setMinimumSize(100, 20)
+        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setMinimumSize(100, 25)
+        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setMinimumSize(100, 25)
 
         dialog.setStyleSheet(self.theme)
 
@@ -105,17 +105,15 @@ class LogBook(MainWindowBase, MainWindowUI):
             state = False
         return state
 
-    def validateCursor(self, cursor):
-        if cursor is None:
-            return False
-
-        if cursor.rowcount == 0:
+    @staticmethod
+    def validateCursor(cursor):
+        if cursor is None or cursor.rowcount == 0:
             return False
 
         return True
 
     # reusable query function
-    def executeQuery(self, query):
+    def executeQuery(self, query, list_objects=None):
 
         # conn_str ='Trusted_Connection=yes;DRIVER={ODBC Driver 17 for SQL Server};SERVER='+self.server_string+';DATABASE=ReportLog;UID=Helpdesk;PWD=b1pa55'
         # conn_str = 'Driver={SQL Server};Server='+ self.server_string + ';Database=ReportLog;Trusted_Connection=yes;'
@@ -126,7 +124,12 @@ class LogBook(MainWindowBase, MainWindowUI):
                                       trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
             conn = conn_str
             cursor = conn.cursor()
-            cursor.execute(query)
+
+            if list_objects is not None:
+                cursor.execute(query, list_objects)
+            else:
+                cursor.execute(query)
+
             return cursor
         except pyodbc.Error as err:
             print("Couldn't connect (Connection timed out)")
@@ -134,15 +137,13 @@ class LogBook(MainWindowBase, MainWindowUI):
             return
 
     def getAllData(self):
-        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        status = ['Fixed', 'Not Fixed']
+        months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
         themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
         formats = ['24 HR', '12 HR']
-        room_list = []
         rooms_query = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
+        room_list = []
 
-        self.populateComboBox(self.comboBoxMonth, months)
-        self.populateComboBox(self.comboBoxStatus, status)
+        self.populateComboBox(self.comboBoxReportsMonth, months)
         self.populateComboBox(self.comboBoxSettingsTheme, themes)
         self.populateComboBox(self.comboBoxSettingsTimeFormat, formats)
 
@@ -280,6 +281,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormCancel.clicked.connect(lambda: self.change_page(self.pageReports))
         self.pushButtonExportData.clicked.connect(self.exportData)
         self.pushButtonEditReports.clicked.connect(self.edit_log)
+        self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month(None))
 
         # problems
         self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
@@ -359,7 +361,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         found_by = self.textBoxNewLostAndFoundBy.text()
         item_description = self.textBoxNewLostAndFoundItemDescription.text()
         note = self.textBoxNewLostAndFoundNote.text()
-
+        list_objects = None
         state = True
 
         # empty field validation
@@ -376,14 +378,20 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             if self.checkBoxNewLostAndFoundReturned.isChecked():
                 returned = 'YES'
+                query = f'''
+                            INSERT INTO dbo.LostAndFound
+                                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
+                            VALUES 
+                                (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+
             else:
                 returned = 'NO'
-
-            query = f'''
-            INSERT INTO dbo.LostAndFound
-                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
-            VALUES 
-                (\'{date}\',\'{room}\',\'{found_by}\',\'{item_description}\',\'{note}\',\'{student_name}\',\'{student_number}\',\'{returned_date}\',\'{returned}\');'''
+                query = f'''
+                            INSERT INTO dbo.LostAndFound
+                                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED) 
+                            VALUES 
+                                (?, ?, ?, ?, ?, ?, ?, ?)'''
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
 
         else:  # already has an id, meaning it's an update
             if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -395,17 +403,19 @@ class LogBook(MainWindowBase, MainWindowUI):
                 query = f'''
                 UPDATE dbo.LostAndFound 
                 SET 
-                    DATE_FOUND = \'{date}\', 
-                    ROOM = \'{room}\', NAME = \'{found_by}\', 
-                    ITEM_DESC = \'{item_description}\', 
-                    NOTE = \'{note}\', 
-                    STUDENT_NAME = \'{student_name}\', 
-                    STUDENT_NUMBER = \'{student_number}\', 
-                    RETURNED_DATE = \'{returned_date}\', 
-                    RETURNED = \'{returned}\' 
+                    DATE_FOUND = ?, 
+                    ROOM = ?, 
+                    NAME = ?, 
+                    ITEM_DESC = ?, 
+                    NOTE = ?, 
+                    STUDENT_NAME = ?, 
+                    STUDENT_NUMBER = ?, 
+                    RETURNED_DATE = ?, 
+                    RETURNED = ?
                 WHERE 
                     ENTRY_ID = {self.stored_id};'''
 
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned_date, returned]
             else:
                 returned = 'NO'
                 student_name = ''
@@ -413,18 +423,20 @@ class LogBook(MainWindowBase, MainWindowUI):
                 query = f'''
                 UPDATE dbo.LostAndFound 
                 SET 
-                    DATE_FOUND = \'{date}\', 
-                    ROOM = \'{room}\', NAME = \'{found_by}\', 
-                    ITEM_DESC = \'{item_description}\', 
-                    NOTE = \'{note}\', 
-                    STUDENT_NAME = \'{student_name}\', 
-                    STUDENT_NUMBER = \'{student_number}\', 
+                    DATE_FOUND = ?, 
+                    ROOM = ?, 
+                    NAME = ?, 
+                    ITEM_DESC = ?, 
+                    NOTE = ?, 
+                    STUDENT_NAME = ?, 
+                    STUDENT_NUMBER = ?, 
                     RETURNED_DATE = null, 
-                    RETURNED = \'{returned}\' 
+                    RETURNED = ?
                 WHERE 
                     ENTRY_ID = {self.stored_id};'''
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
 
-        cursor = self.executeQuery(query)
+        cursor = self.executeQuery(query, list_objects)
 
         # validate the cursor for empty results
         if not self.validateCursor(cursor):
@@ -600,10 +612,25 @@ class LogBook(MainWindowBase, MainWindowUI):
         return True
 
     def refreshTables(self):
-        reports_query = 'SELECT * FROM ReportLog.dbo.Reports'
+        import calendar
+        month = datetime.datetime.now().month
+        month = calendar.month_name[month]
+        index = self.comboBoxReportsMonth.findText(month)
+        if index >= 0:
+            self.comboBoxReportsMonth.setCurrentIndex(index)
+
+        reports_query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
         problems_query = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
         lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
         problems_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+
+        self.populateTable(self.tableWidgetReports, reports_query)
+        self.populateTable(self.tableWidgetProblems, problems_query)
+        self.populateTable(self.tableWidgetLostAndFound, lost_and_found_query)
+
+        self.cleanup_empty_cells(self.tableWidgetReports)
+        self.cleanup_empty_cells(self.tableWidgetProblems)
+        self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
         cursor = self.executeQuery(problems_count_query)
 
@@ -613,13 +640,28 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
 
-        self.populateTable(self.tableWidgetReports, reports_query)
-        self.populateTable(self.tableWidgetProblems, problems_query)
-        self.populateTable(self.tableWidgetLostAndFound, lost_and_found_query)
+    @staticmethod
+    def cleanup_empty_cells(table):
+        if table.item(0, 0) is None:
+            table.clear()
+            table.setRowCount(0)
+
+    def sort_by_month(self, input_month=None):  # setting an optional argument to null since python has no overloading
+        if input_month is not None:
+            query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
+        else:
+            month = self.sender().currentText()
+            if month == 'All':
+                query = f"SELECT * FROM dbo.Reports"
+            else:
+                query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
+        self.populateTable(self.tableWidgetReports, query)
+        self.cleanup_empty_cells(self.tableWidgetReports)
 
     def saveNewLog(self):
 
         state = True
+        list_objects = None
 
         # empty field validation
         if not (self.validateField(self.textBoxNewLogIssue)):
@@ -650,22 +692,25 @@ class LogBook(MainWindowBase, MainWindowUI):
             INSERT INTO dbo.Reports
                 (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) 
             VALUES 
-                (\'{date}\',\'{name}\',\'{room}\',\'{issue}\',\'{note}\',\'{resolution}\',\'{fixed}\');'''
+                (?, ?, ?, ?, ?, ?, ?)'''
+            list_objects = [date, name, room, issue, note, resolution, fixed]
         else:
             query = f'''
             UPDATE dbo.Reports 
             SET 
-                DATE = \'{date}\', 
-                NAME = \'{name}\', 
-                ROOM = \'{room}\', 
-                ISSUE = \'{issue}\', 
-                NOTE = \'{note}\', 
-                RESOLUTION = \'{resolution}\', 
-                FIXED = \'{fixed}\' 
+                DATE = ?, 
+                NAME = ?, 
+                ROOM = ?, 
+                ISSUE = ?, 
+                NOTE = ?, 
+                RESOLUTION = ?, 
+                FIXED = ? 
             WHERE 
                 REPORT_ID = {self.stored_id};'''
 
-        cursor = self.executeQuery(query)
+            list_objects = [date, name, room, issue, note, resolution, fixed]
+
+        cursor = self.executeQuery(query, list_objects)
 
         # validate the cursor for empty results
         if not self.validateCursor(cursor):

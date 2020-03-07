@@ -1,12 +1,12 @@
 import pandas as pd
 import pyodbc
 
-df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='February')
+df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='January')
 df = df.fillna(value='')
 
 
 def get_connection():
-    server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+    server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'
     try:
         conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=server_string,
                                   database='ReportLog', timeout=2,

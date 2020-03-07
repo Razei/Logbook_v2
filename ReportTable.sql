@@ -36,6 +36,7 @@ VALUES
 	('A3-55B','Storage Room'),
 	('A3-56','Electronics(Embedded)'),
 	('A3-61','Hardware Lab'),
+	('A3-61A','Hardware Lab Storage'),
 	('A3-63','Wireless Communication'),
 	('A3-65','Digital Communication'),
 	('B3-17','Security Lab'),
