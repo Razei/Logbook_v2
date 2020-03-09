@@ -5,12 +5,13 @@ block_cipher = None
 import importlib
 from pathlib import Path
 
-package_imports = [['qtmodern', ['resources/frameless.qss', 'resources/style.qss']]]
+'''package_imports = [['qtmodern', ['resources/frameless.qss', 'resources/style.qss']]]'''
 
-added_file = [('logbook_design.ui','logbook_design.ui'),('logbook_dialog.ui','logbook_dialog.ui'), ('themes', 'themes'), ('images', 'images') ]
-for package, files in package_imports:
+added_file = [('logbook_design.ui','.'),('logbook_dialog.ui','.'), ('themes', 'themes'), ('images', 'images'),('qtmodern_package','qtmodern_package'),('settings.json','.')]
+
+'''for package, files in package_imports:
     proot = Path(importlib.import_module(package).__file__).parent
-    added_file.extend((proot / f, package) for f in files)
+    added_file.extend((proot / f, package) for f in files)'''
 
 a = Analysis(['logbook_main.py'],
              pathex=['\\logbook_main.spec'],
@@ -24,6 +25,8 @@ a = Analysis(['logbook_main.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
+
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
@@ -39,9 +42,8 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='images/appicon.ico')
-          
-'''
+          console=True , icon='images\\appicon.ico')
+
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -49,4 +51,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='logbook_main')'''
+               name='logbook_main')

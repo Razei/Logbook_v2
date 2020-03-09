@@ -9,14 +9,9 @@ from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt
 from lab_checker import labChecker
 
-# get path of this python file
-path = os.path.dirname(os.path.abspath(__file__))
-
 # get type from ui file
-MainWindowUI, MainWindowBase = uic.loadUiType(
-    os.path.join(path, 'logbook_design.ui'))
-
-DialogUI, DialogBase = uic.loadUiType(os.path.join(path, 'logbook_dialog.ui'))
+MainWindowUI, MainWindowBase = uic.loadUiType('logbook_design.ui')
+DialogUI, DialogBase = uic.loadUiType('logbook_dialog.ui')
 
 
 class Dialog(DialogBase, DialogUI):
@@ -29,11 +24,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        #  self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -42,12 +37,10 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.staticDate = datetime.datetime.now()
         self.default_returned_date = datetime.date(2020, 1, 1)
-        # get the directory of this script
-        self.path = os.path.dirname(os.path.abspath(__file__))
 
         self.ignoreList = []
         # build a window object from the .ui file
-        self.window = uic.loadUi(os.path.join(self.path, 'logbook_design.ui'))
+        self.window = uic.loadUi('logbook_design.ui')
 
         # self.setWindowIcon(QtGui.QIcon(os.path.join(self.path,"appicon.ico")))
         # add all click events
@@ -67,7 +60,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.labelSettingsWarning.setVisible(False)
 
         # fetches the qss stylesheet path
-        theme_path = os.path.join(os.path.split(__file__)[0], theme['theme_path'])
+        theme_path = theme['theme_path']
 
         # reads the qss stylesheet and applies it to the application
         self.theme = str(open(theme_path, "r").read())

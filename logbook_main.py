@@ -3,22 +3,19 @@ import sys
 import json
 from logbook import LogBook
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
-from pathlib import Path
-import qtmodern.windows
-import qtmodern.styles
+import qtmodern_package.styles as qtmodern_styles
+import qtmodern_package.windows as qtmodern_windows
 
 # Logbook v2 written in Python 3.8
 # by Jarod Lavine and Shaniquo McKenzie
 
-# this is for exe making (don't touch lmao)
-root = Path()
-if getattr(sys, 'frozen', False):
-    root = Path(sys._MEIPASS)
-    qtmodern.styles._STYLESHEET = root / 'qtmodern/style.qss'
-    qtmodern.windows._FL_STYLESHEET = root / 'qtmodern/frameless.qss'
-
 # get path of this python file
-path = os.path.dirname(os.path.abspath(__file__))
+#path = os.path.dirname(os.path.abspath(__file__))
+
+'''if getattr(sys, 'frozen', False):
+    path = os.path.dirname(sys.executable)
+elif __file__:'''
+path = os.path.dirname(__file__)
 
 # get type from ui file
 MainWindowUI, MainWindowBase = uic.loadUiType(
@@ -39,13 +36,13 @@ if __name__ == '__main__':
     # create new application
     app = QtWidgets.QApplication(sys.argv)
 
-    app.setWindowIcon(QtGui.QIcon(os.path.join(path, "appicon.ico")))
+    app.setWindowIcon(QtGui.QIcon("images/appicon.ico"))
 
     if settings['theme'][theme_choice]['base_theme'] == 'dark':
-        qtmodern.styles.dark(app)  # qtmodern
+        qtmodern_styles.dark(app)  # qtmodern
 
     if settings['theme'][theme_choice]['base_theme'] == 'light':
-        qtmodern.styles.light(app)  # qtmodern
+        qtmodern_styles.light(app)  # qtmodern
 
     # create new window of type LogBook and pass settings (calls __init__ constructor to do the rest)
     window = LogBook(settings['theme'][theme_choice], settings['time_format'])
@@ -60,7 +57,7 @@ if __name__ == '__main__':
     windowGeometry.moveCenter(centerPoint)
     window.move(windowGeometry.topLeft())
 
-    mw = qtmodern.windows.ModernWindow(window)  # qtmodern
+    mw = qtmodern_windows.ModernWindow(window)  # qtmodern
 
     # make the interface visible
     mw.show()
