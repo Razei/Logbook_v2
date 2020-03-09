@@ -10,11 +10,6 @@ import qtmodern_package.windows as qtmodern_windows
 # by Jarod Lavine and Shaniquo McKenzie
 
 # get path of this python file
-#path = os.path.dirname(os.path.abspath(__file__))
-
-'''if getattr(sys, 'frozen', False):
-    path = os.path.dirname(sys.executable)
-elif __file__:'''
 path = os.path.dirname(__file__)
 
 # get type from ui file

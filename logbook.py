@@ -27,8 +27,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         #  self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
-        # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -58,6 +58,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         # set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
         self.labelSettingsWarning.setVisible(False)
+
+        # temporarily disabled
+        self.pushButtonAllLabs.setVisible(False)
+        self.pushButtonSchedule.setVisible(False)
+        self.pushButtonUserGuide.setVisible(False)
 
         # fetches the qss stylesheet path
         theme_path = theme['theme_path']
@@ -131,7 +136,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def getAllData(self):
         months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
+        # themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
+        themes = ['Classic Light', 'Centennial Dark']
         formats = ['24 HR', '12 HR']
         rooms_query = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
         room_list = []
@@ -787,7 +793,8 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.comboBoxSettingsTheme.setCurrentIndex(2)
 
         if theme == "Centennial Dark":
-            self.comboBoxSettingsTheme.setCurrentIndex(3)
+            self.comboBoxSettingsTheme.setCurrentIndex(1)
+            # self.comboBoxSettingsTheme.setCurrentIndex(3)
 
         if time_format == "12 HR":
             self.comboBoxSettingsTimeFormat.setCurrentIndex(1)
@@ -836,7 +843,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # for handling creation and deletion of labels for labs that are soon going to be vacant
     def countdown_handler(self):
-        if self.schedules is not None and range(len(self.schedules) != 0):
+        '''if self.schedules is not None and range(len(self.schedules) != 0):
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.roomCountdown(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].getRoom().strip()  # get the room name for label
@@ -855,7 +862,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
                         self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).setVisible(False)
-                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).deleteLater()
+                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).deleteLater()'''
 
         if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
             for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
@@ -948,4 +955,4 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # call the handlers for the countdowns
         self.countdown_handler()
-        self.duration_handler()
+        # self.duration_handler()
