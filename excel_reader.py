@@ -17,7 +17,7 @@ def get_connection():
 
 
 def read_reports():
-    df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='January')
+    df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='March')
     df = df.fillna(value='')
 
     cursor = get_connection().cursor()
@@ -32,21 +32,32 @@ def read_reports():
 
 def read_lost_and_found():
     df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='Lost & Found')
+    df['RETURNED_DATE'] = df['RETURNED_DATE'].fillna(value='NULL')
     df = df.fillna(value='')
 
     cursor = get_connection().cursor()
     sql_cols = ['DATE', 'ROOM', 'FOUND_BY', 'DESCRIPTION', 'NOTE', 'STUDENT_NAME', 'STUDENT_NUMBER', 'RETURNED_DATE', 'RETURNED']
+    data = df[sql_cols].values.tolist()
+    for row in data:
+        if row[6] != '':
+            row[6] = int(row[6])
 
-    columns = df[sql_cols].values.tolist()
-    columns.reverse()
+    data.reverse()
+    for entry in data:
+        if entry[7] == 'NULL':
+            modified_entry = entry
+            del modified_entry[7]
+            cursor.execute('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)', modified_entry)
+        else:
+            cursor.execute('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', entry)
+        cursor.commit()
 
-    cursor.executemany('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', columns)
-    cursor.commit()
+    # cursor.executemany('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', columns)
 
 
 if __name__ == '__main__':
-    # read_reports()
-    read_lost_and_found()
+    read_reports()
+    # read_lost_and_found()
 
 
 
