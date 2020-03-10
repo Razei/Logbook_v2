@@ -23,11 +23,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -297,6 +297,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         # new log
         self.pushButtonFormSave.clicked.connect(self.saveNewLog)
         self.pushButtonFormClear.clicked.connect(self.clearForm)
+        self.textBoxNewLogNote.textChanged.connect(lambda: self.txtInputChanged(self.textBoxNewLogNote))
+        self.textBoxNewLogResolution.textChanged.connect(lambda: self.txtInputChanged(self.textBoxNewLogResolution))
+        self.textBoxNewLostAndFoundNote.textChanged.connect(lambda: self.txtInputChanged(self.textBoxNewLostAndFoundNote))
 
         # lost and found
         self.pushButtonViewLAF.clicked.connect(lambda: self.viewSelection(self.tableWidgetLostAndFound))
@@ -305,6 +308,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
         self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.pageLostAndFound))
         self.pushButtonFormSaveLAF.clicked.connect(self.saveLostAndFoundForm)
+
         # self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
         self.pushButtonDeleteLAF.clicked.connect(lambda: self.deleteSelection(self.tableWidgetLostAndFound, 'LostAndFound'))
         self.checkBoxNewLostAndFoundReturned.clicked.connect(self.returned_checkbox_changed)
@@ -364,7 +368,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         room = self.comboBoxNewLostAndFoundRoom.currentText()
         found_by = self.textBoxNewLostAndFoundBy.text()
         item_description = self.textBoxNewLostAndFoundItemDescription.text()
-        note = self.textBoxNewLostAndFoundNote.text()
+        note = self.textBoxNewLostAndFoundNote.toPlainText()
         list_objects = None
         state = True
 
@@ -547,8 +551,6 @@ class LogBook(MainWindowBase, MainWindowUI):
                     data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
                     data_widget.setAcceptRichText(False)
                     data_widget.document().setDocumentMargin(0)
-
-                    # QtCore.QObject.connect(data_widget, SIGNAL("textChanged()"), lambda: self.txtInputChanged(data_widget, 255))
                 else:
                     data_widget = QtWidgets.QLabel(f"{data[j]}")
                     data_widget.setScaledContents(True)
@@ -571,16 +573,21 @@ class LogBook(MainWindowBase, MainWindowUI):
             # change to view page
             self.change_page(self.pageViewData)
 
-    # coming back to this later
-    def txtInputChanged(self, txtInput, maxInputLen):
-        if txtInput.toPlainText().length() > maxInputLen:
-            text = txtInput.toPlainText()
-            text = text[:maxInputLen]
-            txtInput.setPlainText(text)
+    # limit the amount of characters allowed in a QTextEdit
+    def txtInputChanged(self, txtEdit):
+        text_content = txtEdit.toPlainText()
+        length = len(text_content)
 
-            cursor = txtInput.textCursor()
-        cursor.setPosition(maxInputLen)
-        txtInput.setTextCursor(cursor)
+        max_length = 1000
+
+        if length > max_length:
+            position = txtEdit.textCursor().position()
+            text_cursor = txtEdit.textCursor()
+            text_content = text_content[:max_length]
+            txtEdit.setText(text_content)
+            text_cursor.setPosition(position - (length - max_length))
+            txtEdit.setTextCursor(text_cursor)
+
 
     def deleteSelection(self, table, table_name):
 
