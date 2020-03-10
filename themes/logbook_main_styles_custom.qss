@@ -16,7 +16,7 @@ QDateEdit{
     border:0;
     border-radius:0px;
     color: text_colour;
-    background-color: background_colour;
+    background-color: main_colour;
 }
 
 QDateEdit::up-arrow, QDateEdit::down-arrow {
@@ -33,7 +33,7 @@ QDateEdit::up-arrow {
 }
 
 QDateEdit::up-button, QDateEdit::down-button {
-    background-color: background_colour;
+    background-color: text_colour;
     border-radius:0px;
     width:20px;
 }
@@ -45,7 +45,7 @@ QDateEdit::up-button:pressed, QDateEdit::down-button:pressed {
 QComboBox {
     font-weight:bold;
     color:text_colour;
-    background: background_colour;
+    background: main_colour;
     border-radius:0px;
     padding:8px;
 }
@@ -70,6 +70,7 @@ QListView::item:selected:active:hover{
     color: background_colour;
     font-weight:bold;
 }
+
 QListView::item:selected:active:!hover{
     background-color: accent; 
     color: background_colour;
@@ -92,7 +93,6 @@ QComboBox::drop-down:on { /* shift the arrow when popup is open */
     background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
 }
 
-
 QFrame{
     border:0;
 }
@@ -108,7 +108,6 @@ QFrame[accessibleDescription ="backgroundFrame"]{
     border-radius: 10px;
     border: 0; 
 }
-
 
 QTableWidget{
     color: text_colour;
@@ -132,7 +131,7 @@ QTableWidget::item{
 QHeaderView::section {
     font-weight:bold;
     text-align:left;
-    background-color:background_colour3;
+    background-color: background_colour3;
     padding-top:8px;
     padding-bottom:8px;
     padding-right:8px;
@@ -174,7 +173,6 @@ QScrollBar::sub-line:horizontal {
     subcontrol-position: left;
     subcontrol-origin: margin;
 }
-
 
 QScrollBar:vertical {
     border: 0;
@@ -220,19 +218,18 @@ QAbstractScrollArea::corner {
 }
 
 [accessibleDescription ="checkBoxRoom"]{
-    color:text_colour;
+    color: text_colour;
     font-size: 12pt; 
 }
 
 QCheckBox[accessibleDescription ="timerDanger"]{
-    color:danger_colour;
+    color: danger_colour;
     font-size: 12pt; 
 }
 
-
 QCheckBox::indicator:unchecked{
-    color:text_colour;
-    background-color:#F9F9F9;
+    color: text_colour;
+    background-color: main_colour;
 }
 
 QCheckBox::indicator:checked{
@@ -260,7 +257,6 @@ QLabel[accessibleDescription ="formLabel"]{
     font-family: Segoe UI;
     font-size:12pt;
 }
-
 
 QLabel[accessibleDescription ="formLabelNormal"]{
     color:text_colour;
@@ -306,7 +302,7 @@ QPushButton[accessibleDescription ="successButton"]{
 }
 
 QPushButton[accessibleDescription ="neutralButton"]{
-    background-color:background_colour;
+    background-color: main_colour;
     color: text_colour;
     border-radius: 12.4px;
     font-weight:bold;
@@ -319,11 +315,10 @@ QPushButton[accessibleDescription ="dangerButton"]{
     font-weight:bold;
 }
 
-
 QLineEdit,QTextEdit{
-    background-color:background_colour;
-    color:text_colour;
-    padding:4px;
+    background-color: main_colour;
+    color: text_colour;
+    padding: 4px;
     border: 0px;
     font-size:10pt;
 }
