@@ -40,17 +40,17 @@ class LogBook(MainWindowBase, MainWindowUI):
         # build a window object from the .ui file
         self.window = uic.loadUi('logbook_design.ui')
 
+        # new lab checker object
+        self.lab_checker = None
+        self.schedules = None
+        self.open_lab_schedules = None
+
         # add all click events
         self.addClickEvents()
         self.getAllData()
 
         # self.getAllData()
         self.set_settings(theme['theme_name'], time_format)
-
-        # new lab checker object
-        self.lab_checker = None
-        self.schedules = None
-        self.open_lab_schedules = None
 
         # set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
