@@ -78,7 +78,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -853,44 +853,6 @@ border-radius: 10px;</string>
               <property name="verticalSpacing">
                <number>16</number>
               </property>
-              <item row="3" column="4">
-               <widget class="QPushButton" name="pushButtonRefreshProblems">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>100</width>
-                  <height>25</height>
-                 </size>
-                </property>
-                <property name="cursor">
-                 <cursorShape>PointingHandCursor</cursorShape>
-                </property>
-                <property name="accessibleDescription">
-                 <string>successButton</string>
-                </property>
-                <property name="autoFillBackground">
-                 <bool>false</bool>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(0, 255, 108);
-color: rgb(255, 255, 255);</string>
-                </property>
-                <property name="text">
-                 <string>Refresh</string>
-                </property>
-                <property name="default">
-                 <bool>false</bool>
-                </property>
-                <property name="flat">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
               <item row="2" column="0" colspan="5">
                <widget class="QTableWidget" name="tableWidgetProblems">
                 <property name="sizePolicy">
@@ -1085,7 +1047,45 @@ color: rgb(255,255,255);</string>
                 </property>
                </widget>
               </item>
-              <item row="3" column="3">
+              <item row="3" column="0">
+               <widget class="QPushButton" name="pushButtonProblemsFixed">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="accessibleDescription">
+                 <string>successButton</string>
+                </property>
+                <property name="autoFillBackground">
+                 <bool>false</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+                </property>
+                <property name="text">
+                 <string>Fixed</string>
+                </property>
+                <property name="default">
+                 <bool>false</bool>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="4">
                <widget class="QPushButton" name="pushButtonProblemsView">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -2434,44 +2434,6 @@ color: rgb(255,255,255);</string>
              <column/>
             </widget>
            </item>
-           <item row="2" column="6">
-            <widget class="QPushButton" name="pushButtonRefreshLAF">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>25</height>
-              </size>
-             </property>
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
-             </property>
-             <property name="accessibleDescription">
-              <string>successButton</string>
-             </property>
-             <property name="autoFillBackground">
-              <bool>false</bool>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(0, 255, 108);
-color: rgb(255, 255, 255);</string>
-             </property>
-             <property name="text">
-              <string>Refresh</string>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-             <property name="flat">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
            <item row="2" column="0">
             <widget class="QPushButton" name="pushButtonNewLAF">
              <property name="sizePolicy">
@@ -2589,7 +2551,7 @@ color: rgb(255, 255, 255);</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="5">
+           <item row="2" column="6">
             <widget class="QPushButton" name="pushButtonViewLAF">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">

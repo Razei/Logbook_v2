@@ -197,3 +197,7 @@ class ModernWindow(QWidget):
             self.on_btnMaximize_clicked()
         else:
             self.on_btnRestore_clicked()
+
+    @property
+    def w(self):
+        return self._w

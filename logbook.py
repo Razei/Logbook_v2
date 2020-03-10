@@ -1,5 +1,4 @@
 import json
-import os
 import time
 import datetime
 import pyodbc
@@ -24,11 +23,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        #  self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
-        self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -38,22 +37,20 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.staticDate = datetime.datetime.now()
         self.default_returned_date = datetime.date(2020, 1, 1)
 
-        self.ignoreList = []
         # build a window object from the .ui file
         self.window = uic.loadUi('logbook_design.ui')
 
-        # self.setWindowIcon(QtGui.QIcon(os.path.join(self.path,"appicon.ico")))
         # add all click events
         self.addClickEvents()
-
-        # you're going to have to change the server name for it to work on your comp
         self.getAllData()
+
+        # self.getAllData()
         self.set_settings(theme['theme_name'], time_format)
 
         # new lab checker object
-        self.lab_checker = labChecker(self.server_string)
-        self.schedules = self.lab_checker.getTodaySchedule()
-        self.open_lab_schedules = self.lab_checker.getTodayOpenLabSchedule()
+        self.lab_checker = None
+        self.schedules = None
+        self.open_lab_schedules = None
 
         # set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
@@ -146,6 +143,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.populateComboBox(self.comboBoxSettingsTheme, themes)
         self.populateComboBox(self.comboBoxSettingsTimeFormat, formats)
 
+        self.lab_checker = labChecker(self.server_string)
+        self.schedules = self.lab_checker.getTodaySchedule()
+        self.open_lab_schedules = self.lab_checker.getTodayOpenLabSchedule()
+
         cursor = self.executeQuery(rooms_query)
 
         # validate the cursor for empty results
@@ -168,7 +169,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.refreshTables()
 
     # if you want to test something else and get a database error comment out this function and the function call(I'll do exception handling later lol)
-    def populateTable(self, table, query):
+    def populateTable(self, table, query, tProblems=None):
 
         table.clear()
         table.setSortingEnabled(False)  # this is necessary to avoid confusing the table widget (blank rows)
@@ -189,19 +190,22 @@ class LogBook(MainWindowBase, MainWindowUI):
         for column in cursor_desc:
             header_names.append(column[0])
 
-        table.horizontalHeader().setMaximumSectionSize(250)  # max size per column
-        table.verticalHeader().setMinimumSectionSize(40)  # min size per row
+        table.horizontalHeader().setMaximumSectionSize(200)  # max size per column
+        table.verticalHeader().setMaximumSectionSize(40)  # min size per row
 
         # QTableWidget requires you to set the amount of rows/columns needed before you populate it
         table.setRowCount(len(data))
         table.setColumnCount(len(data[0]))
+
+        if tProblems and tProblems is not None:
+            table.setColumnHidden(0, True)
 
         table.setWordWrap(True)
         table.setTextElideMode(Qt.ElideRight)
         table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
         table.horizontalHeader().setStretchLastSection(True)
         table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
-        table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
 
         # set table header labels with column names from database
@@ -277,14 +281,15 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # reports
         self.pushButtonNew.clicked.connect(self.newLog)
-        self.pushButtonFormCancel.clicked.connect(lambda: self.change_page(self.pageReports))
+        self.pushButtonFormCancel.clicked.connect(lambda: self.change_to_last_page())
         self.pushButtonExportData.clicked.connect(self.exportData)
-        self.pushButtonEditReports.clicked.connect(self.edit_log)
+        self.pushButtonEditReports.clicked.connect(lambda: self.edit_log(self.tableWidgetReports))
         self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month(None))
 
         # problems
-        self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
+        # self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
         self.pushButtonDelete.clicked.connect(lambda: self.deleteSelection(self.tableWidgetReports, 'Reports'))
+        self.pushButtonProblemsFixed.clicked.connect(lambda: self.edit_log(self.tableWidgetProblems))
         self.pushButtonReportsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetReports))
         self.pushButtonProblemsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetProblems))
         self.pushButtonViewDataBack.clicked.connect(self.change_to_last_page)
@@ -300,7 +305,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
         self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.pageLostAndFound))
         self.pushButtonFormSaveLAF.clicked.connect(self.saveLostAndFoundForm)
-        self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
+        # self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
         self.pushButtonDeleteLAF.clicked.connect(lambda: self.deleteSelection(self.tableWidgetLostAndFound, 'LostAndFound'))
         self.checkBoxNewLostAndFoundReturned.clicked.connect(self.returned_checkbox_changed)
 
@@ -619,12 +624,12 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.comboBoxReportsMonth.setCurrentIndex(index)
 
         reports_query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
-        problems_query = 'SELECT DATE,NAME,ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
         lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
         problems_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
 
         self.populateTable(self.tableWidgetReports, reports_query)
-        self.populateTable(self.tableWidgetProblems, problems_query)
+        self.populateTable(self.tableWidgetProblems, problems_query, True)
         self.populateTable(self.tableWidgetLostAndFound, lost_and_found_query)
 
         self.cleanup_empty_cells(self.tableWidgetReports)
@@ -722,8 +727,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.change_page(self.pageReports)
         self.clearForm()
 
-    def edit_log(self):
-        table = self.tableWidgetReports
+    def edit_log(self, table):
+        self.lastPage = table.objectName()
 
         # if a row is selected (having no rows selected returns -1)
         if table.currentRow() != -1 and table.item(0, 0) is not None:
@@ -736,7 +741,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             # validate the cursor for empty results
             if not self.validateCursor(cursor):
-                self.change_page(self.pageReports)
+                self.change_to_last_page()
                 return
 
             log = cursor.fetchall()
@@ -758,7 +763,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             else:
                 self.checkBoxFixed.setChecked(False)
 
-            self.change_page(self.pageNewLog)
+        self.change_page(self.pageNewLog)
 
     @staticmethod
     def import_settings():

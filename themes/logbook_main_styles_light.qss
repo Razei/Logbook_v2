@@ -281,6 +281,7 @@ QLineEdit,QTextEdit{
     background-color:white;
     padding:4px;
     border: 0px;
+    font-size:10pt;
 }
 
 QLabel[accessibleDescription ="LCDNumber"]{

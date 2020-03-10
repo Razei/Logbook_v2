@@ -1,9 +1,6 @@
 import pandas as pd
 import pyodbc
 
-df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='January')
-df = df.fillna(value='')
-
 
 def get_connection():
     server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'
@@ -19,12 +16,38 @@ def get_connection():
         return
 
 
-if __name__ == '__main__':
+def read_reports():
+    df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='January')
+    df = df.fillna(value='')
+
     cursor = get_connection().cursor()
     sql_cols = ['DATE', 'NAME', 'ROOM', 'ISSUE', 'NOTE', 'RESOLUTION', 'FIXED']
 
-    cursor.executemany('INSERT INTO dbo.Reports (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (?, ?, ?, ?, ?, ?, ?)', df[sql_cols].values.tolist())
+    columns = df[sql_cols].values.tolist()
+    columns.reverse()
+
+    cursor.executemany('INSERT INTO dbo.Reports (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (?, ?, ?, ?, ?, ?, ?)', columns)
     cursor.commit()
+
+
+def read_lost_and_found():
+    df = pd.read_excel(r'Report Log 2020.xlsx', sheet_name='Lost & Found')
+    df = df.fillna(value='')
+
+    cursor = get_connection().cursor()
+    sql_cols = ['DATE', 'ROOM', 'FOUND_BY', 'DESCRIPTION', 'NOTE', 'STUDENT_NAME', 'STUDENT_NUMBER', 'RETURNED_DATE', 'RETURNED']
+
+    columns = df[sql_cols].values.tolist()
+    columns.reverse()
+
+    cursor.executemany('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', columns)
+    cursor.commit()
+
+
+if __name__ == '__main__':
+    # read_reports()
+    read_lost_and_found()
+
 
 
 

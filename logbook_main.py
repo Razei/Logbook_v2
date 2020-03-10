@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import threading
 from logbook import LogBook
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 import qtmodern_package.styles as qtmodern_styles
@@ -60,5 +61,9 @@ if __name__ == '__main__':
     timer = QtCore.QTimer()
     timer.timeout.connect(window.Clock)  # call clock function every second
     timer.start(1000)
+
+    # run this in background after showing the interface
+    #t = threading.Thread(target=mw.w.getAllData)
+    #t.start()
 
     sys.exit(app.exec_())
