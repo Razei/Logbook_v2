@@ -731,7 +731,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         cursor.commit()
 
         self.refreshTables()
-        self.change_page(self.pageReports)
+        self.change_to_last_page()
         self.clearForm()
 
     def edit_log(self, table):
@@ -883,7 +883,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
-                if countdown is not None and countdown < datetime.timedelta(hours=9):  # only show countdown if it's not empty and 2 hours away
+                if countdown is not None:  # only show countdown if it's not empty
                     label = room_name + '         ' + 'In: ' + str(countdown)  # text for the label
                     if self.frameOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
                         label_upcoming = QtWidgets.QLabel(label, self)  # create a new checkbox and append the room name + countdown
