@@ -16,7 +16,7 @@ QDateEdit{
     border:0;
     border-radius:0px;
     color: #454547;
-    background-color: #EBEBEB;
+    background-color: #FFFFFF;
 }
 
 QDateEdit::up-arrow, QDateEdit::down-arrow {
@@ -33,7 +33,7 @@ QDateEdit::up-arrow {
 }
 
 QDateEdit::up-button, QDateEdit::down-button {
-    background-color: #EBEBEB;
+    background-color: #454547;
     border-radius:0px;
     width:20px;
 }
