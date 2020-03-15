@@ -4,13 +4,37 @@ import datetime
 import pyodbc
 import pandas as pd
 import urllib
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt
 from lab_checker import labChecker
+from splash_screen import SplashScreen
 
 # get type from ui file
 MainWindowUI, MainWindowBase = uic.loadUiType('logbook_design.ui')
 DialogUI, DialogBase = uic.loadUiType('logbook_dialog.ui')
+TIME_LIMIT = 100
+
+
+class SplashScreenThread(QThread):
+    """
+    Runs a counter thread.
+    """
+    countChanged = pyqtSignal(int)
+    finished = pyqtSignal(bool)
+    count = 0
+    last_count = 0
+
+    def run(self):
+
+        while self.count < TIME_LIMIT:
+            for i in range(self.last_count, self.count):
+                self.count += 1
+                self.countChanged.emit(self.count)
+
+            self.last_count = self.count
+
+        self.finished.emit(True)
 
 
 class Dialog(DialogBase, DialogUI):
@@ -23,11 +47,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -48,8 +72,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         # add all click events
         self.addClickEvents()
         self.getAllData()
-
-        # self.getAllData()
         self.set_settings(theme['theme_name'], time_format)
 
         # set initial activated button
@@ -71,8 +93,21 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.clearStyleSheets()
         self.setStyleSheet(self.theme)
 
+        self.calc.count = 100
+        QtWidgets.QApplication.processEvents()
+
         # show initial frame linked to dashboard button
         self.showLinkedFrame(self.pushButtonDashboard)
+
+    def onCountChanged(self, value):
+        time.sleep(0.05)
+        self.splash.progressBar.setValue(value)
+        QtWidgets.QApplication.processEvents()
+
+    def finished(self, value):
+        time.sleep(1)
+        QtWidgets.QApplication.processEvents()
+        self.splash.finished(value)
 
     def showDialog(self):
 
@@ -132,6 +167,8 @@ class LogBook(MainWindowBase, MainWindowUI):
             return
 
     def getAllData(self):
+        self.setProgressBar(20)
+
         months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
         # themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
         themes = ['Classic Light', 'Centennial Dark']
@@ -145,11 +182,16 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.lab_checker = labChecker(self.server_string)
         self.schedules = self.lab_checker.getTodaySchedule()
+
+        self.setProgressBar(43)
+
         self.open_lab_schedules = self.lab_checker.getTodayOpenLabSchedule()
 
-        cursor = self.executeQuery(rooms_query)
+        self.setProgressBar(70)
 
+        cursor = self.executeQuery(rooms_query)
         # validate the cursor for empty results
+
         if not self.validateCursor(cursor):
             return
 
@@ -161,12 +203,18 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.populateComboBox(self.comboBoxRoom, room_list)
         self.populateComboBox(self.comboBoxNewLostAndFoundRoom, room_list)
 
+        self.setProgressBar(90)
+
         # hide the row numbers in the tables
         self.tableWidgetReports.verticalHeader().setVisible(False)
         self.tableWidgetProblems.verticalHeader().setVisible(False)
         self.tableWidgetLostAndFound.verticalHeader().setVisible(False)
 
         self.refreshTables()
+
+    def setProgressBar(self, value):
+        self.calc.count = value
+        QtWidgets.QApplication.processEvents()
 
     # if you want to test something else and get a database error comment out this function and the function call(I'll do exception handling later lol)
     def populateTable(self, table, query, tProblems=None):
@@ -770,7 +818,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             else:
                 self.checkBoxFixed.setChecked(False)
 
-        self.change_page(self.pageNewLog)
+            self.change_page(self.pageNewLog)
 
     @staticmethod
     def import_settings():
@@ -846,6 +894,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         data.to_excel(f'Reports{test}.xlsx')
 
     def newLog(self):
+        self.lastPage = 'tableWidgetReports'
         self.clearForm()
         self.stored_id = 0
         self.labelNewLog.setText('NEW LOG')
