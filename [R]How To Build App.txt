@@ -1,0 +1,6 @@
+Main exe settings in "logbook_main.spec" file
+
+Type "cmd" in the explorer path
+Run in cmd: "pyinstaller logbook_main.spec"
+
+*you may need to install pyinstaller: "pip install pyinstaller"*
