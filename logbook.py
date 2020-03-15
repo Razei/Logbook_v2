@@ -27,12 +27,15 @@ class SplashScreenThread(QThread):
 
     def run(self):
         while self.count < TIME_LIMIT:
+            QtWidgets.QApplication.processEvents()
             for i in range(self.last_count, self.count):
                 self.count += 1
                 self.countChanged.emit(self.count)
             self.last_count = self.count
 
-        self.countChanged.emit(self.count)
+        self.countChanged.emit(100)
+        QtWidgets.QApplication.processEvents()
+        time.sleep(0.5)
         self.finished.emit(True)
 
 
@@ -46,11 +49,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -100,7 +103,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.setStyleSheet(self.theme)
 
         self.setProgressBar(100)
-        QtWidgets.QApplication.processEvents()
 
         # show initial frame linked to dashboard button
         self.showLinkedFrame(self.pushButtonDashboard)
@@ -111,8 +113,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         QtWidgets.QApplication.processEvents()
 
     def finished(self, value):
-        time.sleep(1)
-        QtWidgets.QApplication.processEvents()
+        time.sleep(0.1)
         self.splash.finished(value)
 
     def showDialog(self):
