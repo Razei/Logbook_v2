@@ -323,12 +323,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                 # use the button's name to find the linked frame (deliberately named this way)
                 self.showLinkedFrame(member)
-                member.setStyleSheet('')  # force a stylesheet recalculation (faster than reapplying the style sheet)
+                member.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
             else:
                 # set all other buttons' colour to white
                 member.setAccessibleDescription('menuButton')
-                member.setStyleSheet('')  # force a stylesheet recalculation (faster than reapplying the style sheet)
+                member.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
     # add all click events
     def addClickEvents(self):
@@ -952,7 +952,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setAccessibleDescription('timerDanger')
                             else:
                                 self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setAccessibleDescription('checkBoxRoom')
-                            self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setStyleSheet('')  # force a stylesheet recalculation (faster than reapplying the style sheet)
+                            self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
                         self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setVisible(False)
@@ -960,7 +960,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # for handling creation and deletion of checkboxes for labs that are vacant
     def duration_handler(self):
-        if self.schedules is not None and range(len(self.schedules) != 0):  # ensuring we're not looping an empty list
+
+        '''if self.schedules is not None and range(len(self.schedules) != 0):  # ensuring we're not looping an empty list
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.calculateDuration(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].getRoom().strip()  # get the room name for label
@@ -986,11 +987,33 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setAccessibleDescription('timerDanger')
                             else:
                                 self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setAccessibleDescription('checkBoxRoom')
-                            self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setStyleSheet('')  # force a stylesheet recalculation (faster than reapplying the style sheet)
+                            self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
+                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()'''
+
+        # open labs
+        if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
+            for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
+                countdown = self.lab_checker.calculateDuration(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
+                room_name = self.open_lab_schedules[i].getRoom().strip()  # get the room name for label
+                search = room_name + str(i)  # room name + i (for multiple open times in the same room)
+
+                # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
+                if countdown is not None:  # only show countdown if it's not empty
+                    label = room_name + '         ' + 'currently in progress: ' + str(countdown)  # text for the label
+                    if self.frameOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
+                        label_upcoming = QtWidgets.QLabel(label, self)  # create a new label and append the room name + countdown
+                        label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
+                        label_upcoming.setObjectName(search)  # set the object name so it's searchable later
+                        self.frameOpenLabs.layout().addWidget(label_upcoming)  # add the checkbox to the frame
+                    else:  # the widget exists already so just update it
+                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setText(label)
+
+                    if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
+                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setVisible(False)
+                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).deleteLater()
 
     def remove_countdown(self):
         for schedule in self.schedules:
@@ -1022,4 +1045,4 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # call the handlers for the countdowns
         self.countdown_handler()
-        # self.duration_handler()
+        self.duration_handler()
