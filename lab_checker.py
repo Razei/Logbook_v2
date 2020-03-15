@@ -40,7 +40,7 @@ class labChecker():
     def getTodaySchedule(self):
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
-        self.weekday_string = 'Monday'  # get weekday string of today
+        self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())  # get weekday string of today
 
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule WHERE DAY = '{self.weekday_string}'"
@@ -62,7 +62,6 @@ class labChecker():
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
         self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())  # get weekday string of today
-
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule WHERE DAY = '{self.weekday_string}'"
         cursor = self.executeQuery(query)
