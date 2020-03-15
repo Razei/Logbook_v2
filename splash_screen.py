@@ -9,11 +9,10 @@ class SplashScreen(SplashBase, SplashUI):
         super(SplashScreen, self).__init__()
         self.setupUi(self)
 
-        flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setWindowFlags(flags)
         self.show()
 
     def finished(self, value):
         if value:
-            QtWidgets.QApplication.processEvents()
             self.close()
