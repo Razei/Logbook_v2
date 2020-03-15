@@ -222,7 +222,7 @@ QAbstractScrollArea::corner {
     font-size: 12pt; 
 }
 
-QCheckBox[accessibleDescription ="timerDanger"]{
+[accessibleDescription ="timerDanger"]{
     color: #FF5959;
     font-size: 12pt; 
 }
