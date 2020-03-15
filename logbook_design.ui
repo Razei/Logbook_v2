@@ -4802,11 +4802,7 @@ color: rgb(0, 0, 0);</string>
                </widget>
               </item>
               <item row="2" column="0">
-<<<<<<< HEAD
                <widget class="QLabel" name="labelNewLostAndFoundFoundBy">
-=======
-               <widget class="QLabel" name="labelNewLostAndFoundoundy">
->>>>>>> remotes/origin/master
                 <property name="font">
                  <font>
                   <family>Segoe UI</family>

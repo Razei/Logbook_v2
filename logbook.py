@@ -26,14 +26,13 @@ class SplashScreenThread(QThread):
     last_count = 0
 
     def run(self):
-
         while self.count < TIME_LIMIT:
             for i in range(self.last_count, self.count):
                 self.count += 1
                 self.countChanged.emit(self.count)
-
             self.last_count = self.count
 
+        self.countChanged.emit(self.count)
         self.finished.emit(True)
 
 
@@ -54,6 +53,13 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
+
+        self.splash = SplashScreen()
+        self.splash_screen_thread = SplashScreenThread()
+        self.splash_screen_thread.countChanged.connect(self.onCountChanged)
+        self.splash_screen_thread.finished.connect(self.finished)
+        self.splash_screen_thread.start()
+        QtWidgets.QApplication.processEvents()
 
         # using the default setupUi function of the super class
         self.setupUi(self)
@@ -93,7 +99,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.clearStyleSheets()
         self.setStyleSheet(self.theme)
 
-        self.calc.count = 100
+        self.setProgressBar(100)
         QtWidgets.QApplication.processEvents()
 
         # show initial frame linked to dashboard button
@@ -213,7 +219,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.refreshTables()
 
     def setProgressBar(self, value):
-        self.calc.count = value
+        self.splash_screen_thread.count = value
         QtWidgets.QApplication.processEvents()
 
     # if you want to test something else and get a database error comment out this function and the function call(I'll do exception handling later lol)

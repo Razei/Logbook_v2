@@ -1,11 +1,8 @@
 import os
 import sys
 import json
-import time
-from PyQt5.QtCore import QThread
 from logbook import LogBook
 from PyQt5 import QtGui, QtCore, QtWidgets
-from splash_screen import SplashScreen
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
 
