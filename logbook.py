@@ -941,23 +941,23 @@ class LogBook(MainWindowBase, MainWindowUI):
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                 if countdown is not None:  # only show countdown if it's not empty
                     label = room_name + '         ' + 'In: ' + str(countdown)  # text for the label
-                    if self.frameOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
+                    if self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
                         label_upcoming = QtWidgets.QLabel(label, self)  # create a new checkbox and append the room name + countdown
                         label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         label_upcoming.setObjectName(search)  # set the object name so it's searchable later
-                        self.frameOpenLabs.layout().addWidget(label_upcoming)  # add the checkbox to the frame
+                        self.frameUpcomingOpenLabs.layout().addWidget(label_upcoming)  # add the checkbox to the frame
                     else:  # the widget exists already so just update it
-                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setText(label)
+                        self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).setText(label)
                         if countdown < datetime.timedelta(minutes=30):
                             if countdown.seconds % 2 == 0:
-                                self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setAccessibleDescription('timerDanger')
+                                self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).setAccessibleDescription('timerDanger')
                             else:
-                                self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setAccessibleDescription('checkBoxRoom')
-                            self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
+                                self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).setAccessibleDescription('checkBoxRoom')
+                            self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
-                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setVisible(False)
-                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).deleteLater()
+                        self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).setVisible(False)
+                        self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).deleteLater()
 
     # for handling creation and deletion of checkboxes for labs that are vacant
     def duration_handler(self):
@@ -1003,7 +1003,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                 if countdown is not None:  # only show countdown if it's not empty
-                    label = room_name + '         ' + 'currently in progress: ' + str(countdown)  # text for the label
+                    label = room_name + '         ' + str(countdown)  # text for the label
                     if self.frameOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
                         label_upcoming = QtWidgets.QLabel(label, self)  # create a new label and append the room name + countdown
                         label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling

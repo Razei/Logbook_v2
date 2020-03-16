@@ -78,7 +78,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>10</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -671,6 +671,23 @@ border-radius: 10px;</string>
               <property name="bottomMargin">
                <number>24</number>
               </property>
+              <item row="1" column="0">
+               <widget class="QFrame" name="frameOpenLabs">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_33"/>
+               </widget>
+              </item>
               <item row="0" column="0">
                <widget class="QLabel" name="labelDashboard_14">
                 <property name="sizePolicy">
@@ -698,7 +715,7 @@ border-radius: 10px;</string>
 	color: rgb(0, 255, 108);</string>
                 </property>
                 <property name="text">
-                 <string>OPEN LABS TODAY</string>
+                 <string>OPEN LABS NOW</string>
                 </property>
                 <property name="scaledContents">
                  <bool>true</bool>
@@ -711,8 +728,8 @@ border-radius: 10px;</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QFrame" name="frameOpenLabs">
+              <item row="1" column="1">
+               <widget class="QFrame" name="frameUpcomingOpenLabs">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                   <horstretch>0</horstretch>
@@ -725,7 +742,47 @@ border-radius: 10px;</string>
                 <property name="frameShadow">
                  <enum>QFrame::Raised</enum>
                 </property>
-                <layout class="QGridLayout" name="gridLayout_33"/>
+                <layout class="QGridLayout" name="gridLayout_39"/>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="labelUpcomingOpenLabs">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Segoe UI</family>
+                  <pointsize>12</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="cursor">
+                 <cursorShape>ArrowCursor</cursorShape>
+                </property>
+                <property name="accessibleDescription">
+                 <string>titleLabel</string>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">
+	color: rgb(0, 255, 108);</string>
+                </property>
+                <property name="text">
+                 <string>UPCOMING OPEN LABS</string>
+                </property>
+                <property name="scaledContents">
+                 <bool>true</bool>
+                </property>
+                <property name="openExternalLinks">
+                 <bool>false</bool>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByMouse</set>
+                </property>
                </widget>
               </item>
              </layout>
@@ -5551,6 +5608,29 @@ Text-align:left</string>
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QFrame" name="frameOpenLabs_3">
+        <property name="geometry">
+         <rect>
+          <x>40</x>
+          <y>580</y>
+          <width>676</width>
+          <height>207</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_38"/>
        </widget>
       </widget>
      </widget>

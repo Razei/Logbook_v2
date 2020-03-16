@@ -5,7 +5,7 @@ block_cipher = None
 import importlib
 from pathlib import Path
 
-added_file = [('logbook_design.ui','.'),('logbook_dialog.ui','.'), ('themes', 'themes'), ('images', 'images'),('qtmodern_package','qtmodern_package'),('settings.json','.')]
+added_file = [('logbook_design.ui','.'),('logbook_dialog.ui','.'),('splash.ui','.'), ('themes', 'themes'), ('images', 'images'),('qtmodern_package','qtmodern_package'),('settings.json','.')]
 
 a = Analysis(['logbook_main.py'],
              pathex=['\\logbook_main.spec'],
