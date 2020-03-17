@@ -1,27 +1,40 @@
+import json
 import sys
 import pyodbc
-from PyQt5 import QtCore, uic, QtWidgets
+from PyQt5 import QtCore, QtGui, uic, QtWidgets
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
+from database_handler import DatabaseHandler
+from ScheduleObj import ScheduleObj
 
 # get type from ui file
 ScheduleUI, ScheduleBase = uic.loadUiType('schedule_modifier.ui')
 
 
 class ScheduleModifier(ScheduleUI, ScheduleBase):
-    def __init__(self):
+    def __init__(self, theme):
         super(ScheduleModifier, self).__init__()
         self.setupUi(self)
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
-        self.pushButtonCheckAll.clicked.connect(self.checkAll)
-        self.pushButtonUnCheckAll.clicked.connect(self.UnCheckAll)
-        self.show()
 
-    def populateComboBox(self, comboBox, items):
-        comboBox.clear()
-        comboBox.setView(QtWidgets.QListView())
-        comboBox.addItems(items)
-        comboBox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        # fetches the qss stylesheet path
+        theme_path = theme['theme_path']
+
+        # reads the qss stylesheet and applies it to the application
+        self.theme = str(open(theme_path, "r").read())
+        self.setStyleSheet(self.theme)
+
+        self.database_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        # self.database_handler = DatabaseHandler('DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS')
+
+        self.pushButtonCheckAll.clicked.connect(self.check_all)
+        self.pushButtonUnCheckAll.clicked.connect(self.un_check_all)
+
+    @staticmethod
+    def populate_combo_box(combobox, items):
+        combobox.clear()
+        combobox.setView(QtWidgets.QListView())
+        combobox.addItems(items)
+        combobox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
     def make_checkboxes(self):
         layout = self.frameSchedule.layout()
@@ -30,12 +43,11 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         rooms_query = "SELECT ROOM FROM ReportLog.dbo.Rooms WHERE NOT ROOM = 'Other'"
         room_list = []
-        start_time = 8
 
-        cursor = self.executeQuery(rooms_query)
+        cursor = self.database_handler.execute_query(rooms_query)
         # validate the cursor for empty results
 
-        if not self.validateCursor(cursor):
+        if not self.database_handler.validate_cursor(cursor):
             return
 
         rooms = cursor.fetchall()
@@ -43,28 +55,39 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         for room in rooms:
             room_list.append(room[0])
 
-        self.populateComboBox(self.comboBoxRooms, room_list)
+        self.populate_combo_box(self.comboBoxRooms, room_list)
+
+        cursor.close()
 
         for i in range(1, column_count):  # loop through all columns
             start_time = 8
 
             for j in range(1, row_count):
-                checkBox = QtWidgets.QCheckBox()
-                checkBox.setObjectName(f'checkBox{days[i-1]}{start_time}')
-                print(checkBox.objectName())
-                layout.addWidget(checkBox, j, i)
+                check_box = QtWidgets.QCheckBox()
+                check_box.setObjectName(f'checkBox{days[i-1]}{start_time}')
+                check_box.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                check_box.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+                # had to do this to center the checkboxes
+                frame = QtWidgets.QFrame()
+                c_layout = QtWidgets.QHBoxLayout()
+                c_layout.addWidget(check_box)
+                c_layout.setAlignment(QtCore.Qt.AlignCenter)
+                c_layout.setContentsMargins(0, 0, 0, 0)
+
+                frame.setLayout(c_layout)
+                print(check_box.objectName())
+                layout.addWidget(frame, j, i)
                 start_time += 1
                 QtWidgets.QApplication.processEvents()
 
-    def checkAll(self):
-        for widget in self.frameSchedule.children():
-            if isinstance(widget, QtWidgets.QCheckBox):
-                widget.setChecked(True)
+    def check_all(self):
+        for widget in self.frameSchedule.findChildren(QtWidgets.QCheckBox):
+            widget.setChecked(True)
 
-    def UnCheckAll(self):
-        for widget in self.frameSchedule.children():
-            if isinstance(widget, QtWidgets.QCheckBox):
-                widget.setChecked(False)
+    def un_check_all(self):
+        for widget in self.frameSchedule.findChildren(QtWidgets.QCheckBox):
+            widget.setChecked(False)
 
     def calculate_times(self):
         layout = self.frameSchedule.layout()
@@ -72,6 +95,7 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         row_count = layout.rowCount()
         room = self.comboBoxRooms.currentText()
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        schedules = []
 
         for i in range(1, column_count):  # loop through all columns
             for j in range(1, row_count):
@@ -80,46 +104,36 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
                 if type(widget) == QtWidgets.QCheckBox and widget.checkState():
                     start_time = widget.objectName().replace(f'checkBox{days[i]}', '') + ':30'
 
-    @staticmethod
-    def validateCursor(cursor):
-        if cursor is None or cursor.rowcount == 0:
-            return False
+    # clears all the QT Creator styles in favour of the QSS stylesheet
+    def clearStyleSheets(self):
+        widget_child = self.centralwidget.findChildren(QtWidgets.QWidget)
 
-        return True
+        for widget in widget_child:
+            widget.setStyleSheet('')
 
-    # reusable query function
-    def executeQuery(self, query, list_objects=None):
 
-        # conn_str ='Trusted_Connection=yes;DRIVER={ODBC Driver 17 for SQL Server};SERVER='+self.server_string+';DATABASE=ReportLog;UID=Helpdesk;PWD=b1pa55'
-        # conn_str = 'Driver={SQL Server};Server='+ self.server_string + ';Database=ReportLog;Trusted_Connection=yes;'
-        # connect with 5 second timeout
-        try:
-            conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=self.server_string,
-                                      database='ReportLog', timeout=2,
-                                      trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
-            conn = conn_str
-            cursor = conn.cursor()
-
-            if list_objects is not None:
-                cursor.execute(query, list_objects)
-            else:
-                cursor.execute(query)
-
-            return cursor
-        except pyodbc.Error as err:
-            print("Couldn't connect (Connection timed out)")
-            print(err)
-            return
+def import_settings():
+    with open('settings.json', 'r') as json_file:
+        data = json.load(json_file)
+        return data
 
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    s = ScheduleModifier()
+
+    settings = import_settings()
+    theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
+
+    if settings['theme'][theme_choice]['base_theme'] == 'dark':
+        qtmodern_styles.dark(app)  # qtmodern
+
+    if settings['theme'][theme_choice]['base_theme'] == 'light':
+        qtmodern_styles.light(app)  # qtmodern
+
+    s = ScheduleModifier(settings['theme'][theme_choice])
     s.make_checkboxes()
 
     mw = qtmodern_windows.ModernWindow(s)  # qtmodern
-
     # make the interface visible
     mw.show()
-
     sys.exit(app.exec_())
