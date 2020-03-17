@@ -50,11 +50,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -915,7 +915,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         '''if self.schedules is not None and range(len(self.schedules) != 0):
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.roomCountdown(self.schedules[i])  # calculate the countdown using the current schedule object
-                room_name = self.schedules[i].getRoom().strip()  # get the room name for label
+                room_name = self.schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
@@ -966,7 +966,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         '''if self.schedules is not None and range(len(self.schedules) != 0):  # ensuring we're not looping an empty list
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.calculateDuration(self.schedules[i])  # calculate the countdown using the current schedule object
-                room_name = self.schedules[i].getRoom().strip()  # get the room name for label
+                room_name = self.schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + 'duration' + str(i)  # room name + i (for multiple open times in the same room)
 
                 # countdown = (datetime.timedelta(seconds=2230) + self.staticDate) - datetime.datetime.now()  # for testing (will countdown from 30 seconds)
@@ -978,7 +978,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
                         checkBox.stateChanged.connect(self.remove_countdown)
-                        checkBox.setAccessibleName(str(self.schedules[i].getScheduleID())) # to link the schedule ID
+                        checkBox.setAccessibleName(str(self.schedules[i].get_schedule_id()))  # to link the schedule ID
                         self.frameEmptyRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
 
                     else:  # if the widget exists already, update it
