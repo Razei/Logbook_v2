@@ -1,7 +1,7 @@
 import time
 import datetime
 import pyodbc
-from scheduleObj import scheduleObj
+from ScheduleObj import ScheduleObj
 
 
 # lab checker class
@@ -54,7 +54,7 @@ class labChecker():
 
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
-            schedule_objects.append(scheduleObj(sch_time.SCHEDULE_ID, sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
+            schedule_objects.append(ScheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
         cursor.close()
         return schedule_objects
 
@@ -74,7 +74,7 @@ class labChecker():
 
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
-            schedule_objects.append(scheduleObj(sch_time.SCHEDULE_ID, sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds')))
+            schedule_objects.append(ScheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
         cursor.close()
         return schedule_objects
 
@@ -130,8 +130,8 @@ class labChecker():
         time_left = None
 
         # if the start time is still in the future
-        if self.compareTimes(schedule_input.getStartTime()):
-            t_delta = self.calculateCountdown(schedule_input.getStartTime())
+        if self.compareTimes(schedule_input.get_start_time()):
+            t_delta = self.calculateCountdown(schedule_input.get_start_time())
             # print(f'Time left: {t_delta}')
             time_left = t_delta
 
@@ -141,8 +141,8 @@ class labChecker():
         time_left = None
 
         # if the start time passed and the end time is still in the future
-        if not self.compareTimes(schedule_input.getStartTime()) and self.compareTimes(schedule_input.getEndTime()):
-            t_delta = self.calculateCountdown(schedule_input.getEndTime())
+        if not self.compareTimes(schedule_input.get_start_time()) and self.compareTimes(schedule_input.get_end_time()):
+            t_delta = self.calculateCountdown(schedule_input.get_end_time())
             time_left = t_delta
 
         return time_left

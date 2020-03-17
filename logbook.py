@@ -9,6 +9,7 @@ from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt
 from lab_checker import labChecker
 from splash_screen import SplashScreen
+from database_handler import DatabaseHandler
 
 # get type from ui file
 MainWindowUI, MainWindowBase = uic.loadUiType('logbook_design.ui')
@@ -49,11 +50,11 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.lastPage = ''
         self.stored_id = 0
 
@@ -935,7 +936,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
             for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.roomCountdown(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
-                room_name = self.open_lab_schedules[i].getRoom().strip()  # get the room name for label
+                room_name = self.open_lab_schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
@@ -998,7 +999,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
             for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.calculateDuration(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
-                room_name = self.open_lab_schedules[i].getRoom().strip()  # get the room name for label
+                room_name = self.open_lab_schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
                 # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
@@ -1018,8 +1019,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def remove_countdown(self):
         for schedule in self.schedules:
-            if schedule.getScheduleID() == int(self.sender().accessibleName()):  # if the schedule ID is the same as the sender's accessibleName field
-                schedule.setEndTime(datetime.datetime.now().time().isoformat(timespec='seconds'))  # expire the time
+            if schedule.get_schedule_id() == int(self.sender().accessibleName()):  # if the schedule ID is the same as the sender's accessibleName field
+                schedule.set_end_time(datetime.datetime.now().time().isoformat(timespec='seconds'))  # expire the time
 
         self.sender().setVisible(False)  # hide the widget
         self.sender().deleteLater()  # schedule the widget for deletion
