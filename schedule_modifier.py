@@ -23,11 +23,13 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         self.theme = str(open(theme_path, "r").read())
         self.setStyleSheet(self.theme)
 
-        self.database_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
-        # self.database_handler = DatabaseHandler('DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS')
+        # self.database_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        self.database_handler = DatabaseHandler('DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS')
 
         self.pushButtonCheckAll.clicked.connect(self.check_all)
         self.pushButtonUnCheckAll.clicked.connect(self.un_check_all)
+        self.pushButtonSave.clicked.connect(self.save_schedules)
+        self.state = False
 
     @staticmethod
     def populate_combo_box(combobox, items):
@@ -96,13 +98,57 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         room = self.comboBoxRooms.currentText()
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         schedules = []
+        start_time = ''
+        end_time = ''
 
         for i in range(1, column_count):  # loop through all columns
             for j in range(1, row_count):
-                item = self.layout.itemAtPosition(i)
-                widget = item.widget()
-                if type(widget) == QtWidgets.QCheckBox and widget.checkState():
-                    start_time = widget.objectName().replace(f'checkBox{days[i]}', '') + ':30'
+                item = layout.itemAtPosition(j, i)
+                widget = item.widget().children()[1]
+
+                if type(widget) == QtWidgets.QCheckBox and widget.isChecked():
+                    if not self.state:
+                        start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
+                        self.state = True
+                        continue
+
+                if type(widget) == QtWidgets.QCheckBox and not widget.isChecked() and self.state:
+                    end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
+                    print(start_time, end_time, days[i - 1], room)
+                    self.state = False
+                    schedules.append(ScheduleObj(room, days[i - 1], start_time, end_time))
+
+        return schedules
+
+    def save_schedules(self):
+        schedules = self.calculate_times()
+        if schedules is not None:
+            query = 'SELECT ROOM,DAY,START_TIME,END_TIME from dbo.Schedule'
+            cursor = self.database_handler.execute_query(query)
+
+            data = cursor.fetchall()
+            cursor.close()
+            for d in data:
+                for i in range(len(schedules)):
+                    if d.ROOM == schedules[i].room:
+                        query = f'DELETE FROM dbo.Schedule WHERE ROOM = ?'
+
+                        cursor = self.database_handler.execute_query(query, schedules[i].room)
+
+                        if self.database_handler.validate_cursor(cursor):
+                            cursor.commit()
+                            cursor.close()
+
+            for i in range(len(schedules)):
+                query = f'''
+                INSERT INTO dbo.Schedule
+                    (ROOM,DAY,START_TIME,END_TIME) 
+                VALUES 
+                    (?, ?, ?, ?)'''
+                list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]
+                cursor = self.database_handler.execute_query(query, list_objects)
+                cursor.commit()
+                cursor.close()
 
     # clears all the QT Creator styles in favour of the QSS stylesheet
     def clearStyleSheets(self):
