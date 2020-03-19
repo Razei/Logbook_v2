@@ -1,10 +1,9 @@
-import json
 import sys
-import pyodbc
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
 from database_handler import DatabaseHandler
+from settings_manager import SettingsManager
 from ScheduleObj import ScheduleObj
 
 # get type from ui file
@@ -15,6 +14,11 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
     def __init__(self, theme):
         super(ScheduleModifier, self).__init__()
         self.setupUi(self)
+        self.database_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        # self.database_handler = DatabaseHandler('DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS')
+
+        # populate the window with auto generated checkboxes
+        self.make_checkboxes()
 
         # fetches the qss stylesheet path
         theme_path = theme['theme_path']
@@ -23,13 +27,12 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         self.theme = str(open(theme_path, "r").read())
         self.setStyleSheet(self.theme)
 
-        # self.database_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
-        self.database_handler = DatabaseHandler('DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS')
-
         self.pushButtonCheckAll.clicked.connect(self.check_all)
         self.pushButtonUnCheckAll.clicked.connect(self.un_check_all)
         self.pushButtonSave.clicked.connect(self.save_schedules)
         self.state = False
+
+        qtmodern_windows.ModernWindow(self)
 
     @staticmethod
     def populate_combo_box(combobox, items):
@@ -47,8 +50,8 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         room_list = []
 
         cursor = self.database_handler.execute_query(rooms_query)
-        # validate the cursor for empty results
 
+        # validate the cursor for empty results
         if not self.database_handler.validate_cursor(cursor):
             return
 
@@ -78,10 +81,9 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
                 c_layout.setContentsMargins(0, 0, 0, 0)
 
                 frame.setLayout(c_layout)
-                print(check_box.objectName())
                 layout.addWidget(frame, j, i)
                 start_time += 1
-                QtWidgets.QApplication.processEvents()
+                QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
 
     def check_all(self):
         for widget in self.frameSchedule.findChildren(QtWidgets.QCheckBox):
@@ -101,16 +103,17 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
         start_time = ''
         end_time = ''
 
-        for i in range(1, column_count):  # loop through all columns
-            for j in range(1, row_count):
-                item = layout.itemAtPosition(j, i)
-                widget = item.widget().children()[1]
+        # loop vertically (rows of a column)
+        for i in range(1, column_count):
+            for j in range(1, row_count):  # loop through all rows for each column
+                item = layout.itemAtPosition(j, i)  # itemAtPosition(row, column)
+                widget = item.widget().children()[1]  # the checkbox is a child of a layout (to center it)
 
-                if type(widget) == QtWidgets.QCheckBox and widget.isChecked():
-                    if not self.state:
+                if type(widget) == QtWidgets.QCheckBox and widget.isChecked():  # if it's checked
+                    if not self.state:  # self.state helps to keep track of whether there's a start time already
                         start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
-                        self.state = True
-                        continue
+                        self.state = True  # indicate there is now a start time waiting for an end time to complete the object
+                        continue  # skip the rest of the code
 
                 if type(widget) == QtWidgets.QCheckBox and not widget.isChecked() and self.state:
                     end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
@@ -144,30 +147,25 @@ class ScheduleModifier(ScheduleUI, ScheduleBase):
                 INSERT INTO dbo.Schedule
                     (ROOM,DAY,START_TIME,END_TIME) 
                 VALUES 
-                    (?, ?, ?, ?)'''
-                list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]
-                cursor = self.database_handler.execute_query(query, list_objects)
+                    (?, ?, ?, ?)'''  # query string
+                list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]  # variables to substitute '?' in the query string
+                cursor = self.database_handler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
                 cursor.commit()
                 cursor.close()
 
     # clears all the QT Creator styles in favour of the QSS stylesheet
-    def clearStyleSheets(self):
+    def clear_style_sheets(self):
         widget_child = self.centralwidget.findChildren(QtWidgets.QWidget)
 
         for widget in widget_child:
             widget.setStyleSheet('')
 
 
-def import_settings():
-    with open('settings.json', 'r') as json_file:
-        data = json.load(json_file)
-        return data
-
-
+# for testing
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
 
-    settings = import_settings()
+    settings = SettingsManager.import_settings()
     theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
 
     if settings['theme'][theme_choice]['base_theme'] == 'dark':
@@ -182,4 +180,4 @@ if __name__ == '__main__':
     mw = qtmodern_windows.ModernWindow(s)  # qtmodern
     # make the interface visible
     mw.show()
-    sys.exit(app.exec_())
+    app.exec_()
