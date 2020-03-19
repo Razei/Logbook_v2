@@ -1,20 +1,20 @@
-import json
 import time
 import datetime
-import pyodbc
 import pandas as pd
 import urllib
+import qtmodern_package.windows as qtmodern_windows
+import schedule_modifier
 from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5 import QtCore, QtWidgets, uic
+from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from PyQt5.QtCore import Qt
-from lab_checker import labChecker
+from lab_checker import LabChecker
 from splash_screen import SplashScreen
+from settings_manager import SettingsManager
 from database_handler import DatabaseHandler
 
 # get type from ui file
 MainWindowUI, MainWindowBase = uic.loadUiType('logbook_design.ui')
 DialogUI, DialogBase = uic.loadUiType('logbook_dialog.ui')
-TIME_LIMIT = 100
 
 
 class SplashScreenThread(QThread):
@@ -25,19 +25,20 @@ class SplashScreenThread(QThread):
     finished = pyqtSignal(bool)
     count = 0
     last_count = 0
+    max_progress = 100
 
     def run(self):
-        while self.count < TIME_LIMIT:
-            QtWidgets.QApplication.processEvents()
+        while self.count < self.max_progress:
+            QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
             for i in range(self.last_count, self.count):
                 self.count += 1
-                self.countChanged.emit(self.count)
+                self.countChanged.emit(self.count)  # emit the countChanged signal and pass the count variable to whatever catches the event
             self.last_count = self.count
 
-        self.countChanged.emit(100)
-        QtWidgets.QApplication.processEvents()
+        self.countChanged.emit(100)  # emit the countChanged signal and pass the count variable to whatever catches the event
+        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
         time.sleep(0.5)
-        self.finished.emit(True)
+        self.finished.emit(True)   # emit the finished signal to close the splash screen
 
 
 class Dialog(DialogBase, DialogUI):
@@ -50,48 +51,54 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.db_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
         self.lastPage = ''
         self.stored_id = 0
+        self.stored_theme = theme
 
-        self.splash = SplashScreen()
+        self.splash = SplashScreen(self.stored_theme)
+        self.splash.show()
         self.splash_screen_thread = SplashScreenThread()
-        self.splash_screen_thread.countChanged.connect(self.onCountChanged)
-        self.splash_screen_thread.finished.connect(self.finished)
-        self.splash_screen_thread.start()
-        QtWidgets.QApplication.processEvents()
+        self.splash_screen_thread.countChanged.connect(self.onCountChanged)  # connect this function to the custom countChanged signal from the SplashScreenThread
+        self.splash_screen_thread.finished.connect(self.finished)  # connect this function to the custom finished signal from the SplashScreenThread
+        self.splash_screen_thread.start()  # start the thread so it will run simultaneously with the logbook
+        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
 
-        # using the default setupUi function of the super class
+        # using the setupUi function of the MainWindow
         self.setupUi(self)
 
         self.staticDate = datetime.datetime.now()
+
+        # default date to set returned to
         self.default_returned_date = datetime.date(2020, 1, 1)
 
         # build a window object from the .ui file
         self.window = uic.loadUi('logbook_design.ui')
 
-        # new lab checker object
+        # initialise variables that will hold object instances later
         self.lab_checker = None
         self.schedules = None
         self.open_lab_schedules = None
+        self.schedule_mod = None
 
         # add all click events
         self.addClickEvents()
         self.getAllData()
-        self.set_settings(theme['theme_name'], time_format)
+        self.apply_settings(theme['theme_name'], time_format)
 
         # set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
         self.labelSettingsWarning.setVisible(False)
 
         # temporarily disabled
-        self.pushButtonAllLabs.setVisible(False)
-        self.pushButtonSchedule.setVisible(False)
-        self.pushButtonUserGuide.setVisible(False)
+        # self.pushButtonAllLabs.setVisible(False)
+        # self.pushButtonSchedule.setVisible(False)
+        # self.pushButtonUserGuide.setVisible(False)
 
         # fetches the qss stylesheet path
         theme_path = theme['theme_path']
@@ -103,76 +110,74 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.clearStyleSheets()
         self.setStyleSheet(self.theme)
 
-        self.setProgressBar(100)
+        self.setProgressBar(100)  # set the progress bar to 100 to indicate loading is finished
 
         # show initial frame linked to dashboard button
         self.showLinkedFrame(self.pushButtonDashboard)
 
+    # this function receives the data from the countChanged signal
     def onCountChanged(self, value):
         time.sleep(0.05)
         self.splash.progressBar.setValue(value)
-        QtWidgets.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
 
+    # this function receives the data from the finished signal
     def finished(self, value):
         time.sleep(0.1)
         self.splash.finished(value)
 
-    def showDialog(self):
+    def show_schedule_modifier(self):
+        self.schedule_mod = schedule_modifier.ScheduleModifier(self.stored_theme)  # make a new schedule modifier instance
+        self.schedule_mod = qtmodern_windows.ModernWindow(self.schedule_mod)
+        self.schedule_mod.setWindowTitle('Schedule Modifier')
+        self.schedule_mod.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        self.schedule_mod.btnMaximize.setParent(None)
+        self.schedule_mod.btnMinimize.setParent(None)
+        self.schedule_mod.btnMaximize.deleteLater()
+        self.schedule_mod.btnMinimize.deleteLater()
+
+        # center the window
+        window_geometry = self.schedule_mod.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        window_geometry.moveCenter(center_point)
+
+        self.schedule_mod.move(window_geometry.topLeft())
+        self.schedule_mod.show()
+
+    def show_dialog(self):
 
         dialog = Dialog()
         flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         state = True
 
-        dialog.setWindowFlags(flags)
-        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setAccessibleDescription('successButton')
-        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setAccessibleDescription('dangerButton')
+        yes_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes)
+        no_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No)
 
-        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes).setMinimumSize(100, 25)
-        dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No).setMinimumSize(100, 25)
+        dialog.setWindowFlags(flags)
+
+        yes_button.setAccessibleDescription('successButton')
+        no_button.setAccessibleDescription('dangerButton')
+
+        yes_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        no_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+        yes_button.setMinimumSize(100, 25)
+        no_button.setMinimumSize(100, 25)
 
         dialog.setStyleSheet(self.theme)
 
         # center the window
-        windowGeometryDialog = dialog.frameGeometry()
+        window_geometry_dialog = dialog.frameGeometry()
         screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        windowGeometryDialog.moveCenter(centerPoint)
-        dialog.move(windowGeometryDialog.topLeft())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        window_geometry_dialog.moveCenter(center_point)
+        dialog.move(window_geometry_dialog.topLeft())
 
         if not dialog.exec_() == 1:
             state = False
         return state
-
-    @staticmethod
-    def validateCursor(cursor):
-        if cursor is None or cursor.rowcount == 0:
-            return False
-
-        return True
-
-    # reusable query function
-    def executeQuery(self, query, list_objects=None):
-
-        # conn_str ='Trusted_Connection=yes;DRIVER={ODBC Driver 17 for SQL Server};SERVER='+self.server_string+';DATABASE=ReportLog;UID=Helpdesk;PWD=b1pa55'
-        # conn_str = 'Driver={SQL Server};Server='+ self.server_string + ';Database=ReportLog;Trusted_Connection=yes;'
-        # connect with 5 second timeout
-        try:
-            conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=self.server_string,
-                                      database='ReportLog', timeout=2,
-                                      trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
-            conn = conn_str
-            cursor = conn.cursor()
-
-            if list_objects is not None:
-                cursor.execute(query, list_objects)
-            else:
-                cursor.execute(query)
-
-            return cursor
-        except pyodbc.Error as err:
-            print("Couldn't connect (Connection timed out)")
-            print(err)
-            return
 
     def getAllData(self):
         self.setProgressBar(20)
@@ -188,19 +193,19 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.populateComboBox(self.comboBoxSettingsTheme, themes)
         self.populateComboBox(self.comboBoxSettingsTimeFormat, formats)
 
-        self.lab_checker = labChecker(self.server_string)
-        self.schedules = self.lab_checker.getTodaySchedule()
+        self.lab_checker = LabChecker(self.server_string)
+        self.schedules = self.lab_checker.get_today_schedule()
 
         self.setProgressBar(43)
 
-        self.open_lab_schedules = self.lab_checker.getTodayOpenLabSchedule()
+        self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
 
         self.setProgressBar(70)
 
-        cursor = self.executeQuery(rooms_query)
-        # validate the cursor for empty results
+        cursor = self.db_handler.execute_query(rooms_query)
 
-        if not self.validateCursor(cursor):
+        # validate the cursor for empty results
+        if not self.db_handler.validate_cursor(cursor):
             return
 
         rooms = cursor.fetchall()
@@ -218,11 +223,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.tableWidgetProblems.verticalHeader().setVisible(False)
         self.tableWidgetLostAndFound.verticalHeader().setVisible(False)
 
-        self.refreshTables()
+        self.refresh_tables()
 
     def setProgressBar(self, value):
         self.splash_screen_thread.count = value
-        QtWidgets.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
 
     # if you want to test something else and get a database error comment out this function and the function call(I'll do exception handling later lol)
     def populateTable(self, table, query, tProblems=None):
@@ -233,10 +238,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         # new array variables for holding column names
         header_names = []
 
-        cursor = self.executeQuery(query)
+        cursor = self.db_handler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.validateCursor(cursor):
+        if not self.db_handler.validate_cursor(cursor):
             return
 
         data = cursor.fetchall()
@@ -334,43 +339,44 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # add all click events
     def addClickEvents(self):
+        self.pushButtonSchedule.clicked.connect(self.show_schedule_modifier)
 
         # reports
-        self.pushButtonNew.clicked.connect(self.newLog)
-        self.pushButtonFormCancel.clicked.connect(lambda: self.change_to_last_page())
-        self.pushButtonExportData.clicked.connect(self.exportData)
+        self.pushButtonNew.clicked.connect(self.new_log)
+        self.pushButtonFormCancel.clicked.connect(self.change_to_last_page)
+        self.pushButtonExportData.clicked.connect(self.export_data_sheet)
         self.pushButtonEditReports.clicked.connect(lambda: self.edit_log(self.tableWidgetReports))
         self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month(None))
 
         # problems
         # self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
-        self.pushButtonDelete.clicked.connect(lambda: self.deleteSelection(self.tableWidgetReports, 'Reports'))
+        self.pushButtonDelete.clicked.connect(lambda: self.delete_selection(self.tableWidgetReports, 'Reports'))
         self.pushButtonProblemsFixed.clicked.connect(lambda: self.edit_log(self.tableWidgetProblems))
-        self.pushButtonReportsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetReports))
-        self.pushButtonProblemsView.clicked.connect(lambda: self.viewSelection(self.tableWidgetProblems))
+        self.pushButtonReportsView.clicked.connect(lambda: self.view_selection(self.tableWidgetReports))
+        self.pushButtonProblemsView.clicked.connect(lambda: self.view_selection(self.tableWidgetProblems))
         self.pushButtonViewDataBack.clicked.connect(self.change_to_last_page)
 
         # new log
-        self.pushButtonFormSave.clicked.connect(self.saveNewLog)
-        self.pushButtonFormClear.clicked.connect(self.clearForm)
-        self.textBoxNewLogNote.textChanged.connect(lambda: self.txtInputChanged(self.textBoxNewLogNote))
-        self.textBoxNewLogResolution.textChanged.connect(lambda: self.txtInputChanged(self.textBoxNewLogResolution))
-        self.textBoxNewLostAndFoundNote.textChanged.connect(lambda: self.txtInputChanged(self.textBoxNewLostAndFoundNote))
+        self.pushButtonFormSave.clicked.connect(self.save_new_log)
+        self.pushButtonFormClear.clicked.connect(self.clear_form)
+        self.textBoxNewLogNote.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLogNote))
+        self.textBoxNewLogResolution.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLogResolution))
+        self.textBoxNewLostAndFoundNote.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLostAndFoundNote))
 
         # lost and found
-        self.pushButtonViewLAF.clicked.connect(lambda: self.viewSelection(self.tableWidgetLostAndFound))
-        self.pushButtonNewLAF.clicked.connect(self.newLostAndFound)
+        self.pushButtonViewLAF.clicked.connect(lambda: self.view_selection(self.tableWidgetLostAndFound))
+        self.pushButtonNewLAF.clicked.connect(self.new_lost_and_found)
         self.pushButtonEditLAF.clicked.connect(self.edit_laf_form)
-        self.pushButtonFormClearLAF.clicked.connect(self.clearLostAndFoundForm)
+        self.pushButtonFormClearLAF.clicked.connect(self.clear_lost_and_found_form)
         self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.pageLostAndFound))
-        self.pushButtonFormSaveLAF.clicked.connect(self.saveLostAndFoundForm)
+        self.pushButtonFormSaveLAF.clicked.connect(self.save_lost_and_found_form)
 
         # self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
-        self.pushButtonDeleteLAF.clicked.connect(lambda: self.deleteSelection(self.tableWidgetLostAndFound, 'LostAndFound'))
+        self.pushButtonDeleteLAF.clicked.connect(lambda: self.delete_selection(self.tableWidgetLostAndFound, 'LostAndFound'))
         self.checkBoxNewLostAndFoundReturned.clicked.connect(self.returned_checkbox_changed)
 
         # save settings signal
-        self.pushButtonSaveSettings.clicked.connect(lambda: self.save_settings())
+        self.pushButtonSaveSettings.clicked.connect(self.save_settings)
 
         # look through the children of the children until we find a QPushButton
         for widget in self.frameMenu.children():
@@ -385,7 +391,77 @@ class LogBook(MainWindowBase, MainWindowUI):
                     if isinstance(member, QtWidgets.QPushButton):
                         member.clicked.connect(self.button_pressed)  # connect click event function
 
-    def clearForm(self):
+    def view_selection(self, table):
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            self.lastPage = table.objectName()
+            row_index = table.currentRow()  # get index of current row
+            data = []  # data list
+            labels = []
+            layout = self.frameViewDataForm.layout()
+
+            for i in range(table.columnCount()):  # loop through all columns
+                data.append(table.item(row_index, i).text())  # add each field to the list
+                labels.append(table.horizontalHeaderItem(i).text())
+
+            if layout is not None:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.deleteLater()
+                        widget.setParent(None)
+
+            for j in range(len(data)):
+
+                replaced = labels[j].replace('_', ' ')
+                data_widget = None
+
+                if replaced == 'NOTE' or replaced == 'RESOLUTION':
+                    data_widget = QtWidgets.QTextEdit(f"{data[j]}")
+                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                    data_widget.setAccessibleDescription('textEdit')
+                    data_widget.setReadOnly(True)
+                    data_widget.setTextInteractionFlags(Qt.NoTextInteraction)
+                    data_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+                    data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                    data_widget.setAcceptRichText(False)
+                    data_widget.document().setDocumentMargin(0)
+                else:
+                    data_widget = QtWidgets.QLabel(f"{data[j]}")
+                    data_widget.setScaledContents(True)
+                    data_widget.setWordWrap(True)
+                    data_widget.setAccessibleDescription('formLabelNormal')
+                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+                data_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                data_widget.setMaximumSize(500, 150)
+
+                label_widget = QtWidgets.QLabel(f"{replaced}:")
+                label_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_widget.setAccessibleDescription('formLabel')
+                label_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_widget.setMinimumSize(200, 0)
+                label_widget.setMaximumSize(500, 100)
+
+                self.frameViewDataForm.layout().addRow(label_widget, data_widget)
+
+            # change to view page
+            self.change_page(self.pageViewData)
+
+    def delete_selection(self, table, table_name):
+
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            if self.show_dialog():
+                row_index = table.currentRow()  # get index of current row
+                column_index = table.item(row_index, 0).text()
+                first_column = self.db_handler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
+                delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
+                self.db_handler.execute_query(delete_query).commit()
+                self.refresh_tables()
+
+    def clear_form(self):
         self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLog.setCurrentSectionIndex(2)
         self.textBoxNewLogIssue.setText('')
@@ -395,18 +471,18 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.textBoxNewLogResolution.setText('')
         self.comboBoxRoom.setCurrentIndex(0)
 
-    def newLostAndFound(self):
+    def new_lost_and_found(self):
         self.stored_id = 0
-        self.clearLostAndFoundForm()
+        self.clear_lost_and_found_form()
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
         self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
 
         self.frameReturnedLAF.hide()
-        self.refreshTables()
+        self.refresh_tables()
         self.change_page(self.pageNewLAF)
 
-    def clearLostAndFoundForm(self):
+    def clear_lost_and_found_form(self):
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
         self.comboBoxNewLostAndFoundRoom.setCurrentIndex(0)
@@ -417,9 +493,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.checkBoxNewLostAndFoundReturned.setCheckState(False)
         self.textBoxNewLostAndFoundStudentName.clear()
         self.textBoxNewLostAndFoundStudentNumber.clear()
-        self.showFrameReturnedLAF()
+        self.show_frame_returned_laf()
 
-    def saveLostAndFoundForm(self):
+    def save_lost_and_found_form(self):
         date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
         room = self.comboBoxNewLostAndFoundRoom.currentText()
         found_by = self.textBoxNewLostAndFoundBy.text()
@@ -429,7 +505,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         state = True
 
         # empty field validation
-        if not (self.validateField(self.textBoxNewLostAndFoundBy)):
+        if not (self.validate_field(self.textBoxNewLostAndFoundBy)):
             state = False
 
         if not state:
@@ -500,15 +576,15 @@ class LogBook(MainWindowBase, MainWindowUI):
                     ENTRY_ID = {self.stored_id};'''
                 list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
 
-        cursor = self.executeQuery(query, list_objects)
+        cursor = self.db_handler.execute_query(query, list_objects)
 
         # validate the cursor for empty results
-        if not self.validateCursor(cursor):
+        if not self.db_handler.validate_cursor(cursor):
             self.change_to_last_page()
             return
 
         cursor.commit()
-        self.refreshTables()
+        self.refresh_tables()
         self.change_page(self.pageLostAndFound)
 
     def edit_laf_form(self):
@@ -521,15 +597,15 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stored_id = entry_id
 
             query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM dbo.LostAndFound WHERE ENTRY_ID = {entry_id};'
-            cursor = self.executeQuery(query)
+            cursor = self.db_handler.execute_query(query)
 
             # validate the cursor for empty results
-            if not self.validateCursor(cursor):
+            if not self.db_handler.validate_cursor(cursor):
                 self.change_to_last_page()
                 return
 
             laf = cursor.fetchall()
-            self.clearForm()
+            self.clear_form()
             self.labelNewLostAndFound.setText('EDIT LOST AND FOUND')
             self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
@@ -550,14 +626,14 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             if str(laf[0].RETURNED).strip() == 'YES':
                 self.checkBoxNewLostAndFoundReturned.setChecked(True)
-                self.showFrameReturnedLAF()
+                self.show_frame_returned_laf()
             else:
                 self.checkBoxNewLostAndFoundReturned.setChecked(False)
-                self.showFrameReturnedLAF()
+                self.show_frame_returned_laf()
 
             self.change_page(self.pageNewLAF)
 
-    def showFrameReturnedLAF(self):
+    def show_frame_returned_laf(self):
         if self.checkBoxNewLostAndFoundReturned.isChecked():
             self.frameReturnedLAF.show()
         else:
@@ -568,94 +644,23 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
             self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
 
-        self.showFrameReturnedLAF()
-
-    def viewSelection(self, table):
-
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1 and table.item(0, 0) is not None:
-            self.lastPage = table.objectName()
-            row_index = table.currentRow()  # get index of current row
-            data = []  # data list
-            labels = []
-            layout = self.frameViewDataForm.layout()
-
-            for i in range(table.columnCount()):  # loop through all columns
-                data.append(table.item(row_index, i).text())  # add each field to the list
-                labels.append(table.horizontalHeaderItem(i).text())
-
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
-                    widget = item.widget()
-                    if widget is not None:
-                        widget.deleteLater()
-                        widget.setParent(None)
-
-            for j in range(len(data)):
-
-                replaced = labels[j].replace('_', ' ')
-                data_widget = None
-
-                if replaced == 'NOTE' or replaced == 'RESOLUTION':
-                    data_widget = QtWidgets.QTextEdit(f"{data[j]}")
-                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                    data_widget.setAccessibleDescription('textEdit')
-                    data_widget.setReadOnly(True)
-                    data_widget.setTextInteractionFlags(Qt.NoTextInteraction)
-                    data_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
-                    data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-                    data_widget.setAcceptRichText(False)
-                    data_widget.document().setDocumentMargin(0)
-                else:
-                    data_widget = QtWidgets.QLabel(f"{data[j]}")
-                    data_widget.setScaledContents(True)
-                    data_widget.setWordWrap(True)
-                    data_widget.setAccessibleDescription('formLabelNormal')
-                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-
-                data_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                data_widget.setMaximumSize(500, 150)
-
-                label_widget = QtWidgets.QLabel(f"{replaced}:")
-                label_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                label_widget.setAccessibleDescription('formLabel')
-                label_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                label_widget.setMinimumSize(200, 0)
-                label_widget.setMaximumSize(500, 100)
-
-                self.frameViewDataForm.layout().addRow(label_widget, data_widget)
-
-            # change to view page
-            self.change_page(self.pageViewData)
+        self.show_frame_returned_laf()
 
     # limit the amount of characters allowed in a QTextEdit
-    def txtInputChanged(self, txtEdit):
-        text_content = txtEdit.toPlainText()
+    @staticmethod
+    def max_txt_input(txt_edit):
+        text_content = txt_edit.toPlainText()
         length = len(text_content)
 
         max_length = 1000
 
         if length > max_length:
-            position = txtEdit.textCursor().position()
-            text_cursor = txtEdit.textCursor()
+            position = txt_edit.textCursor().position()
+            text_cursor = txt_edit.textCursor()
             text_content = text_content[:max_length]
-            txtEdit.setText(text_content)
+            txt_edit.setText(text_content)
             text_cursor.setPosition(position - (length - max_length))
-            txtEdit.setTextCursor(text_cursor)
-
-
-    def deleteSelection(self, table, table_name):
-
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1 and table.item(0, 0) is not None:
-            if self.showDialog():
-                row_index = table.currentRow()  # get index of current row
-                column_index = table.item(row_index, 0).text()
-                first_column = self.executeQuery(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
-                delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
-                self.executeQuery(delete_query).commit()
-                self.refreshTables()
+            txt_edit.setTextCursor(text_cursor)
 
     def change_to_last_page(self):
         # remove the 'tableWidget' from the string (this is why everything is named this way lol)
@@ -671,14 +676,13 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(widget))  # change the page to the widget
 
     @staticmethod
-    def validateField(text_edit):
+    def validate_field(text_edit):
         if text_edit.text() == '':
             text_edit.setPlaceholderText('Cannot be blank')
             return False
-
         return True
 
-    def refreshTables(self):
+    def refresh_tables(self):
         import calendar
         month = datetime.datetime.now().month
         month = calendar.month_name[month]
@@ -699,10 +703,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.cleanup_empty_cells(self.tableWidgetProblems)
         self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
-        cursor = self.executeQuery(problems_count_query)
+        cursor = self.db_handler.execute_query(problems_count_query)
 
         # validate the cursor for empty results
-        if not self.validateCursor(cursor):
+        if not self.db_handler.validate_cursor(cursor):
             return
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
@@ -725,16 +729,16 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.populateTable(self.tableWidgetReports, query)
         self.cleanup_empty_cells(self.tableWidgetReports)
 
-    def saveNewLog(self):
+    def save_new_log(self):
 
         state = True
         list_objects = None
 
         # empty field validation
-        if not (self.validateField(self.textBoxNewLogIssue)):
+        if not (self.validate_field(self.textBoxNewLogIssue)):
             state = False
 
-        if not (self.validateField(self.textBoxNewLogName)):
+        if not (self.validate_field(self.textBoxNewLogName)):
             state = False
 
         if not state:
@@ -777,18 +781,18 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             list_objects = [date, name, room, issue, note, resolution, fixed]
 
-        cursor = self.executeQuery(query, list_objects)
+        cursor = self.db_handler.execute_query(query, list_objects)
 
         # validate the cursor for empty results
-        if not self.validateCursor(cursor):
+        if not self.db_handler.validate_cursor(cursor):
             self.change_page(self.pageReports)
             return
 
         cursor.commit()
 
-        self.refreshTables()
+        self.refresh_tables()
         self.change_to_last_page()
-        self.clearForm()
+        self.clear_form()
 
     def edit_log(self, table):
         self.lastPage = table.objectName()
@@ -800,15 +804,15 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stored_id = report_id
 
             query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from dbo.Reports WHERE REPORT_ID = {report_id};'
-            cursor = self.executeQuery(query)
+            cursor = self.db_handler.execute_query(query)
 
             # validate the cursor for empty results
-            if not self.validateCursor(cursor):
+            if not self.db_handler.validate_cursor(cursor):
                 self.change_to_last_page()
                 return
 
             log = cursor.fetchall()
-            self.clearForm()
+            self.clear_form()
             self.labelNewLog.setText('EDIT LOG')
             self.dateEditNewLog.setDate(log[0].DATE)
             self.dateEditNewLog.setCurrentSectionIndex(2)
@@ -828,29 +832,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             self.change_page(self.pageNewLog)
 
-    @staticmethod
-    def import_settings():
-        with open('settings.json', 'r') as json_file:
-            data = json.load(json_file)
-            return data
-
-    @staticmethod
-    def settings_switch(argument):  # python doesn't have switch case so this is an alternative
-        switcher = {
-            "Classic Light": 'classic_light',
-            "Classic Dark": 'classic_dark',
-            "Centennial Light": 'centennial_light',
-            "Centennial Dark": 'centennial_dark',
-        }
-
-        # taken from https://www.geeksforgeeks.org/
-        # get() method of dictionary data type returns
-        # value of passed argument if it is present
-        # in dictionary otherwise second argument will
-        # be assigned as default value of passed argument
-        return switcher.get(argument, 'classic_light')
-
-    def set_settings(self, theme, time_format):
+    def apply_settings(self, theme, time_format):
         if theme == "Classic Light":
             self.comboBoxSettingsTheme.setCurrentIndex(0)
 
@@ -873,18 +855,19 @@ class LogBook(MainWindowBase, MainWindowUI):
         theme = self.comboBoxSettingsTheme.currentText()
         time_format = self.comboBoxSettingsTimeFormat.currentText()
 
-        output = self.settings_switch(theme)
-        data = self.import_settings()
+        output = SettingsManager.settings_theme_switch(theme)
+        data = SettingsManager.import_settings()
 
         data['theme_choice']['name'] = output
         data['time_format'] = time_format
 
-        with open("settings.json", "w") as jsonFile:
-            json.dump(data, jsonFile, indent=2)
+        SettingsManager.export_settings(data)
+        '''with open("settings.json", "w") as jsonFile:
+            json.dump(data, jsonFile, indent=2)'''
 
         self.labelSettingsWarning.setVisible(True)
 
-    def exportData(self):
+    def export_data_sheet(self):
 
         server = self.server_string
 
@@ -901,9 +884,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         test = str(datetime.datetime.now().year)
         data.to_excel(f'Reports{test}.xlsx')
 
-    def newLog(self):
+    def new_log(self):
         self.lastPage = 'tableWidgetReports'
-        self.clearForm()
+        self.clear_form()
         self.stored_id = 0
         self.labelNewLog.setText('NEW LOG')
         self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
@@ -912,9 +895,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # for handling creation and deletion of labels for labs that are soon going to be vacant
     def countdown_handler(self):
-        '''if self.schedules is not None and range(len(self.schedules) != 0):
+        if self.schedules is not None and range(len(self.schedules) != 0):
             for i in range(len(self.schedules)):  # loop through all of today's schedules
-                countdown = self.lab_checker.roomCountdown(self.schedules[i])  # calculate the countdown using the current schedule object
+                countdown = self.lab_checker.room_countdown(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
@@ -925,17 +908,18 @@ class LogBook(MainWindowBase, MainWindowUI):
                         label_upcoming = QtWidgets.QLabel(label, self)  # create a new checkbox and append the room name + countdown
                         label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         label_upcoming.setObjectName(search)  # set the object name so it's searchable later
+                        label_upcoming.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
                         self.frameUpcomingRooms.layout().addWidget(label_upcoming)  # add the checkbox to the frame
                     else:  # the widget exists already so just update it
                         self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).setText(label)
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
                         self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).setVisible(False)
-                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).deleteLater()'''
+                        self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).deleteLater()
 
         if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
             for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
-                countdown = self.lab_checker.roomCountdown(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
+                countdown = self.lab_checker.room_countdown(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.open_lab_schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
@@ -946,6 +930,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         label_upcoming = QtWidgets.QLabel(label, self)  # create a new checkbox and append the room name + countdown
                         label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         label_upcoming.setObjectName(search)  # set the object name so it's searchable later
+                        label_upcoming.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
                         self.frameUpcomingOpenLabs.layout().addWidget(label_upcoming)  # add the checkbox to the frame
                     else:  # the widget exists already so just update it
                         self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search).setText(label)
@@ -963,9 +948,9 @@ class LogBook(MainWindowBase, MainWindowUI):
     # for handling creation and deletion of checkboxes for labs that are vacant
     def duration_handler(self):
 
-        '''if self.schedules is not None and range(len(self.schedules) != 0):  # ensuring we're not looping an empty list
+        if self.schedules is not None and range(len(self.schedules) != 0):  # ensuring we're not looping an empty list
             for i in range(len(self.schedules)):  # loop through all of today's schedules
-                countdown = self.lab_checker.calculateDuration(self.schedules[i])  # calculate the countdown using the current schedule object
+                countdown = self.lab_checker.calculate_duration(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + 'duration' + str(i)  # room name + i (for multiple open times in the same room)
 
@@ -993,12 +978,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so remove the widget
                         self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()'''
+                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
 
         # open labs
         if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
             for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
-                countdown = self.lab_checker.calculateDuration(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
+                countdown = self.lab_checker.calculate_duration(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.open_lab_schedules[i].get_room().strip()  # get the room name for label
                 search = room_name + str(i)  # room name + i (for multiple open times in the same room)
 
@@ -1006,10 +991,11 @@ class LogBook(MainWindowBase, MainWindowUI):
                 if countdown is not None:  # only show countdown if it's not empty
                     label = room_name + '         ' + str(countdown)  # text for the label
                     if self.frameOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
-                        label_upcoming = QtWidgets.QLabel(label, self)  # create a new label and append the room name + countdown
-                        label_upcoming.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
-                        label_upcoming.setObjectName(search)  # set the object name so it's searchable later
-                        self.frameOpenLabs.layout().addWidget(label_upcoming)  # add the checkbox to the frame
+                        label_duration = QtWidgets.QLabel(label, self)  # create a new label and append the room name + countdown
+                        label_duration.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
+                        label_duration.setObjectName(search)  # set the object name so it's searchable later
+                        label_duration.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+                        self.frameOpenLabs.layout().addWidget(label_duration)  # add the checkbox to the frame
                     else:  # the widget exists already so just update it
                         self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setText(label)
 
