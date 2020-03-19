@@ -1,73 +1,64 @@
-import time
 import datetime
-import pyodbc
 from ScheduleObj import ScheduleObj
+from database_handler import DatabaseHandler
 
 
 # lab checker class
 # the schedule object holds the room number, day, start time, and end time
 # the schedule list holds all the schedules for all the rooms for the current day
-class labChecker():
+class LabChecker:
     def __init__(self, server_string):
-        self.server_string = server_string  # change this to your server name
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = server_string
+        self.db_handler = DatabaseHandler(server_string)
         self.tFormat = "%H:%M:%S"  # 24hr by default
-        self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())
-        # self.todaySchedule = self.getTodaySchedule()
+        self.weekday_string = self.weekday_switch(self.get_local_date().weekday())
 
-    def validateCursor(self, cursor):
-        if cursor is None:
-            return False
-
-        if cursor.rowcount == 0:
-            return False
-
-        return True
-
-    def getLocalDate(self):
+    @staticmethod
+    def get_local_date():
         return datetime.datetime.today()  # local system date
 
-    def setTimeFormat(self, tFormat):
+    def set_time_format(self, t_format):
         # local variables
-        tFormat24hr = "%H:%M:%S"
-        tFormat12hr = "%I:%M:%S %p"
+        t_format24hr = "%H:%M:%S"
+        t_format12hr = "%I:%M:%S %p"
 
-        if tFormat == '12HR':
-            self.tFormat = tFormat12hr
+        if t_format == '12HR':
+            self.tFormat = t_format12hr
         else:
-            self.tFormat = tFormat24hr
+            self.tFormat = t_format24hr
 
-    def getTodaySchedule(self):
+    def get_today_schedule(self):
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
-        self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())  # get weekday string of today
+        self.weekday_string = self.weekday_switch(self.get_local_date().weekday())  # get weekday string of today
 
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule WHERE DAY = '{self.weekday_string}'"
-        cursor = self.executeQuery(query)
+        cursor = self.db_handler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.validateCursor(cursor):
+        if not self.db_handler.validate_cursor(cursor):
             return
 
         schedule_data = cursor.fetchall()
 
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
+            # the schedule object holds the room number, day, start time, and end time
             schedule_objects.append(ScheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
         cursor.close()
         return schedule_objects
 
-    def getTodayOpenLabSchedule(self):
+    def get_today_open_lab_schedule(self):
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
-        self.weekday_string = self.weekday_switch(self.getLocalDate().weekday())  # get weekday string of today
+        self.weekday_string = self.weekday_switch(self.get_local_date().weekday())  # get weekday string of today
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule WHERE DAY = '{self.weekday_string}'"
-        cursor = self.executeQuery(query)
+        cursor = self.db_handler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.validateCursor(cursor):
+        if not self.db_handler.validate_cursor(cursor):
             return
 
         schedule_data = cursor.fetchall()
@@ -77,21 +68,6 @@ class labChecker():
             schedule_objects.append(ScheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
         cursor.close()
         return schedule_objects
-
-    # reusable query function
-    def executeQuery(self, query):
-        try:
-            conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=self.server_string,
-                                      database='ReportLog', timeout=2,
-                                      trusted_connection='Yes')  # user='Helpdesk', password='b1pa55'
-            conn = conn_str
-            cursor = conn.cursor()
-            cursor.execute(query)
-            return cursor
-        except pyodbc.Error as err:
-            print("Couldn't connect (Connection timed out)")
-            print(err)
-            return
 
     @staticmethod
     def weekday_switch(argument):  # python doesn't have switch case so this is an alternative
@@ -112,8 +88,8 @@ class labChecker():
         # be assigned as default value of passed argument 
         return switcher.get(argument, "n/a")
 
-    def calculateCountdown(self, time_stamp):
-        current_time = self.getLocalDate().time().isoformat(timespec='seconds')  # return the 'time' part of the date as a string with seconds precision level
+    def calculate_countdown(self, time_stamp):
+        current_time = self.get_local_date().time().isoformat(timespec='seconds')  # return the 'time' part of the date as a string with seconds precision level
 
         first_time = datetime.datetime.strptime(time_stamp, "%H:%M:%S")  # convert time stamp string to datetime object
         second_time = datetime.datetime.strptime(current_time, "%H:%M:%S")  # make sure the current time is formatted correctly and make it into a datetime object
@@ -121,28 +97,28 @@ class labChecker():
 
         return t_delta
 
-    def compareTimes(self, time_stamp):
-        if datetime.datetime.strptime(time_stamp, "%H:%M:%S").time() > self.getLocalDate().time():  # if the time stamp is in the future (larger than current time)
+    def compare_times(self, time_stamp):
+        if datetime.datetime.strptime(time_stamp, "%H:%M:%S").time() > self.get_local_date().time():  # if the time stamp is in the future (larger than current time)
             return True
         return False
 
-    def roomCountdown(self, schedule_input):
+    def room_countdown(self, schedule_input):
         time_left = None
 
         # if the start time is still in the future
-        if self.compareTimes(schedule_input.get_start_time()):
-            t_delta = self.calculateCountdown(schedule_input.get_start_time())
+        if self.compare_times(schedule_input.get_start_time()):
+            t_delta = self.calculate_countdown(schedule_input.get_start_time())
             # print(f'Time left: {t_delta}')
             time_left = t_delta
 
         return time_left
 
-    def calculateDuration(self, schedule_input):
+    def calculate_duration(self, schedule_input):
         time_left = None
 
         # if the start time passed and the end time is still in the future
-        if not self.compareTimes(schedule_input.get_start_time()) and self.compareTimes(schedule_input.get_end_time()):
-            t_delta = self.calculateCountdown(schedule_input.get_end_time())
+        if not self.compare_times(schedule_input.get_start_time()) and self.compare_times(schedule_input.get_end_time()):
+            t_delta = self.calculate_countdown(schedule_input.get_end_time())
             time_left = t_delta
 
         return time_left
@@ -151,9 +127,9 @@ class labChecker():
 # temporary main for testing
 if __name__ == '__main__':
     server_string = 'LAPTOP-L714M249\\SQLEXPRESS;'
-    labChk = labChecker(server_string)
-    labChk.setTimeFormat('12HR')
-    schedules = labChk.getTodaySchedule()
+    labChk = LabChecker(server_string)
+    labChk.set_time_format('12HR')
+    schedules = labChk.get_today_schedule()
 
     for schedule in schedules:
-        print(labChk.roomCountdown(schedule))
+        print(labChk.room_countdown(schedule))
