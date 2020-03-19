@@ -1,8 +1,8 @@
 import os
 import sys
-import json
 from logbook import LogBook
 from PyQt5 import QtGui, QtCore, QtWidgets
+from settings_manager import SettingsManager
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
 
@@ -13,16 +13,10 @@ import qtmodern_package.windows as qtmodern_windows
 path = os.path.dirname(__file__)
 
 
-def import_settings():
-    with open('settings.json', 'r') as json_file:
-        data = json.load(json_file)
-        return data
-
-
 if __name__ == '__main__':
 
     path = os.path.dirname(os.path.abspath(__file__))
-    settings = import_settings()
+    settings = SettingsManager.import_settings()
     theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
 
     # create new application
@@ -41,7 +35,8 @@ if __name__ == '__main__':
 
     # center the window
     windowGeometry = window.frameGeometry()
-    centerPoint = QtWidgets.QDesktopWidget().availableGeometry().center()
+    screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+    centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
     windowGeometry.moveCenter(centerPoint)
     window.move(windowGeometry.topLeft())
 
