@@ -3,7 +3,7 @@ import pyodbc
 
 
 def get_connection():
-    server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'
+    server_string = 'DESKTOP-SIF9RD3' + '\\' + 'SQLEXPRESS'
     try:
         conn_str = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=server_string,
                                   database='ReportLog', timeout=2,
@@ -57,7 +57,7 @@ def read_lost_and_found():
 
 if __name__ == '__main__':
     read_reports()
-    # read_lost_and_found()
+    read_lost_and_found()
 
 
 

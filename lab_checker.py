@@ -126,7 +126,7 @@ class LabChecker:
 
 # temporary main for testing
 if __name__ == '__main__':
-    server_string = 'LAPTOP-L714M249\\SQLEXPRESS;'
+    server_string = 'DESKTOP-SIF9RD3\\SQLEXPRESS;'
     labChk = LabChecker(server_string)
     labChk.set_time_format('12HR')
     schedules = labChk.get_today_schedule()
