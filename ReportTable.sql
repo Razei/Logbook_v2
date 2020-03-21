@@ -1,3 +1,6 @@
+--DROP DATABASE ReportLog;
+
+--CREATE DATABASE ReportLog;
 
 --To make sure SQL Server is using the ReportLog database and not master
 USE ReportLog;
@@ -66,8 +69,10 @@ INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES ('202
 --INSERT INTO dbo.Reports(DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES ('2020-01-02','Shaniquo','A3-55','Lab Check','Computers are working ok','','YES');
 
 SELECT * FROM dbo.Reports;
-*/
 
+
+SELECT DISTINCT(ROOM) FROM ReportLog.dbo.Reports WHERE FIXED ='NO';
+*/
 CREATE TABLE dbo.Courses (
 	COURSE_ID NCHAR(70) PRIMARY KEY,
 	COURSE_NAME NCHAR(255),
@@ -154,3 +159,4 @@ INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-24','T
 INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-55','Monday','17:30','21:30');
 INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Monday','9:30','12:30');
 INSERT INTO dbo.OpenLabSchedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Sunday','12:30','14:30');
+

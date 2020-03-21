@@ -55,8 +55,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
-        self.db_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
+        self.db_handler = DatabaseHandler('DESKTOP-SIF9RD3\\SQLEXPRESS')
+
+        #self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        #self.db_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+
         self.lastPage = ''
         self.stored_id = 0
         self.stored_theme = theme
@@ -694,6 +698,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
         lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
         problems_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+        problems_room_query = 'SELECT DISTINCT(ROOM) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
 
         self.populateTable(self.tableWidgetReports, reports_query)
         self.populateTable(self.tableWidgetProblems, problems_query, True)
@@ -704,12 +709,23 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
         cursor = self.db_handler.execute_query(problems_count_query)
+        room_cursor = self.db_handler.execute_query(problems_room_query)
 
         # validate the cursor for empty results
-        if not self.db_handler.validate_cursor(cursor):
+        if not (self.db_handler.validate_cursor(cursor) and self.db_handler.validate_cursor(room_cursor)):
             return
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
+
+
+
+        #show the rooms with all the problems
+        room_problems = room_cursor.fetchall()
+        room_list_problems = []
+        for room in room_problems:
+            room_list_problems.append(room[0])
+
+        self.labelRoomProblems.setText('\n'.join(room_list_problems))
 
     @staticmethod
     def cleanup_empty_cells(table):
