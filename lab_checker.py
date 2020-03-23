@@ -9,7 +9,7 @@ from database_handler import DatabaseHandler
 class LabChecker:
     def __init__(self, server_string):
         self.server_string = server_string
-        self.db_handler = DatabaseHandler(server_string)
+        self.db_handler = DatabaseHandler(self.server_string)
         self.tFormat = "%H:%M:%S"  # 24hr by default
         self.weekday_string = self.weekday_switch(self.get_local_date().weekday())
 
