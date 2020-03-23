@@ -97,6 +97,15 @@ QFrame{
     border:0;
 }
 
+[accessibleDescription ="scrollArea"] {
+    border-radius: 10px;
+    background-color: background_colour2;
+}
+
+ QScrollArea, QAbstractScrollArea, QScrollArea QWidget {
+    background-color: transparent;
+}
+
 QFrame[accessibleDescription ="menuFrame"]{  
     background-color: qlineargradient(x1: 0, y1: 0, x2: 0.5, y2: 0.5,stop: 0 background_colour, stop: 1 background_colour2);
     border-radius: 10px;
@@ -147,6 +156,7 @@ QScrollBar:horizontal {
     border: 0;
     border-radius: 6px;
     background: background_colour2;
+    background-color: transparent;
     height: 15px;
     margin: 0px 20px 0px 20px;
 }
@@ -178,6 +188,7 @@ QScrollBar:vertical {
     border: 0;
     border-radius: 6px;
     background: background_colour2;
+    background-color: transparent;
     width: 15px;
     margin: 20px 0px 20px 0px;
 }
