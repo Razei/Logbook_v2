@@ -5,6 +5,9 @@ class DatabaseHandler:
     def __init__(self, server_string):
         self.server_string = server_string
 
+    def get_server_string(self):
+        return self.server_string
+
     # reusable query function
     def execute_query(self, query, list_objects=None):
 
