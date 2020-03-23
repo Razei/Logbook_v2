@@ -89,6 +89,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.schedules = None
         self.open_lab_schedules = None
         self.schedule_mod = None
+        self.all_rooms = None
 
         # add all click events
         self.addClickEvents()
@@ -98,11 +99,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         # set initial activated button
         self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
         self.labelSettingsWarning.setVisible(False)
-
-        # temporarily disabled
-        # self.pushButtonAllLabs.setVisible(False)
-        # self.pushButtonSchedule.setVisible(False)
-        # self.pushButtonUserGuide.setVisible(False)
 
         # fetches the qss stylesheet path
         theme_path = theme['theme_path']
@@ -217,6 +213,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         for room in rooms:
             room_list.append(room[0])
 
+        self.all_rooms = room_list
+
         self.populateComboBox(self.comboBoxRoom, room_list)
         self.populateComboBox(self.comboBoxNewLostAndFoundRoom, room_list)
 
@@ -227,7 +225,54 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.tableWidgetProblems.verticalHeader().setVisible(False)
         self.tableWidgetLostAndFound.verticalHeader().setVisible(False)
 
+        self.get_all_labs()
         self.refresh_tables()
+
+    def get_all_labs(self):
+        layout = self.scrollAreaAllLabs.widget().layout()
+
+        if self.all_rooms is not None and range(len(self.all_rooms) != 0):
+
+            for room in self.all_rooms:  # loop through all rooms
+                current_row = layout.rowCount()  # next row (since the count starts at 0)
+                label_times = None
+
+                # label creation
+                label_room = QtWidgets.QLabel(room.strip())
+                label_room.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_room.setAccessibleDescription('formLabel')
+                label_room.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_room.setMinimumSize(0, 30)
+                label_room.setMaximumSize(100, 100)
+
+                # adding to layout
+                layout.addWidget(label_room, current_row, 0)
+
+                if self.schedules is not None and range(len(self.schedules) != 0):  # not empty validation
+                    for schedule in self.schedules:  # loop through all schedules
+                        if schedule.get_room().strip() == room.strip():
+
+                            if label_times is not None:
+                                label_times.setText(label_times.text() + '\n' + schedule.get_start_time())
+                            else:
+                                # label creation
+                                label_times = QtWidgets.QLabel(schedule.get_start_time())
+                                label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                                label_times.setAccessibleDescription('formLabel')
+                                label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                                label_times.setMinimumSize(200, 0)
+                                label_times.setMaximumSize(100, 100)
+
+                    if label_times is not None:
+                        layout.addWidget(label_times, current_row, 1)
+                    else:
+                        label_times = QtWidgets.QLabel('No open times')
+                        label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                        label_times.setAccessibleDescription('formLabel')
+                        label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                        label_times.setMinimumSize(200, 0)
+                        label_times.setMaximumSize(100, 100)
+                        layout.addWidget(label_times, current_row, 1)
 
     def setProgressBar(self, value):
         self.splash_screen_thread.count = value
@@ -688,8 +733,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def refresh_tables(self):
         import calendar
-        month = datetime.datetime.now().month
-        month = calendar.month_name[month]
+        month = calendar.month_name[datetime.datetime.now().month]  # converting the month number to a string
         index = self.comboBoxReportsMonth.findText(month)
         if index >= 0:
             self.comboBoxReportsMonth.setCurrentIndex(index)
@@ -717,15 +761,13 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
 
-
-
-        #show the rooms with all the problems
+        # show the rooms with all the problems
         room_problems = room_cursor.fetchall()
         room_list_problems = []
         for room in room_problems:
             room_list_problems.append(room[0])
 
-        self.labelRoomProblems.setText('\n'.join(room_list_problems))
+        #self.labelRoomProblems.setText('\n'.join(room_list_problems))
 
     @staticmethod
     def cleanup_empty_cells(table):
@@ -737,7 +779,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if input_month is not None:
             query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
         else:
-            month = self.sender().currentText()
+            month = self.sender().currentText()  # receive the combobox's current text
             if month == 'All':
                 query = f"SELECT * FROM dbo.Reports"
             else:
