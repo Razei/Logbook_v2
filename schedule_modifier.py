@@ -175,9 +175,8 @@ if __name__ == '__main__':
         qtmodern_styles.light(app)  # qtmodern
 
     s = ScheduleModifier(settings['theme'][theme_choice])
-    s.make_checkboxes()
 
     mw = qtmodern_windows.ModernWindow(s)  # qtmodern
     # make the interface visible
     mw.show()
-    app.exec_()
+    sys.exit(app.exec_())
