@@ -43,6 +43,8 @@ class CustomThemeMaker:
         self.danger_colour = '#FF5959'
         self.danger_gradient = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #FF0505, stop: 1 #FF5959)'
 
+        self.replace_strings()
+
     def light_theme(self):
         # path of qss stylesheet
         self.output_file_name = "logbook_main_styles_light.qss"
@@ -61,6 +63,8 @@ class CustomThemeMaker:
 
         self.danger_colour = '#FF5959'
         self.danger_gradient = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #FF0505, stop: 1 #FF5959)'
+
+        self.replace_strings()
 
     def replace_strings(self):
         output_path = os.path.join(os.path.split(__file__)[0], 'themes//' + self.output_file_name)
@@ -86,4 +90,4 @@ class CustomThemeMaker:
 if __name__ == '__main__':
     custom_theme = CustomThemeMaker()
     custom_theme.light_theme()
-    custom_theme.replace_strings()
+    custom_theme.dark_theme()
