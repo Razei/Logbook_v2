@@ -218,6 +218,18 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def get_all_labs(self):
         layout = self.scrollAreaAllLabs.widget().layout()
+        column_count = layout.columnCount()
+        row_count = layout.rowCount()
+
+        if layout is not None:
+            for i in range(column_count):  # loop through all columns
+                for j in range(1, row_count):  # loop starting at row 1
+                    item = layout.itemAtPosition(j, i)
+                    if item is not None:
+                        widget = item.widget()
+                        if widget is not None:
+                            widget.deleteLater()
+                            widget.setParent(None)
 
         if self.all_rooms is not None and range(len(self.all_rooms) != 0):
 
@@ -441,6 +453,23 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.schedule_mod.save_schedules(frame, combo_box)
         self.schedules = self.lab_checker.get_today_schedule()
         self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
+        self.get_all_labs()
+
+        self.clear_layout(self.frameEmptyRooms)
+        self.clear_layout(self.frameUpcomingRooms)
+        self.clear_layout(self.frameOpenLabs)
+        self.clear_layout(self.frameUpcomingOpenLabs)
+
+    def clear_layout(self, widget):
+        layout = widget.layout()
+
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                    widget.setParent(None)
 
     def view_selection(self, table):
         # if a row is selected (having no rows selected returns -1)
