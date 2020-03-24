@@ -55,11 +55,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
-        self.db_handler = DatabaseHandler('DESKTOP-SIF9RD3\\SQLEXPRESS')
+        #self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
+        #self.db_handler = DatabaseHandler('DESKTOP-SIF9RD3\\SQLEXPRESS')
 
-        #self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
-        #self.db_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.db_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        self.schedule_mod = schedule_modifier.ScheduleModifier(self.server_string)
 
         self.lastPage = ''
         self.stored_id = 0
@@ -88,12 +89,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.lab_checker = None
         self.schedules = None
         self.open_lab_schedules = None
-        self.schedule_mod = None
         self.all_rooms = None
 
         # add all click events
-        self.addClickEvents()
         self.getAllData()
+        self.addClickEvents()
         self.apply_settings(theme['theme_name'], time_format)
 
         # set initial activated button
@@ -127,24 +127,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.splash.finished(value)
 
     def show_schedule_modifier(self):
-        self.schedule_mod = schedule_modifier.ScheduleModifier(self.stored_theme)  # make a new schedule modifier instance
-        self.schedule_mod = qtmodern_windows.ModernWindow(self.schedule_mod)
-        self.schedule_mod.setWindowTitle('Schedule Modifier')
-        self.schedule_mod.setWindowModality(QtCore.Qt.ApplicationModal)
-
-        self.schedule_mod.btnMaximize.setParent(None)
-        self.schedule_mod.btnMinimize.setParent(None)
-        self.schedule_mod.btnMaximize.deleteLater()
-        self.schedule_mod.btnMinimize.deleteLater()
-
-        # center the window
-        window_geometry = self.schedule_mod.frameGeometry()
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        window_geometry.moveCenter(center_point)
-
-        self.schedule_mod.move(window_geometry.topLeft())
-        self.schedule_mod.show()
+        self.schedule_mod.make_labels(self.frameScheduleMod)
+        self.schedule_mod.make_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms)
 
     def show_dialog(self):
 
@@ -195,6 +179,10 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.lab_checker = LabChecker(self.server_string)
         self.schedules = self.lab_checker.get_today_schedule()
+
+        self.schedule_mod.make_labels(self.frameScheduleMod)
+        self.schedule_mod.make_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms)
+        self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms)
 
         self.setProgressBar(43)
 
@@ -355,10 +343,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         for widget in self.stackedWidget.children():
             if search in widget.objectName():
-                self.change_page(widget)
+                self.change_page(self.stackedWidget,widget)
 
     # this function loops through the buttons in the menu to find the active QPushButton and set it to the active colour (green)
     def button_pressed(self):
+        self.change_page(self.stackedWidgetSchedule, self.pageOptions)
+
         # look through the children of the children until we find a QPushButton
         for widget in self.frameMenu.children():
             self.isPushButton(widget)  # check for push buttons and update them
@@ -388,7 +378,6 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # add all click events
     def addClickEvents(self):
-        self.pushButtonSchedule.clicked.connect(self.show_schedule_modifier)
 
         # reports
         self.pushButtonNew.clicked.connect(self.new_log)
@@ -417,8 +406,16 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonNewLAF.clicked.connect(self.new_lost_and_found)
         self.pushButtonEditLAF.clicked.connect(self.edit_laf_form)
         self.pushButtonFormClearLAF.clicked.connect(self.clear_lost_and_found_form)
-        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.pageLostAndFound))
+        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.stackedWidget,self.pageLostAndFound))
         self.pushButtonFormSaveLAF.clicked.connect(self.save_lost_and_found_form)
+
+        # schedule modifier
+        self.comboBoxScheduleRooms.currentIndexChanged.connect(lambda: self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms))
+        self.pushButtonScheduleBack.clicked.connect(lambda: self.change_page(self.stackedWidgetSchedule, self.pageOptions))
+        self.pushButtonScheduleMod.clicked.connect(lambda: self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier))
+        self.pushButtonScheduleSave.clicked.connect(lambda: self.save_schedules(self.frameScheduleMod, self.comboBoxScheduleRooms))
+        self.pushButtonScheduleCheckAll.clicked.connect(lambda: self.schedule_mod.check_all(self.frameScheduleMod))
+        self.pushButtonScheduleUnCheckAll.clicked.connect(lambda: self.schedule_mod.un_check_all(self.frameScheduleMod))
 
         # self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
         self.pushButtonDeleteLAF.clicked.connect(lambda: self.delete_selection(self.tableWidgetLostAndFound, 'LostAndFound'))
@@ -439,6 +436,11 @@ class LogBook(MainWindowBase, MainWindowUI):
                 for member in frame.children():
                     if isinstance(member, QtWidgets.QPushButton):
                         member.clicked.connect(self.button_pressed)  # connect click event function
+
+    def save_schedules(self, frame, combo_box):
+        self.schedule_mod.save_schedules(frame, combo_box)
+        self.schedules = self.lab_checker.get_today_schedule()
+        self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
 
     def view_selection(self, table):
         # if a row is selected (having no rows selected returns -1)
@@ -496,7 +498,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 self.frameViewDataForm.layout().addRow(label_widget, data_widget)
 
             # change to view page
-            self.change_page(self.pageViewData)
+            self.change_page(self.stackedWidget,self.pageViewData)
 
     def delete_selection(self, table, table_name):
 
@@ -529,7 +531,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.frameReturnedLAF.hide()
         self.refresh_tables()
-        self.change_page(self.pageNewLAF)
+        self.change_page(self.stackedWidget,self.pageNewLAF)
 
     def clear_lost_and_found_form(self):
         self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
@@ -634,7 +636,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         cursor.commit()
         self.refresh_tables()
-        self.change_page(self.pageLostAndFound)
+        self.change_page(self.stackedWidget,self.pageLostAndFound)
 
     def edit_laf_form(self):
         table = self.tableWidgetLostAndFound
@@ -680,7 +682,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 self.checkBoxNewLostAndFoundReturned.setChecked(False)
                 self.show_frame_returned_laf()
 
-            self.change_page(self.pageNewLAF)
+            self.change_page(self.stackedWidget,self.pageNewLAF)
 
     def show_frame_returned_laf(self):
         if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -715,14 +717,14 @@ class LogBook(MainWindowBase, MainWindowUI):
         # remove the 'tableWidget' from the string (this is why everything is named this way lol)
         name = self.lastPage.replace('tableWidget', '')
         page_name = 'page' + name  # add page to the modified string
-        self.change_page(self.findChild(QtWidgets.QWidget, page_name))  # change to last page
+        self.change_page(self.stackedWidget,self.findChild(QtWidgets.QWidget, page_name))  # change to last page
 
-    def change_page(self, name):
+    def change_page(self,stacked_widget, name):
         widget = name
 
         # if the widget is in the stackedWidget
-        if self.stackedWidget.indexOf(widget) != -1:
-            self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(widget))  # change the page to the widget
+        if stacked_widget.indexOf(widget) != -1:
+            stacked_widget.setCurrentIndex(stacked_widget.indexOf(widget))  # change the page to the widget
 
     @staticmethod
     def validate_field(text_edit):
@@ -843,7 +845,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # validate the cursor for empty results
         if not self.db_handler.validate_cursor(cursor):
-            self.change_page(self.pageReports)
+            self.change_page(self.stackedWidget,self.pageReports)
             return
 
         cursor.commit()
@@ -888,7 +890,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             else:
                 self.checkBoxFixed.setChecked(False)
 
-            self.change_page(self.pageNewLog)
+            self.change_page(self.stackedWidget,self.pageNewLog)
 
     def apply_settings(self, theme, time_format):
         if theme == "Classic Light":
@@ -949,11 +951,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.labelNewLog.setText('NEW LOG')
         self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
         self.dateEditNewLog.setCurrentSectionIndex(2)
-        self.change_page(self.pageNewLog)
+        self.change_page(self.stackedWidget,self.pageNewLog)
 
     # for handling creation and deletion of labels for labs that are soon going to be vacant
     def countdown_handler(self):
-        if self.schedules is not None and range(len(self.schedules) != 0):
+        if self.schedules is not None and len(self.schedules) != 0:
             for i in range(len(self.schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.room_countdown(self.schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.schedules[i].get_room().strip()  # get the room name for label
@@ -975,7 +977,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).setVisible(False)
                         self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search).deleteLater()
 
-        if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
+        if self.open_lab_schedules is not None and len(self.open_lab_schedules) != 0:
             for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
                 countdown = self.lab_checker.room_countdown(self.open_lab_schedules[i])  # calculate the countdown using the current schedule object
                 room_name = self.open_lab_schedules[i].get_room().strip()  # get the room name for label
