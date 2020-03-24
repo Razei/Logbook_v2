@@ -1,3 +1,17 @@
+QProgressBar {
+     border: 0px;
+     border-radius: 10px;
+     background-color: #454547;
+     text-align:center;
+     color: #FFFFFF;
+ }
+
+ QProgressBar::chunk {
+     background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
+     border-radius: 10px;
+     text-align:center;
+ }
+
 QDialog{
     border-radius:10px;
 }
@@ -33,7 +47,7 @@ QDateEdit::up-arrow {
 }
 
 QDateEdit::up-button, QDateEdit::down-button {
-    background-color: #454547;
+    background-color: #FFFFFF;
     border-radius:0px;
     width:20px;
 }
@@ -70,6 +84,7 @@ QListView::item:selected:active:hover{
     color: #454547;
     font-weight:bold;
 }
+
 QListView::item:selected:active:!hover{
     background-color: #86DA50; 
     color: #454547;
@@ -96,9 +111,9 @@ QFrame{
     border:0;
 }
 
-[accessibleDescription ="scrollArea"] {
+[accessibleDescription ="flatBackground"] {
     border-radius: 10px;
-    background-color: #353535;
+    background-color: #585858;
 }
 
  QScrollArea, QAbstractScrollArea, QScrollArea QWidget {
@@ -139,7 +154,7 @@ QTableWidget::item{
 QHeaderView::section {
     font-weight:bold;
     text-align:left;
-    background-color:#5E5E5E;
+    background-color: #5E5E5E;
     padding-top:8px;
     padding-bottom:8px;
     padding-right:8px;
@@ -182,7 +197,6 @@ QScrollBar::sub-line:horizontal {
     subcontrol-position: left;
     subcontrol-origin: margin;
 }
-
 
 QScrollBar:vertical {
     border: 0;
@@ -229,19 +243,18 @@ QAbstractScrollArea::corner {
 }
 
 [accessibleDescription ="checkBoxRoom"]{
-    color:#FFFFFF;
+    color: #FFFFFF;
     font-size: 12pt; 
 }
 
-QCheckBox[accessibleDescription ="timerDanger"]{
-    color:#FF5959;
+[accessibleDescription ="timerDanger"]{
+    color: #FF5959;
     font-size: 12pt; 
 }
-
 
 QCheckBox::indicator:unchecked{
-    color:#FFFFFF;
-    background-color:#F9F9F9;
+    color: #FFFFFF;
+    background-color: #454547;
 }
 
 QCheckBox::indicator:checked{
@@ -269,7 +282,6 @@ QLabel[accessibleDescription ="formLabel"]{
     font-family: Segoe UI;
     font-size:12pt;
 }
-
 
 QLabel[accessibleDescription ="formLabelNormal"]{
     color:#FFFFFF;
@@ -315,7 +327,7 @@ QPushButton[accessibleDescription ="successButton"]{
 }
 
 QPushButton[accessibleDescription ="neutralButton"]{
-    background-color:#454547;
+    background-color: #454547;
     color: #FFFFFF;
     border-radius: 12.4px;
     font-weight:bold;
@@ -328,13 +340,12 @@ QPushButton[accessibleDescription ="dangerButton"]{
     font-weight:bold;
 }
 
-
 QLineEdit,QTextEdit{
-    background-color:#454547;
-    color:#FFFFFF;
-    padding:4px;
+    background-color: #454547;
+    color: #FFFFFF;
+    padding: 4px;
     border: 0px;
-    font-size:11pt;
+    font-size:10pt;
 }
 
 QLabel[accessibleDescription ="LCDNumber"]{
