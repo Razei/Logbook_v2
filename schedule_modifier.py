@@ -1,4 +1,6 @@
 import sys
+from datetime import datetime
+
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
@@ -10,8 +12,14 @@ from ScheduleObj import ScheduleObj
 class ScheduleModifier:
     def __init__(self, server_string):
         self.database_handler = DatabaseHandler(server_string)
-        self.schedules = self.get_schedules()
-        self.open_lab_schedules = self.get_schedules()
+        self.schedules = self.get_database_schedules()
+        self.open_lab_schedules = self.get_database_open_lab_schedules()
+
+    def get_schedules(self):
+        return self.schedules
+
+    def get_open_lab_schedules(self):
+        return self.open_lab_schedules
 
     @staticmethod
     def populate_combo_box(combobox, items):
@@ -46,27 +54,21 @@ class ScheduleModifier:
 
         frame.setLayout(layout)
 
-    def make_checkboxes(self, frame, comboBox):
+    def make_checkboxes(self, frame, comboBox, room_list):
         layout = frame.layout()
         column_count = layout.columnCount()
         row_count = layout.rowCount()
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        rooms_query = "SELECT ROOM FROM ReportLog.dbo.Rooms WHERE NOT ROOM = 'Other'"
-        room_list = []
-
-        cursor = self.database_handler.execute_query(rooms_query)
 
         # validate the cursor for empty results
-        if not self.database_handler.validate_cursor(cursor):
+        if room_list is None:
             return
 
-        rooms = cursor.fetchall()
-
-        for room in rooms:
-            room_list.append(room[0])
+        for room in room_list:
+            if room.strip() == 'Other':
+                room_list.remove(room)
 
         self.populate_combo_box(comboBox, room_list)
-        cursor.close()
 
         for i in range(1, column_count):  # loop starting at column 1
             start_time = 8
@@ -89,7 +91,7 @@ class ScheduleModifier:
                 layout.addWidget(frame2, j, i)
                 start_time += 1
 
-    def get_schedules(self):
+    def get_database_schedules(self):
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
 
@@ -112,7 +114,7 @@ class ScheduleModifier:
         cursor.close()
         return schedule_objects
 
-    def get_open_lab_schedules(self):
+    def get_database_open_lab_schedules(self):
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
 
@@ -135,16 +137,23 @@ class ScheduleModifier:
         cursor.close()
         return schedule_objects
 
-    def update_checkboxes(self, frame, comboBox):
+    def update_checkboxes(self, frame, comboBox, mode):
         import re
         self.un_check_all(frame)
 
-        schedules = self.schedules
+        if mode is None or mode == '':
+            return
+
+        if mode == 'Open':
+            schedules = self.open_lab_schedules
+        else:
+            schedules = self.schedules
+
         layout = frame.layout()
         column_count = layout.columnCount()
         row_count = layout.rowCount()
         room = comboBox.currentText().strip()
-        focused_list = []
+        focused_list = []  # holding schedules focused on a specific room
         state = False
 
         # validate the list for empty results
@@ -166,17 +175,20 @@ class ScheduleModifier:
                 if type(widget) == QtWidgets.QCheckBox:
                     for entry in focused_list:
                         w_name = widget.objectName().replace('checkBox', '')
-                        temp = re.compile("([a-zA-Z]+)([0-9]+)")
-                        res = temp.match(w_name).groups()
+                        temp = re.compile("([a-zA-Z]+)([0-9]+)")  # separate the string and the digit
+                        res = temp.match(w_name).groups()  # execute
+
+                        # convert the digit to a formatted time string
+                        t_compare = datetime.strptime(res[1] + ':30', '%H:%M').strftime('%H:%M')  # I couldn't find a more elegant way to do this so....
 
                         time_search = entry.get_start_time()[:-3]  # remove the last 3 characters from the string (:00)
                         # if matched or if state (state will make sure all checkboxes after start time are checked until it reaches end time)
-                        if ((entry.get_day().strip() == res[0]) and (time_search == res[1] + ':30')) or state:
+                        if ((entry.get_day() == res[0]) and (time_search == t_compare)) or state:
                             widget.setChecked(True)
                             state = True
 
                         time_search = entry.get_end_time()[:-3]  # remove the last 3 characters from the string (:00)
-                        if (entry.get_day().strip() == res[0]) and (time_search == res[1] + ':30'):
+                        if (entry.get_day().strip() == res[0]) and (time_search == t_compare):
                             widget.setChecked(False)
                             state = False
 
@@ -209,13 +221,16 @@ class ScheduleModifier:
                 item = layout.itemAtPosition(j, i)  # itemAtPosition(row, column)
                 widget = item.widget().children()[1]  # the checkbox is a child of a layout (to center it)
 
-                if type(widget) == QtWidgets.QCheckBox and widget.isChecked():  # if it's checked
+                widget_time = widget.objectName().replace(f'checkBox{days[i - 1]}', '') + ':30'
+
+                # if it's checked and it's not 22:30
+                if (type(widget) == QtWidgets.QCheckBox and widget.isChecked()) and not (widget_time == '22:30'):  # 22:30 cannot be a start time
                     if not state:  # self.state helps to keep track of whether there's a start time already
                         start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
-                        state = True  # indicate there is now a start time waiting for an end time to complete the object
+                        state = True  # indicate there is now a start time waiting for an end time to complete the object below
                         continue  # skip the rest of the code
 
-                if type(widget) == QtWidgets.QCheckBox and not widget.isChecked() and state:
+                if (type(widget) == QtWidgets.QCheckBox and not widget.isChecked() and state) or (widget_time == '22:30' and state):
                     end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
                     print(start_time, end_time, days[i - 1], room)
                     state = False
@@ -223,47 +238,55 @@ class ScheduleModifier:
 
         return schedules
 
-    def save_schedules(self, frame, combo_box):
+    def save_schedules(self, frame, combo_box, mode):
         schedules = self.calculate_times(frame, combo_box)
+
         if schedules is not None:
-            query = 'SELECT ROOM,DAY,START_TIME,END_TIME from dbo.Schedule'
+            if mode == 'Open':
+                table_name = 'dbo.OpenLabSchedule'
+            else:
+                table_name = 'dbo.Schedule'
+
+            query = f'SELECT ROOM,DAY,START_TIME,END_TIME from {table_name}'
             cursor = self.database_handler.execute_query(query)
+
+            # validate the cursor for empty results
+            if not self.database_handler.validate_cursor(cursor):
+                return
 
             data = cursor.fetchall()
             cursor.close()
 
+            current_room = combo_box.currentText()
+
             # delete all existing entries for this room
             for d in data:
-                for i in range(len(schedules)):
-                    if d.ROOM == schedules[i].room:
-                        query = f'DELETE FROM dbo.Schedule WHERE ROOM = ?'
+                if d.ROOM == current_room:
+                    query = f'DELETE FROM {table_name} WHERE ROOM = ?'
 
-                        cursor = self.database_handler.execute_query(query, schedules[i].room)
+                    cursor = self.database_handler.execute_query(query, current_room)
 
-                        if self.database_handler.validate_cursor(cursor):
-                            cursor.commit()
-                            cursor.close()
+                    if self.database_handler.validate_cursor(cursor):
+                        cursor.commit()
+                        cursor.close()
 
             # add new data
-            for i in range(len(schedules)):
-                query = f'''
-                INSERT INTO dbo.Schedule
-                    (ROOM,DAY,START_TIME,END_TIME) 
-                VALUES 
-                    (?, ?, ?, ?)'''  # query string
-                list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]  # variables to substitute '?' in the query string
-                cursor = self.database_handler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
-                cursor.commit()
-                cursor.close()
+            if schedules is not None and len(schedules) != 0:
+                for i in range(len(schedules)):
+                    query = f'''
+                    INSERT INTO {table_name}
+                        (ROOM,DAY,START_TIME,END_TIME) 
+                    VALUES 
+                        (?, ?, ?, ?)'''  # query string
+                    list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]  # variables to substitute '?' in the query string
+                    cursor = self.database_handler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
+                    cursor.commit()
+                    cursor.close()
 
-        self.schedules = self.get_schedules()
-
-    # clears all the QT Creator styles in favour of the QSS stylesheet
-    def clear_style_sheets(self):
-        widget_child = self.centralwidget.findChildren(QtWidgets.QWidget)
-
-        for widget in widget_child:
-            widget.setStyleSheet('')
+        if mode == 'Open':
+            self.open_lab_schedules = self.get_database_open_lab_schedules()
+        else:
+            self.schedules = self.get_database_schedules()
 
 
 # for testing
