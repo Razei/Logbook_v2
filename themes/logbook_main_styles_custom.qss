@@ -1,3 +1,7 @@
+*{
+    font-family: Segoe UI;
+}
+
 QProgressBar {
      border: 0px;
      border-radius: 10px;
@@ -74,19 +78,20 @@ QListView::item{
 }
 
 QListView {
-    show-decoration-selected: 1;
+    show-decoration-selected: 0;
     selection-color: text_colour;
-    selection-background-color: accent;
+    selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+        outline: none;
 }
 
 QListView::item:selected:active:hover{
-    background-color:accent; 
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
     color: background_colour;
     font-weight:bold;
 }
 
 QListView::item:selected:active:!hover{
-    background-color: accent; 
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2); 
     color: background_colour;
 }
 
@@ -113,7 +118,7 @@ QFrame{
 
 [accessibleDescription ="flatBackground"] {
     border-radius: 10px;
-    background-color: background_colour2;
+    background-color: background_colour3;
 }
 
  QScrollArea, QAbstractScrollArea, QScrollArea QWidget {
@@ -247,6 +252,10 @@ QAbstractScrollArea::corner {
     font-size: 12pt; 
 }
 
+QCheckBox::indicator{
+    border: 1px solid qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+}
+
 [accessibleDescription ="timerDanger"]{
     color: danger_colour;
     font-size: 12pt; 
@@ -291,6 +300,7 @@ QLabel[accessibleDescription ="formLabelNormal"]{
 
 QLabel[accessibleDescription ="titleLabel"]{
     color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 accent, stop: 1 accent2);
+    font-weight:bold;
 }
 
 QLabel[accessibleDescription ="timerLabelNormal"]{
