@@ -522,6 +522,40 @@ Text-align:left</string>
          </item>
         </layout>
        </widget>
+       <widget class="QPushButton" name="pushButtonRefreshStyle">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>580</y>
+          <width>189</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <family>Segoe UI</family>
+          <pointsize>12</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="accessibleDescription">
+         <string>menuButton</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255); 
+Text-align:left</string>
+        </property>
+        <property name="text">
+         <string>REFRESH</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
       </widget>
      </widget>
     </item>
@@ -3027,6 +3061,46 @@ color: rgb(0, 0, 0);</string>
                   <property name="verticalSpacing">
                    <number>16</number>
                   </property>
+                  <item row="0" column="3">
+                   <widget class="QLabel" name="labelSchedule_2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Segoe UI</family>
+                      <pointsize>12</pointsize>
+                      <weight>75</weight>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="cursor">
+                     <cursorShape>ArrowCursor</cursorShape>
+                    </property>
+                    <property name="accessibleDescription">
+                     <string>titleLabel</string>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">
+	color: rgb(0, 255, 108);</string>
+                    </property>
+                    <property name="text">
+                     <string>CURRENT SCHEDULE</string>
+                    </property>
+                    <property name="scaledContents">
+                     <bool>true</bool>
+                    </property>
+                    <property name="openExternalLinks">
+                     <bool>false</bool>
+                    </property>
+                    <property name="textInteractionFlags">
+                     <set>Qt::LinksAccessibleByMouse</set>
+                    </property>
+                   </widget>
+                  </item>
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelSchedule">
                     <property name="font">
@@ -3064,6 +3138,193 @@ color: rgb(0, 0, 0);</string>
                   <item row="0" column="1">
                    <widget class="QComboBox" name="comboBoxScheduleRooms"/>
                   </item>
+                  <item row="1" column="3">
+                   <widget class="QFrame" name="frameScheduleMod_2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>0</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="accessibleDescription">
+                     <string>flatBackground</string>
+                    </property>
+                    <property name="frameShape">
+                     <enum>QFrame::NoFrame</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Raised</enum>
+                    </property>
+                    <property name="lineWidth">
+                     <number>0</number>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_37">
+                     <property name="leftMargin">
+                      <number>24</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>24</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>24</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>24</number>
+                     </property>
+                     <item row="2" column="0">
+                      <widget class="QLabel" name="label_8">
+                       <property name="font">
+                        <font>
+                         <family>Segoe UI</family>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="accessibleDescription">
+                        <string>titleLabel</string>
+                       </property>
+                       <property name="text">
+                        <string>DAY</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="1">
+                      <widget class="QLabel" name="label_9">
+                       <property name="font">
+                        <font>
+                         <family>Segoe UI</family>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="accessibleDescription">
+                        <string>titleLabel</string>
+                       </property>
+                       <property name="text">
+                        <string>START TIME</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="4" column="0" colspan="3">
+                      <widget class="QScrollArea" name="scrollArea">
+                       <property name="styleSheet">
+                        <string notr="true">scrollBar</string>
+                       </property>
+                       <property name="widgetResizable">
+                        <bool>true</bool>
+                       </property>
+                       <widget class="QWidget" name="frameCurrentSchedule">
+                        <property name="geometry">
+                         <rect>
+                          <x>0</x>
+                          <y>0</y>
+                          <width>493</width>
+                          <height>496</height>
+                         </rect>
+                        </property>
+                        <layout class="QGridLayout" name="gridLayout_38">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="spacing">
+                          <number>16</number>
+                         </property>
+                         <item row="0" column="0">
+                          <widget class="QLabel" name="label_4">
+                           <property name="font">
+                            <font>
+                             <family>Segoe UI</family>
+                             <weight>75</weight>
+                             <bold>true</bold>
+                            </font>
+                           </property>
+                           <property name="accessibleDescription">
+                            <string>titleLabel</string>
+                           </property>
+                           <property name="text">
+                            <string>DAY</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="0" column="1">
+                          <widget class="QLabel" name="label_5">
+                           <property name="font">
+                            <font>
+                             <family>Segoe UI</family>
+                             <weight>75</weight>
+                             <bold>true</bold>
+                            </font>
+                           </property>
+                           <property name="accessibleDescription">
+                            <string>titleLabel</string>
+                           </property>
+                           <property name="text">
+                            <string>START TIME</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="0" column="2">
+                          <widget class="QLabel" name="label_6">
+                           <property name="font">
+                            <font>
+                             <family>Segoe UI</family>
+                             <weight>75</weight>
+                             <bold>true</bold>
+                            </font>
+                           </property>
+                           <property name="accessibleDescription">
+                            <string>titleLabel</string>
+                           </property>
+                           <property name="text">
+                            <string>END TIME</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </widget>
+                     </item>
+                     <item row="2" column="2">
+                      <widget class="QLabel" name="label_7">
+                       <property name="font">
+                        <font>
+                         <family>Segoe UI</family>
+                         <weight>75</weight>
+                         <bold>true</bold>
+                        </font>
+                       </property>
+                       <property name="accessibleDescription">
+                        <string>titleLabel</string>
+                       </property>
+                       <property name="text">
+                        <string>END TIME</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
                   <item row="1" column="0" colspan="2">
                    <widget class="QFrame" name="frameScheduleMod">
                     <property name="sizePolicy">
@@ -3071,6 +3332,18 @@ color: rgb(0, 0, 0);</string>
                       <horstretch>0</horstretch>
                       <verstretch>0</verstretch>
                      </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>400</width>
+                      <height>16777215</height>
+                     </size>
                     </property>
                     <property name="accessibleDescription">
                      <string>flatBackground</string>
@@ -3085,6 +3358,22 @@ color: rgb(0, 0, 0);</string>
                      <number>0</number>
                     </property>
                    </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <spacer name="horizontalSpacer">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Fixed</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>25</width>
+                      <height>5</height>
+                     </size>
+                    </property>
+                   </spacer>
                   </item>
                  </layout>
                 </widget>
