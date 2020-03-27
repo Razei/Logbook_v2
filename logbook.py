@@ -51,15 +51,14 @@ class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
         # local variables
-        # self.server_string = 'DESKTOP-B2TFENN' + '\\' + 'SQLEXPRESS'  # change this to your server name
+        # self.server_string = 'DESKTOP-B2TFENN\\SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        #self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
-        #self.db_handler = DatabaseHandler('DESKTOP-SIF9RD3\\SQLEXPRESS')
+        # self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
 
         self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
-        self.db_handler = DatabaseHandler('LAPTOP-L714M249\\SQLEXPRESS')
+        self.db_handler = DatabaseHandler(self.server_string)
         self.schedule_mod = schedule_modifier.ScheduleModifier(self.server_string)
 
         self.lastPage = ''
@@ -93,7 +92,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # add all click events
         self.getAllData()
-        self.addClickEvents()
+        self.add_all_events()
         self.apply_settings(theme['theme_name'], time_format)
 
         # set initial activated button
@@ -105,6 +104,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # reads the qss stylesheet and applies it to the application
         self.theme = str(open(theme_path, "r").read())
+        self.theme_path = theme_path
 
         # clears all the QT Creator styles in favour of the QSS stylesheet
         self.clearStyleSheets()
@@ -114,6 +114,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # show initial frame linked to dashboard button
         self.showLinkedFrame(self.pushButtonDashboard)
+
+    def refresh_style(self):
+        # clears all the QT Creator styles in favour of the QSS stylesheet
+        self.clearStyleSheets()
+        theme = str(open(self.theme_path, "r").read())
+        self.setStyleSheet(theme)
 
     # this function receives the data from the countChanged signal
     def onCountChanged(self, value):
@@ -127,8 +133,16 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.splash.finished(value)
 
     def show_schedule_modifier(self):
-        self.schedule_mod.make_labels(self.frameScheduleMod)
-        self.schedule_mod.make_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms)
+        self.labelSchedule.setText('SCHEDULE MODIFIER')
+        self.pushButtonScheduleSave.setAccessibleName('Schedule')
+        self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
+        self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
+
+    def show_open_lab_schedule_modifier(self):
+        self.labelSchedule.setText('OPEN LAB SCHEDULE MODIFIER')
+        self.pushButtonScheduleSave.setAccessibleName('Open')
+        self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
+        self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
 
     def show_dialog(self):
 
@@ -179,16 +193,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.lab_checker = LabChecker(self.server_string)
         self.schedules = self.lab_checker.get_today_schedule()
-
-        self.schedule_mod.make_labels(self.frameScheduleMod)
-        self.schedule_mod.make_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms)
-        self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms)
-
-        self.setProgressBar(43)
-
         self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
 
-        self.setProgressBar(70)
+        self.setProgressBar(43)
 
         cursor = self.db_handler.execute_query(rooms_query)
 
@@ -203,6 +210,13 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.all_rooms = room_list
 
+        cursor.close()
+
+        self.setProgressBar(70)
+
+        self.schedule_mod.make_labels(self.frameScheduleMod)
+        self.schedule_mod.make_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, room_list)
+        self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, self.pushButtonScheduleSave.accessibleName())
         self.populateComboBox(self.comboBoxRoom, room_list)
         self.populateComboBox(self.comboBoxNewLostAndFoundRoom, room_list)
 
@@ -215,6 +229,69 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.get_all_labs()
         self.refresh_tables()
+
+    # add all events
+    def add_all_events(self):
+        self.pushButtonRefreshStyle.clicked.connect(self.refresh_style)
+
+        # reports
+        self.pushButtonNew.clicked.connect(self.new_log)
+        self.pushButtonFormCancel.clicked.connect(self.change_to_last_page)
+        self.pushButtonExportData.clicked.connect(self.export_data_sheet)
+        self.pushButtonEditReports.clicked.connect(lambda: self.edit_log(self.tableWidgetReports))
+        self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month(None))
+
+        # problems
+        # self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
+        self.pushButtonDelete.clicked.connect(lambda: self.delete_selection(self.tableWidgetReports, 'Reports'))
+        self.pushButtonProblemsFixed.clicked.connect(lambda: self.edit_log(self.tableWidgetProblems))
+        self.pushButtonReportsView.clicked.connect(lambda: self.view_selection(self.tableWidgetReports))
+        self.pushButtonProblemsView.clicked.connect(lambda: self.view_selection(self.tableWidgetProblems))
+        self.pushButtonViewDataBack.clicked.connect(self.change_to_last_page)
+
+        # new log
+        self.pushButtonFormSave.clicked.connect(self.save_new_log)
+        self.pushButtonFormClear.clicked.connect(self.clear_form)
+        self.textBoxNewLogNote.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLogNote))
+        self.textBoxNewLogResolution.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLogResolution))
+        self.textBoxNewLostAndFoundNote.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLostAndFoundNote))
+
+        # lost and found
+        self.pushButtonViewLAF.clicked.connect(lambda: self.view_selection(self.tableWidgetLostAndFound))
+        self.pushButtonNewLAF.clicked.connect(self.new_lost_and_found)
+        self.pushButtonEditLAF.clicked.connect(self.edit_laf_form)
+        self.pushButtonFormClearLAF.clicked.connect(self.clear_lost_and_found_form)
+        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.stackedWidget,self.pageLostAndFound))
+        self.pushButtonFormSaveLAF.clicked.connect(self.save_lost_and_found_form)
+
+        # schedule modifier
+        self.comboBoxScheduleRooms.currentIndexChanged.connect(self.schedule_modifier_index_changed)
+        self.pushButtonScheduleBack.clicked.connect(lambda: self.change_page(self.stackedWidgetSchedule, self.pageOptions))
+        self.pushButtonScheduleMod.clicked.connect(self.show_schedule_modifier)
+        self.pushButtonOpenLabScheduleMod.clicked.connect(self.show_open_lab_schedule_modifier)
+        self.pushButtonScheduleSave.clicked.connect(lambda: self.save_schedules(self.frameScheduleMod, self.comboBoxScheduleRooms))
+        self.pushButtonScheduleCheckAll.clicked.connect(lambda: self.schedule_mod.check_all(self.frameScheduleMod))
+        self.pushButtonScheduleUnCheckAll.clicked.connect(lambda: self.schedule_mod.un_check_all(self.frameScheduleMod))
+
+        # self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
+        self.pushButtonDeleteLAF.clicked.connect(lambda: self.delete_selection(self.tableWidgetLostAndFound, 'LostAndFound'))
+        self.checkBoxNewLostAndFoundReturned.clicked.connect(self.returned_checkbox_changed)
+
+        # save settings signal
+        self.pushButtonSaveSettings.clicked.connect(self.save_settings)
+
+        # look through the children of the children until we find a QPushButton
+        for widget in self.frameMenu.children():
+            if isinstance(widget, QtWidgets.QPushButton):
+                widget.clicked.connect(self.button_pressed)  # connect click event function
+
+            for frame in widget.children():
+                if isinstance(frame, QtWidgets.QPushButton):
+                    frame.clicked.connect(self.button_pressed)  # connect click event function
+
+                for member in frame.children():
+                    if isinstance(member, QtWidgets.QPushButton):
+                        member.clicked.connect(self.button_pressed)  # connect click event function
 
     def get_all_labs(self):
         layout = self.scrollAreaAllLabs.widget().layout()
@@ -273,6 +350,67 @@ class LogBook(MainWindowBase, MainWindowUI):
                         label_times.setMinimumSize(200, 0)
                         label_times.setMaximumSize(100, 100)
                         layout.addWidget(label_times, current_row, 1)
+
+    def schedule_modifier_index_changed(self):
+        self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, self.pushButtonScheduleSave.accessibleName())
+        self.show_room_schedule(self.comboBoxScheduleRooms.currentText())
+
+    def show_room_schedule(self, room):
+        layout = self.frameCurrentSchedule.layout()
+        schedules = self.schedule_mod.get_schedules()
+
+        if layout is not None:
+            column_count = layout.columnCount()
+            row_count = layout.rowCount()
+            for i in range(column_count):  # loop through all columns
+                for j in range(row_count):  # loop starting at row 1
+                    item = layout.itemAtPosition(j, i)
+                    if item is not None:
+                        widget = item.widget()
+                        if widget is not None:
+                            widget.deleteLater()
+                            widget.setParent(None)
+
+        label_start_time = None
+
+        if schedules is not None and range(len(schedules) != 0):  # not empty validation
+            for schedule in schedules:  # loop through all schedules
+                if schedule.get_room().strip() == room.strip():
+                    current_row = layout.rowCount()  # this will always be an empty row index
+
+                    # label creation
+                    label_day = QtWidgets.QLabel(schedule.get_day().strip())
+                    label_day.setAlignment(Qt.AlignLeft  | Qt.AlignTop)
+                    label_day.setAccessibleDescription('formLabel')
+                    label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+                    label_day.setMinimumSize(0, 30)
+                    # adding to layout
+
+                    # label creation
+                    label_start_time = QtWidgets.QLabel(schedule.get_start_time())
+                    label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                    label_start_time.setAccessibleDescription('formLabel')
+                    label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+
+                    # label creation
+                    label_end_time = QtWidgets.QLabel(schedule.get_end_time())
+                    label_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                    label_end_time.setAccessibleDescription('formLabel')
+                    label_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+
+                    layout.addWidget(label_day, current_row, 0)
+                    layout.addWidget(label_start_time, current_row, 1)
+                    layout.addWidget(label_end_time, current_row, 2)
+
+            if label_start_time is None:
+                current_row = layout.rowCount()  # this will always be an empty row index
+
+                label_start_time = QtWidgets.QLabel('No open times')
+                label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_start_time.setAccessibleDescription('formLabel')
+                label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+                label_start_time.setMinimumSize(200, 0)
+                layout.addWidget(label_start_time, current_row, 1)
 
     def setProgressBar(self, value):
         self.splash_screen_thread.count = value
@@ -388,72 +526,12 @@ class LogBook(MainWindowBase, MainWindowUI):
                 member.setAccessibleDescription('menuButton')
                 member.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
-    # add all click events
-    def addClickEvents(self):
-
-        # reports
-        self.pushButtonNew.clicked.connect(self.new_log)
-        self.pushButtonFormCancel.clicked.connect(self.change_to_last_page)
-        self.pushButtonExportData.clicked.connect(self.export_data_sheet)
-        self.pushButtonEditReports.clicked.connect(lambda: self.edit_log(self.tableWidgetReports))
-        self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month(None))
-
-        # problems
-        # self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
-        self.pushButtonDelete.clicked.connect(lambda: self.delete_selection(self.tableWidgetReports, 'Reports'))
-        self.pushButtonProblemsFixed.clicked.connect(lambda: self.edit_log(self.tableWidgetProblems))
-        self.pushButtonReportsView.clicked.connect(lambda: self.view_selection(self.tableWidgetReports))
-        self.pushButtonProblemsView.clicked.connect(lambda: self.view_selection(self.tableWidgetProblems))
-        self.pushButtonViewDataBack.clicked.connect(self.change_to_last_page)
-
-        # new log
-        self.pushButtonFormSave.clicked.connect(self.save_new_log)
-        self.pushButtonFormClear.clicked.connect(self.clear_form)
-        self.textBoxNewLogNote.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLogNote))
-        self.textBoxNewLogResolution.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLogResolution))
-        self.textBoxNewLostAndFoundNote.textChanged.connect(lambda: self.max_txt_input(self.textBoxNewLostAndFoundNote))
-
-        # lost and found
-        self.pushButtonViewLAF.clicked.connect(lambda: self.view_selection(self.tableWidgetLostAndFound))
-        self.pushButtonNewLAF.clicked.connect(self.new_lost_and_found)
-        self.pushButtonEditLAF.clicked.connect(self.edit_laf_form)
-        self.pushButtonFormClearLAF.clicked.connect(self.clear_lost_and_found_form)
-        self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.stackedWidget,self.pageLostAndFound))
-        self.pushButtonFormSaveLAF.clicked.connect(self.save_lost_and_found_form)
-
-        # schedule modifier
-        self.comboBoxScheduleRooms.currentIndexChanged.connect(lambda: self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms))
-        self.pushButtonScheduleBack.clicked.connect(lambda: self.change_page(self.stackedWidgetSchedule, self.pageOptions))
-        self.pushButtonScheduleMod.clicked.connect(lambda: self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier))
-        self.pushButtonScheduleSave.clicked.connect(lambda: self.save_schedules(self.frameScheduleMod, self.comboBoxScheduleRooms))
-        self.pushButtonScheduleCheckAll.clicked.connect(lambda: self.schedule_mod.check_all(self.frameScheduleMod))
-        self.pushButtonScheduleUnCheckAll.clicked.connect(lambda: self.schedule_mod.un_check_all(self.frameScheduleMod))
-
-        # self.pushButtonRefreshLAF.clicked.connect(self.refreshTables)
-        self.pushButtonDeleteLAF.clicked.connect(lambda: self.delete_selection(self.tableWidgetLostAndFound, 'LostAndFound'))
-        self.checkBoxNewLostAndFoundReturned.clicked.connect(self.returned_checkbox_changed)
-
-        # save settings signal
-        self.pushButtonSaveSettings.clicked.connect(self.save_settings)
-
-        # look through the children of the children until we find a QPushButton
-        for widget in self.frameMenu.children():
-            if isinstance(widget, QtWidgets.QPushButton):
-                widget.clicked.connect(self.button_pressed)  # connect click event function
-
-            for frame in widget.children():
-                if isinstance(frame, QtWidgets.QPushButton):
-                    frame.clicked.connect(self.button_pressed)  # connect click event function
-
-                for member in frame.children():
-                    if isinstance(member, QtWidgets.QPushButton):
-                        member.clicked.connect(self.button_pressed)  # connect click event function
-
     def save_schedules(self, frame, combo_box):
-        self.schedule_mod.save_schedules(frame, combo_box)
+        self.schedule_mod.save_schedules(frame, combo_box, self.pushButtonScheduleSave.accessibleName())
         self.schedules = self.lab_checker.get_today_schedule()
         self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
         self.get_all_labs()
+        self.show_room_schedule(combo_box.currentText())
 
         self.clear_layout(self.frameEmptyRooms)
         self.clear_layout(self.frameUpcomingRooms)
