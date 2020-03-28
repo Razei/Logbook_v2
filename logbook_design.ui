@@ -3183,41 +3183,7 @@ color: rgb(0, 0, 0);</string>
                      <property name="bottomMargin">
                       <number>24</number>
                      </property>
-                     <item row="2" column="0">
-                      <widget class="QLabel" name="label_8">
-                       <property name="font">
-                        <font>
-                         <family>Segoe UI</family>
-                         <weight>75</weight>
-                         <bold>true</bold>
-                        </font>
-                       </property>
-                       <property name="accessibleDescription">
-                        <string>titleLabel</string>
-                       </property>
-                       <property name="text">
-                        <string>DAY</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="2" column="1">
-                      <widget class="QLabel" name="label_9">
-                       <property name="font">
-                        <font>
-                         <family>Segoe UI</family>
-                         <weight>75</weight>
-                         <bold>true</bold>
-                        </font>
-                       </property>
-                       <property name="accessibleDescription">
-                        <string>titleLabel</string>
-                       </property>
-                       <property name="text">
-                        <string>START TIME</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="4" column="0" colspan="3">
+                     <item row="3" column="0" colspan="2">
                       <widget class="QScrollArea" name="scrollArea">
                        <property name="styleSheet">
                         <string notr="true">scrollBar</string>
@@ -3231,7 +3197,7 @@ color: rgb(0, 0, 0);</string>
                           <x>0</x>
                           <y>0</y>
                           <width>493</width>
-                          <height>496</height>
+                          <height>517</height>
                          </rect>
                         </property>
                         <layout class="QGridLayout" name="gridLayout_38">
@@ -3264,6 +3230,9 @@ color: rgb(0, 0, 0);</string>
                            </property>
                            <property name="text">
                             <string>DAY</string>
+                           </property>
+                           <property name="alignment">
+                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                            </property>
                           </widget>
                          </item>
@@ -3303,23 +3272,6 @@ color: rgb(0, 0, 0);</string>
                          </item>
                         </layout>
                        </widget>
-                      </widget>
-                     </item>
-                     <item row="2" column="2">
-                      <widget class="QLabel" name="label_7">
-                       <property name="font">
-                        <font>
-                         <family>Segoe UI</family>
-                         <weight>75</weight>
-                         <bold>true</bold>
-                        </font>
-                       </property>
-                       <property name="accessibleDescription">
-                        <string>titleLabel</string>
-                       </property>
-                       <property name="text">
-                        <string>END TIME</string>
-                       </property>
                       </widget>
                      </item>
                     </layout>
