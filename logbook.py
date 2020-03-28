@@ -343,7 +343,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                     if label_times is not None:
                         layout.addWidget(label_times, current_row, 1)
                     else:
-                        label_times = QtWidgets.QLabel('No open times')
+                        label_times = QtWidgets.QLabel('None')
                         label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                         label_times.setAccessibleDescription('formLabel')
                         label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -352,12 +352,17 @@ class LogBook(MainWindowBase, MainWindowUI):
                         layout.addWidget(label_times, current_row, 1)
 
     def schedule_modifier_index_changed(self):
-        self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, self.pushButtonScheduleSave.accessibleName())
-        self.show_room_schedule(self.comboBoxScheduleRooms.currentText())
+        mode = self.pushButtonScheduleSave.accessibleName()
+        self.schedule_mod.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, mode)
+        self.show_room_schedule(self.comboBoxScheduleRooms.currentText(), mode)
 
-    def show_room_schedule(self, room):
+    def show_room_schedule(self, room, mode):
         layout = self.frameCurrentSchedule.layout()
-        schedules = self.schedule_mod.get_schedules()
+
+        if mode == 'Open':
+            schedules = self.schedule_mod.get_open_lab_schedules()
+        else:
+            schedules = self.schedule_mod.get_schedules()
 
         if layout is not None:
             column_count = layout.columnCount()
@@ -371,46 +376,83 @@ class LogBook(MainWindowBase, MainWindowUI):
                             widget.deleteLater()
                             widget.setParent(None)
 
-        label_start_time = None
+        current_row = layout.rowCount()  # this will always be an empty row index
+
+        # label creation
+        header_day = QtWidgets.QLabel('DAY')
+        header_start_time = QtWidgets.QLabel('START TIME')
+        header_end_time = QtWidgets.QLabel('END TIME')
+
+        header_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        header_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        header_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # accessible description for qss styling
+        header_day.setAccessibleDescription('titleLabel')
+        header_start_time.setAccessibleDescription('titleLabel')
+        header_end_time.setAccessibleDescription('titleLabel')
+
+        header_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        header_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        header_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+        header_day.setMinimumSize(0, 30)
+        header_start_time.setMinimumSize(0, 30)
+        header_end_time.setMinimumSize(0, 30)
+
+        layout.addWidget(header_day, current_row, 0)
+        layout.addWidget(header_start_time, current_row, 1)
+        layout.addWidget(header_end_time, current_row, 2)
 
         if schedules is not None and range(len(schedules) != 0):  # not empty validation
-            for schedule in schedules:  # loop through all schedules
-                if schedule.get_room().strip() == room.strip():
-                    current_row = layout.rowCount()  # this will always be an empty row index
+            days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-                    # label creation
-                    label_day = QtWidgets.QLabel(schedule.get_day().strip())
-                    label_day.setAlignment(Qt.AlignLeft  | Qt.AlignTop)
-                    label_day.setAccessibleDescription('formLabel')
-                    label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-                    label_day.setMinimumSize(0, 30)
-                    # adding to layout
+            for schedule_day in days:  # loop through all schedule days
+                current_row = layout.rowCount()  # this will always be an empty row index
+                label_start_time = None
+                label_end_time = None
 
-                    # label creation
-                    label_start_time = QtWidgets.QLabel(schedule.get_start_time())
+                # label creation
+                label_day = QtWidgets.QLabel(schedule_day.strip())
+                label_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_day.setAccessibleDescription('formLabel')
+                label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_day.setMinimumSize(0, 30)
+
+                layout.addWidget(label_day, current_row, 0)
+
+                for schedule in schedules:  # loop through all schedules
+                    if schedule.get_room().strip() == room.strip() and schedule.get_day() == schedule_day:
+                        # label creation
+                        if label_start_time is not None:
+                            label_start_time.setText(label_start_time.text() + '\n' + schedule.get_start_time())
+                        else:
+                            label_start_time = QtWidgets.QLabel(schedule.get_start_time())
+                            label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                            label_start_time.setAccessibleDescription('formLabel')
+                            label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+                        # label creation
+                        if label_end_time is not None:
+                            label_end_time.setText(label_end_time.text() + '\n' + schedule.get_end_time())
+                        else:
+                            label_end_time = QtWidgets.QLabel(schedule.get_end_time())
+                            label_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                            label_end_time.setAccessibleDescription('formLabel')
+                            label_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+                if label_start_time is not None:
+                    layout.addWidget(label_start_time, current_row, 1)
+                else:
+                    label_start_time = QtWidgets.QLabel('None')
                     label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                     label_start_time.setAccessibleDescription('formLabel')
-                    label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-
-                    # label creation
-                    label_end_time = QtWidgets.QLabel(schedule.get_end_time())
-                    label_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                    label_end_time.setAccessibleDescription('formLabel')
-                    label_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-
-                    layout.addWidget(label_day, current_row, 0)
+                    label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                    label_start_time.setMinimumSize(200, 0)
                     layout.addWidget(label_start_time, current_row, 1)
+
+                if label_end_time is not None:
                     layout.addWidget(label_end_time, current_row, 2)
-
-            if label_start_time is None:
-                current_row = layout.rowCount()  # this will always be an empty row index
-
-                label_start_time = QtWidgets.QLabel('No open times')
-                label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                label_start_time.setAccessibleDescription('formLabel')
-                label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-                label_start_time.setMinimumSize(200, 0)
-                layout.addWidget(label_start_time, current_row, 1)
 
     def setProgressBar(self, value):
         self.splash_screen_thread.count = value
@@ -527,11 +569,12 @@ class LogBook(MainWindowBase, MainWindowUI):
                 member.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
     def save_schedules(self, frame, combo_box):
-        self.schedule_mod.save_schedules(frame, combo_box, self.pushButtonScheduleSave.accessibleName())
+        mode = self.pushButtonScheduleSave.accessibleName()
+        self.schedule_mod.save_schedules(frame, combo_box, mode)
         self.schedules = self.lab_checker.get_today_schedule()
         self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
         self.get_all_labs()
-        self.show_room_schedule(combo_box.currentText())
+        self.show_room_schedule(combo_box.currentText(), mode)
 
         self.clear_layout(self.frameEmptyRooms)
         self.clear_layout(self.frameUpcomingRooms)
