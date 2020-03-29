@@ -55,9 +55,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
+        # self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
 
-        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         self.db_handler = DatabaseHandler(self.server_string)
         self.schedule_mod = schedule_modifier.ScheduleModifier(self.server_string)
 
