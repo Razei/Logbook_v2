@@ -407,23 +407,23 @@ class LogBook(MainWindowBase, MainWindowUI):
         layout.addWidget(header_start_time, current_row, 1)
         layout.addWidget(header_end_time, current_row, 2)
 
-        if schedules is not None and range(len(schedules) != 0):  # not empty validation
-            days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-            for schedule_day in days:  # loop through all schedule days
-                current_row = layout.rowCount()  # this will always be an empty row index
-                label_start_time = None
-                label_end_time = None
+        for schedule_day in days:  # loop through all schedule days
+            current_row = layout.rowCount()  # this will always be an empty row index
+            label_start_time = None
+            label_end_time = None
 
-                # label creation
-                label_day = QtWidgets.QLabel(schedule_day.strip())
-                label_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                label_day.setAccessibleDescription('formLabel')
-                label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                label_day.setMinimumSize(0, 30)
+            # label creation
+            label_day = QtWidgets.QLabel(schedule_day.strip())
+            label_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            label_day.setAccessibleDescription('formLabel')
+            label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            label_day.setMinimumSize(0, 30)
 
-                layout.addWidget(label_day, current_row, 0)
+            layout.addWidget(label_day, current_row, 0)
 
+            if schedules is not None and range(len(schedules) != 0):  # not empty validation
                 for schedule in schedules:  # loop through all schedules
                     if schedule.get_room().strip() == room.strip() and schedule.get_day() == schedule_day:
                         # label creation
@@ -444,18 +444,18 @@ class LogBook(MainWindowBase, MainWindowUI):
                             label_end_time.setAccessibleDescription('formLabel')
                             label_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-                if label_start_time is not None:
-                    layout.addWidget(label_start_time, current_row, 1)
-                else:
-                    label_start_time = QtWidgets.QLabel('None')
-                    label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                    label_start_time.setAccessibleDescription('formLabel')
-                    label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                    label_start_time.setMinimumSize(200, 0)
-                    layout.addWidget(label_start_time, current_row, 1)
+            if label_start_time is not None:
+                layout.addWidget(label_start_time, current_row, 1)
+            else:
+                label_start_time = QtWidgets.QLabel('None')
+                label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_start_time.setAccessibleDescription('formLabel')
+                label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_start_time.setMinimumSize(200, 0)
+                layout.addWidget(label_start_time, current_row, 1)
 
-                if label_end_time is not None:
-                    layout.addWidget(label_end_time, current_row, 2)
+            if label_end_time is not None:
+                layout.addWidget(label_end_time, current_row, 2)
 
     def setProgressBar(self, value):
         self.splash_screen_thread.count = value

@@ -250,24 +250,22 @@ class ScheduleModifier:
             cursor = self.database_handler.execute_query(query)
 
             # validate the cursor for empty results
-            if not self.database_handler.validate_cursor(cursor):
-                return
+            if self.database_handler.validate_cursor(cursor):
+                data = cursor.fetchall()
+                cursor.close()
 
-            data = cursor.fetchall()
-            cursor.close()
+                current_room = combo_box.currentText()
 
-            current_room = combo_box.currentText()
+                # delete all existing entries for this room
+                for d in data:
+                    if d.ROOM == current_room:
+                        query = f'DELETE FROM {table_name} WHERE ROOM = ?'
 
-            # delete all existing entries for this room
-            for d in data:
-                if d.ROOM == current_room:
-                    query = f'DELETE FROM {table_name} WHERE ROOM = ?'
+                        cursor = self.database_handler.execute_query(query, current_room)
 
-                    cursor = self.database_handler.execute_query(query, current_room)
-
-                    if self.database_handler.validate_cursor(cursor):
-                        cursor.commit()
-                        cursor.close()
+                        if self.database_handler.validate_cursor(cursor):
+                            cursor.commit()
+                            cursor.close()
 
             # add new data
             if schedules is not None and len(schedules) != 0:
