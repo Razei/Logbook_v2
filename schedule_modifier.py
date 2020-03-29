@@ -51,7 +51,6 @@ class ScheduleModifier:
             time.setAccessibleDescription('normalLabel')
             layout.addWidget(time, i+1, 0)
             start_time += 1
-
         frame.setLayout(layout)
 
     def make_checkboxes(self, frame, comboBox, room_list):
