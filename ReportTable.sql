@@ -121,6 +121,8 @@ INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,ST
 SELECT * FROM dbo.LostAndFound;
 */
 
+SELECT * FROM ReportLog.dbo.LostAndFound where ITEM_DESC like '%keyword%'or NAME like '%keyword%' or ROOM like '%keyword%' or NOTE like '%keyword%';
+
 CREATE TABLE dbo.Schedule(
 	SCHEDULE_ID INT IDENTITY(1,1) PRIMARY KEY,
 	ROOM NCHAR(6) FOREIGN KEY REFERENCES ROOMS(ROOM) ON DELETE CASCADE,
