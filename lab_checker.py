@@ -1,17 +1,17 @@
 import datetime
 from ScheduleObj import ScheduleObj
 from database_handler import DatabaseHandler
+from schedule_modifier import ScheduleModifier
 
 
 # lab checker class
 # the schedule object holds the room number, day, start time, and end time
 # the schedule list holds all the schedules for all the rooms for the current day
 class LabChecker:
-    def __init__(self, server_string):
-        self.server_string = server_string
-        self.db_handler = DatabaseHandler(self.server_string)
+    def __init__(self):
         self.tFormat = "%H:%M:%S"  # 24hr by default
         self.weekday_string = self.weekday_switch(self.get_local_date().weekday())
+        self.schedules = ScheduleModifier().get_database_schedules()
 
     @staticmethod
     def get_local_date():
@@ -34,10 +34,10 @@ class LabChecker:
 
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule WHERE DAY = '{self.weekday_string}'"
-        cursor = self.db_handler.execute_query(query)
+        cursor = DatabaseHandler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.db_handler.validate_cursor(cursor):
+        if not DatabaseHandler.validate_cursor(cursor):
             return
 
         schedule_data = cursor.fetchall()
@@ -45,7 +45,7 @@ class LabChecker:
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
             # the schedule object holds the room number, day, start time, and end time
-            schedule_objects.append(ScheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
+            schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(), sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
         cursor.close()
         return schedule_objects
 
@@ -55,17 +55,17 @@ class LabChecker:
         self.weekday_string = self.weekday_switch(self.get_local_date().weekday())  # get weekday string of today
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule WHERE DAY = '{self.weekday_string}'"
-        cursor = self.db_handler.execute_query(query)
+        cursor = DatabaseHandler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.db_handler.validate_cursor(cursor):
+        if not DatabaseHandler.validate_cursor(cursor):
             return
 
         schedule_data = cursor.fetchall()
 
         # loop through the cursor and add data to the scheduleObj class
         for sch_time in schedule_data:
-            schedule_objects.append(ScheduleObj(sch_time.ROOM, sch_time.DAY, sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
+            schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(), sch_time.START_TIME.isoformat(timespec='seconds'), sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
         cursor.close()
         return schedule_objects
 
@@ -123,7 +123,6 @@ class LabChecker:
 
         return time_left
 
-    '''
     # for handling creation and deletion of checkboxes for labs that are vacant
     def duration_handler(self):
 
@@ -181,13 +180,21 @@ class LabChecker:
                     if countdown <= datetime.timedelta(seconds=1):  # countdown expired, so hide and remove the widget
                         self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setVisible(False)
                         self.frameOpenLabs.findChild(QtWidgets.QLabel, search).deleteLater()
-'''
+
+
+class Countdown:
+    def __init__(self, schedule):
+        self.schedule = schedule
+        self.countdown = ''
+
+    def get_schedule(self):
+        return self.schedule
 
 
 # temporary main for testing
 if __name__ == '__main__':
     server_string = 'DESKTOP-SIF9RD3\\SQLEXPRESS;'
-    labChk = LabChecker(server_string)
+    labChk = LabChecker()
     labChk.set_time_format('12HR')
     schedules = labChk.get_today_schedule()
 

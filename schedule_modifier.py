@@ -1,7 +1,6 @@
 import sys
 from datetime import datetime
-
-from PyQt5 import QtCore, QtGui, uic, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
 from database_handler import DatabaseHandler
@@ -10,8 +9,8 @@ from ScheduleObj import ScheduleObj
 
 
 class ScheduleModifier:
-    def __init__(self, server_string):
-        self.database_handler = DatabaseHandler(server_string)
+
+    def __init__(self):
         self.schedules = self.get_database_schedules()
         self.open_lab_schedules = self.get_database_open_lab_schedules()
 
@@ -90,16 +89,17 @@ class ScheduleModifier:
                 layout.addWidget(frame2, j, i)
                 start_time += 1
 
-    def get_database_schedules(self):
+    @staticmethod
+    def get_database_schedules():
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
 
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule"
-        cursor = self.database_handler.execute_query(query)
+        cursor = DatabaseHandler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.database_handler.validate_cursor(cursor):
+        if not DatabaseHandler.validate_cursor(cursor):
             return
 
         schedule_data = cursor.fetchall()
@@ -113,16 +113,17 @@ class ScheduleModifier:
         cursor.close()
         return schedule_objects
 
-    def get_database_open_lab_schedules(self):
+    @staticmethod
+    def get_database_open_lab_schedules():
         # local variables
         schedule_objects = []  # for holding a list of schedule objects
 
         # query stuff
         query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule"
-        cursor = self.database_handler.execute_query(query)
+        cursor = DatabaseHandler.execute_query(query)
 
         # validate the cursor for empty results
-        if not self.database_handler.validate_cursor(cursor):
+        if not DatabaseHandler.validate_cursor(cursor):
             return
 
         schedule_data = cursor.fetchall()
@@ -247,10 +248,10 @@ class ScheduleModifier:
                 table_name = 'dbo.Schedule'
 
             query = f'SELECT ROOM,DAY,START_TIME,END_TIME from {table_name}'
-            cursor = self.database_handler.execute_query(query)
+            cursor = DatabaseHandler.execute_query(query)
 
             # validate the cursor for empty results
-            if self.database_handler.validate_cursor(cursor):
+            if DatabaseHandler.validate_cursor(cursor):
                 data = cursor.fetchall()
                 cursor.close()
 
@@ -258,12 +259,12 @@ class ScheduleModifier:
 
                 # delete all existing entries for this room
                 for d in data:
-                    if d.ROOM == current_room:
+                    if d.ROOM.strip() == current_room:
                         query = f'DELETE FROM {table_name} WHERE ROOM = ?'
 
-                        cursor = self.database_handler.execute_query(query, current_room)
+                        cursor = DatabaseHandler.execute_query(query, current_room)
 
-                        if self.database_handler.validate_cursor(cursor):
+                        if DatabaseHandler.validate_cursor(cursor):
                             cursor.commit()
                             cursor.close()
 
@@ -276,7 +277,7 @@ class ScheduleModifier:
                     VALUES 
                         (?, ?, ?, ?)'''  # query string
                     list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]  # variables to substitute '?' in the query string
-                    cursor = self.database_handler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
+                    cursor = DatabaseHandler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
                     cursor.commit()
                     cursor.close()
 
