@@ -53,10 +53,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         # self.server_string = 'DESKTOP-B2TFENN\\SQLEXPRESS'  # change this to your server name
 
         '''Shaniquo's Laptop, DO NOT DELETE'''
-        # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
-        # self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
+        #self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
+        self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
 
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        #self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
         DatabaseHandler.set_server_string(self.server_string)
 
         self.server_string = DatabaseHandler.get_server_string()
@@ -267,8 +267,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormCancelLAF.clicked.connect(lambda: self.change_page(self.stackedWidget,self.pageLostAndFound))
         self.pushButtonFormSaveLAF.clicked.connect(self.save_lost_and_found_form)
 
-        # search lost and found
-        # self.pushButtonSearchLAF.clicked.connect(self.search_LAF(self.txtBoxSearchLAF.text()))
+        # search lost and found & Reports
+        self.pushButtonSearchLAF.clicked.connect(lambda: self.search_Buttons(self.tableWidgetLostAndFound, self.txtBoxSearchLAF))
+        self.pushButtonSearchReports.clicked.connect(lambda: self.search_Buttons(self.tableWidgetReports, self.txtBoxSearchReports))
 
         # schedule modifier
         self.comboBoxScheduleRooms.currentIndexChanged.connect(self.schedule_modifier_index_changed)
@@ -932,7 +933,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         for room in room_problems:
             room_list_problems.append(room[0])
 
-        #self.labelRoomProblems.setText('\n'.join(room_list_problems))
+        self.labelRoomProblems.setText('\n'.join(room_list_problems))
 
     @staticmethod
     def cleanup_empty_cells(table):
@@ -1017,11 +1018,47 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.change_to_last_page()
         self.clear_form()
 
-    def search_LAF(self, keyword):
+    '''def search_LAF(self):
+        keyword = self.txtBoxSearchLAF.text()
         if keyword is not None:
-            lost_and_found_query = f"SELECT * FROM ReportLog.dbo.LostAndFound where ITEM_DESC like '%{keyword}%'or NAME like '%{keyword}%' or ROOM like '%{keyword}%' or NOTE like '%{keyword}%'"
+            lost_and_found_query = f"""
+                SELECT * FROM ReportLog.dbo.LostAndFound 
+                where ITEM_DESC like '%{keyword}%'or 
+                NAME like '%{keyword}%' or 
+                ROOM like '%{keyword}%' or 
+                NOTE like '%{keyword}%';
+                """
             self.populate_table(self.tableWidgetLostAndFound, lost_and_found_query)
             self.cleanup_empty_cells(self.tableWidgetLostAndFound)
+    '''
+
+    def search_Buttons(self, table, button):
+        keyword = button.text()
+
+        if table.objectName().find('Lost') != -1:
+            query = f"""
+                SELECT * FROM ReportLog.dbo.LostAndFound 
+                where ITEM_DESC like '%{keyword}%'or 
+                NAME like '%{keyword}%' or 
+                ROOM like '%{keyword}%' or 
+                NOTE like '%{keyword}%';
+            """
+            self.populate_table(table, query)
+            self.cleanup_empty_cells(table)
+
+        elif table.objectName().find('Reports') != -1:
+            query = f"""
+                SELECT * FROM ReportLog.dbo.Reports 
+                where ISSUE like '%{keyword}%'or 
+                NAME like '%{keyword}%' or 
+                ROOM like '%{keyword}%' or 
+                RESOLUTION like '%{keyword}%' or
+                FIXED like '%{keyword}%' or 
+                NOTE like '%{keyword}%';
+            """
+            self.populate_table(table, query)
+            self.cleanup_empty_cells(table)
+
 
     def edit_log(self, table):
         self.lastPage = table.objectName()
