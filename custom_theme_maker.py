@@ -14,6 +14,7 @@ class CustomThemeMaker:
         self.background_colour3 = ''
 
         self.main_colour = ''
+        self.main_colour2 = ''
 
         self.text_colour = ''
         self.active_text_colour = ''
@@ -33,6 +34,7 @@ class CustomThemeMaker:
         self.background_colour3 = '#5E5E5E'
 
         self.main_colour = '#454547'
+        self.main_colour2 = '#454547'
 
         self.text_colour = '#FFFFFF'
         self.active_text_colour = '#454547'
@@ -54,6 +56,7 @@ class CustomThemeMaker:
         self.background_colour3 = '#F9F9F9'
 
         self.main_colour = '#FFFFFF'
+        self.main_colour2 = '#454547'
 
         self.text_colour = '#454547'
         self.active_text_colour = '#FFFFFF'
@@ -76,6 +79,7 @@ class CustomThemeMaker:
             line = line.replace('background_colour2', self.background_colour2)
             line = line.replace('background_colour3', self.background_colour3)
             line = line.replace('background_colour', self.background_colour)
+            line = line.replace('main_colour2', self.main_colour2)
             line = line.replace('main_colour', self.main_colour)
 
             line = line.replace('accent2', self.accent2)
