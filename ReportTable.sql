@@ -119,10 +119,10 @@ CREATE TABLE dbo.LostAndFound (
 /*
 INSERT INTO dbo.LostAndFound(DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES ('2020-01-02','A3-26','Jarod','White iPad','Found at the teachers desk','New Student','123456789','2020-01-02','YES');
 SELECT * FROM dbo.LostAndFound;
-*/
+
 
 SELECT * FROM ReportLog.dbo.LostAndFound where ITEM_DESC like '%keyword%'or NAME like '%keyword%' or ROOM like '%keyword%' or NOTE like '%keyword%';
-
+*/
 CREATE TABLE dbo.Schedule(
 	SCHEDULE_ID INT IDENTITY(1,1) PRIMARY KEY,
 	ROOM NCHAR(6) FOREIGN KEY REFERENCES ROOMS(ROOM) ON DELETE CASCADE,
@@ -131,7 +131,7 @@ CREATE TABLE dbo.Schedule(
 	END_TIME TIME(0)
 );
 
-/*
+/**/
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','12:00','15:00');
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday','16:00','17:00');
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('A3-15','Friday','11:30','13:30');
@@ -145,7 +145,7 @@ INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('D1-22','Monday',
 INSERT INTO dbo.Schedule(ROOM,DAY,START_TIME,END_TIME) VALUES ('B3-17','Monday','23:00','00:30');
 
 SELECT * FROM dbo.Schedule;
-*/
+
 
 CREATE TABLE dbo.OpenLabSchedule(
 	SCHEDULE_ID INT IDENTITY(1,1) PRIMARY KEY,
