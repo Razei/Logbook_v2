@@ -53,11 +53,11 @@ class DatabaseHandler:
     @classmethod
     def create_new_database(cls, year_str=None):
         import datetime
-        now = datetime.datetime.now()
+        year = datetime.datetime.now().year
 
         # I tried to do this in SQL Server with a SQL file, but I couldn't figure out how to make a dynamic database name
         # so I'll just use python instead lol
-        database_name = 'ReportLog' + str(now.year)
+        database_name = 'ReportLog' + str(year)
 
         query = f'''
         USE master;
