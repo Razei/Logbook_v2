@@ -8,17 +8,65 @@ from settings_manager import SettingsManager
 from ScheduleObj import ScheduleObj
 
 
+def get_database_schedules():
+    # local variables
+    schedule_objects = []  # for holding a list of schedule objects
+
+    # query stuff
+    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule"
+    cursor = DatabaseHandler.execute_query(query)
+
+    # validate the cursor for empty results
+    if not DatabaseHandler.validate_cursor(cursor):
+        return
+
+    schedule_data = cursor.fetchall()
+
+    # loop through the cursor and add data to the scheduleObj class
+    for sch_time in schedule_data:
+        # the schedule object holds the room number, day, start time, and end time
+        schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(),
+                                            sch_time.START_TIME.isoformat(timespec='seconds'),
+                                            sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
+    cursor.close()
+    return schedule_objects
+
+
+def get_database_open_lab_schedules():
+    # local variables
+    schedule_objects = []  # for holding a list of schedule objects
+
+    # query stuff
+    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule"
+    cursor = DatabaseHandler.execute_query(query)
+
+    # validate the cursor for empty results
+    if not DatabaseHandler.validate_cursor(cursor):
+        return
+
+    schedule_data = cursor.fetchall()
+
+    # loop through the cursor and add data to the scheduleObj class
+    for sch_time in schedule_data:
+        # the schedule object holds the room number, day, start time, and end time
+        schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(),
+                                            sch_time.START_TIME.isoformat(timespec='seconds'),
+                                            sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
+    cursor.close()
+    return schedule_objects
+
+
 class ScheduleModifier:
+    schedules = get_database_schedules()
+    open_lab_schedules = get_database_open_lab_schedules()
 
-    def __init__(self):
-        self.schedules = self.get_database_schedules()
-        self.open_lab_schedules = self.get_database_open_lab_schedules()
+    @classmethod
+    def get_schedules(cls):
+        return cls.schedules
 
-    def get_schedules(self):
-        return self.schedules
-
-    def get_open_lab_schedules(self):
-        return self.open_lab_schedules
+    @classmethod
+    def get_open_lab_schedules(cls):
+        return cls.open_lab_schedules
 
     @staticmethod
     def populate_combo_box(combobox, items):
@@ -52,7 +100,8 @@ class ScheduleModifier:
             start_time += 1
         frame.setLayout(layout)
 
-    def make_checkboxes(self, frame, comboBox, room_list):
+    @classmethod
+    def make_checkboxes(cls, frame, comboBox, room_list):
         layout = frame.layout()
         column_count = layout.columnCount()
         row_count = layout.rowCount()
@@ -66,7 +115,7 @@ class ScheduleModifier:
             if room.strip() == 'Other':
                 room_list.remove(room)
 
-        self.populate_combo_box(comboBox, room_list)
+        cls.populate_combo_box(comboBox, room_list)
 
         for i in range(1, column_count):  # loop starting at column 1
             start_time = 8
@@ -89,65 +138,18 @@ class ScheduleModifier:
                 layout.addWidget(frame2, j, i)
                 start_time += 1
 
-    @staticmethod
-    def get_database_schedules():
-        # local variables
-        schedule_objects = []  # for holding a list of schedule objects
-
-        # query stuff
-        query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule"
-        cursor = DatabaseHandler.execute_query(query)
-
-        # validate the cursor for empty results
-        if not DatabaseHandler.validate_cursor(cursor):
-            return
-
-        schedule_data = cursor.fetchall()
-
-        # loop through the cursor and add data to the scheduleObj class
-        for sch_time in schedule_data:
-            # the schedule object holds the room number, day, start time, and end time
-            schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(),
-                                                sch_time.START_TIME.isoformat(timespec='seconds'),
-                                                sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
-        cursor.close()
-        return schedule_objects
-
-    @staticmethod
-    def get_database_open_lab_schedules():
-        # local variables
-        schedule_objects = []  # for holding a list of schedule objects
-
-        # query stuff
-        query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule"
-        cursor = DatabaseHandler.execute_query(query)
-
-        # validate the cursor for empty results
-        if not DatabaseHandler.validate_cursor(cursor):
-            return
-
-        schedule_data = cursor.fetchall()
-
-        # loop through the cursor and add data to the scheduleObj class
-        for sch_time in schedule_data:
-            # the schedule object holds the room number, day, start time, and end time
-            schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(),
-                                                sch_time.START_TIME.isoformat(timespec='seconds'),
-                                                sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
-        cursor.close()
-        return schedule_objects
-
-    def update_checkboxes(self, frame, comboBox, mode):
+    @classmethod
+    def update_checkboxes(cls, frame, comboBox, mode):
         import re
-        self.un_check_all(frame)
+        cls.un_check_all(frame)
 
         if mode is None or mode == '':
             return
 
         if mode == 'Open':
-            schedules = self.open_lab_schedules
+            schedules = cls.open_lab_schedules
         else:
-            schedules = self.schedules
+            schedules = cls.schedules
 
         layout = frame.layout()
         column_count = layout.columnCount()
@@ -226,20 +228,21 @@ class ScheduleModifier:
                 # if it's checked and it's not 22:30
                 if (type(widget) == QtWidgets.QCheckBox and widget.isChecked()) and not (widget_time == '22:30'):  # 22:30 cannot be a start time
                     if not state:  # self.state helps to keep track of whether there's a start time already
-                        start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
+                        start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30:00'
                         state = True  # indicate there is now a start time waiting for an end time to complete the object below
                         continue  # skip the rest of the code
 
                 if (type(widget) == QtWidgets.QCheckBox and not widget.isChecked() and state) or (widget_time == '22:30' and state):
-                    end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
+                    end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30:00'
                     print(start_time, end_time, days[i - 1], room)
                     state = False
                     schedules.append(ScheduleObj(room, days[i - 1], start_time, end_time))
 
         return schedules
 
-    def save_schedules(self, frame, combo_box, mode):
-        schedules = self.calculate_times(frame, combo_box)
+    @classmethod
+    def save_schedules(cls, frame, combo_box, mode):
+        schedules = cls.calculate_times(frame, combo_box)
 
         if schedules is not None:
             if mode == 'Open':
@@ -282,9 +285,9 @@ class ScheduleModifier:
                     cursor.close()
 
         if mode == 'Open':
-            self.open_lab_schedules = self.get_database_open_lab_schedules()
+            cls.open_lab_schedules = get_database_open_lab_schedules()
         else:
-            self.schedules = self.get_database_schedules()
+            cls.schedules = get_database_schedules()
 
 
 # for testing
