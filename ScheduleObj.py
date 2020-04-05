@@ -62,6 +62,9 @@ class Countdown:
     def get_duration_expired(self):
         return self.duration_expired
 
+    def set_end_time(self, value):
+        self.end_time = value
+
     def get_countdown_expired(self):
         return self.countdown_expired
 
