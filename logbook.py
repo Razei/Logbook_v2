@@ -3,7 +3,6 @@ import time
 import datetime
 import pandas as pd
 import urllib
-import schedule_modifier
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from PyQt5.QtCore import Qt
@@ -234,10 +233,13 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.get_all_labs()
         self.refresh_tables()
 
+    def problems_link(self, event):
+        self.pushButtonProblems.clicked.emit()
+
     # add all events
     def add_all_events(self):
         self.pushButtonRefreshStyle.clicked.connect(self.refresh_style)
-
+        self.labelNumberProblems.mousePressEvent = self.problems_link
         # reports
         self.pushButtonNew.clicked.connect(self.new_log)
         self.pushButtonFormCancel.clicked.connect(self.change_to_last_page)
@@ -305,7 +307,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         layout = self.scrollAreaAllLabs.widget().layout()
         column_count = layout.columnCount()
         row_count = layout.rowCount()
-        schedules =  self.schedules
+        schedules = self.schedules
 
         if layout is not None:
             for i in range(column_count):  # loop through all columns
@@ -322,6 +324,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if self.all_rooms is not None and range(len(self.all_rooms) != 0):
             for room in self.all_rooms:  # loop through all rooms
                 label_times = None
+                label_end_times = None
 
                 # label creation
                 label_room = QtWidgets.QLabel(room)
@@ -349,6 +352,17 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 label_times.setMinimumSize(200, 0)
                                 label_times.setMaximumSize(100, 100)
 
+                            if label_end_times is not None:
+                                label_end_times.setText(label_end_times.text() + '\n' + schedule.get_end_time())
+                            else:
+                                # label creation
+                                label_end_times = QtWidgets.QLabel(schedule.get_end_time())
+                                label_end_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                                label_end_times.setAccessibleDescription('formLabel')
+                                label_end_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                                label_end_times.setMinimumSize(200, 0)
+                                label_end_times.setMaximumSize(100, 100)
+
                 if label_times is not None:
                     layout.addWidget(label_times, current_row, 1)
                 else:
@@ -359,6 +373,9 @@ class LogBook(MainWindowBase, MainWindowUI):
                     label_times.setMinimumSize(200, 0)
                     label_times.setMaximumSize(100, 100)
                     layout.addWidget(label_times, current_row, 1)
+
+                if label_end_times is not None:
+                    layout.addWidget(label_end_times, current_row, 2)
 
                 current_row += 1
 
@@ -910,7 +927,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
         lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
         problems_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
-        problems_room_query = 'SELECT DISTINCT(ROOM) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
 
         self.populate_table(self.tableWidgetReports, reports_query)
         self.populate_table(self.tableWidgetProblems, problems_query, True)
@@ -921,21 +937,12 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
         cursor = DatabaseHandler.execute_query(problems_count_query)
-        room_cursor = DatabaseHandler.execute_query(problems_room_query)
 
         # validate the cursor for empty results
-        if not (DatabaseHandler.validate_cursor(cursor) and DatabaseHandler.validate_cursor(room_cursor)):
+        if not DatabaseHandler.validate_cursor(cursor):
             return
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
-
-        # show the rooms with all the problems
-        room_problems = room_cursor.fetchall()
-        room_list_problems = []
-        for room in room_problems:
-            room_list_problems.append(room[0])
-
-        self.labelRoomProblems.setText('\n'.join(room_list_problems))
 
     @staticmethod
     def cleanup_empty_cells(table):
@@ -1049,18 +1056,33 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.cleanup_empty_cells(table)
 
         elif table.objectName().find('Reports') != -1:
-            query = f"""
-                SELECT * FROM ReportLog.dbo.Reports 
-                where ISSUE like '%{keyword}%'or 
-                NAME like '%{keyword}%' or 
-                ROOM like '%{keyword}%' or 
-                RESOLUTION like '%{keyword}%' or
-                FIXED like '%{keyword}%' or 
-                NOTE like '%{keyword}%';
-            """
+            if self.comboBoxReportsMonth.currentText() != 'All':
+                month = self.comboBoxReportsMonth.currentText()
+                query = f"""
+                            SELECT * FROM ReportLog.dbo.Reports 
+                            where 
+                            MONTH(DATE) = (SELECT MONTH('{month}' + '2020')) AND
+                            (
+                                ISSUE like '%{keyword}%'or 
+                                NAME like '%{keyword}%' or 
+                                ROOM like '%{keyword}%' or 
+                                RESOLUTION like '%{keyword}%' or
+                                FIXED like '%{keyword}%' or 
+                                NOTE like '%{keyword}%'
+                            );
+                        """
+            else:
+                query = f"""
+                    SELECT * FROM ReportLog.dbo.Reports 
+                    where ISSUE like '%{keyword}%'or 
+                    NAME like '%{keyword}%' or 
+                    ROOM like '%{keyword}%' or 
+                    RESOLUTION like '%{keyword}%' or
+                    FIXED like '%{keyword}%' or 
+                    NOTE like '%{keyword}%';
+                """
             self.populate_table(table, query)
             self.cleanup_empty_cells(table)
-
 
     def edit_log(self, table):
         self.lastPage = table.objectName()
@@ -1212,7 +1234,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if schedules is not None and len(schedules) != 0:
             for schedule in schedules:  # loop through all of today's schedules
                 dash_countdown = schedule.get_countdown().get_countdown()  # calculate the dash_countdown using the current schedule object
-                dash_countdown = datetime.datetime.strptime(str(dash_countdown), "%H:%M:%S").strftime("%H:%M:%S")
+
                 room_name = schedule.get_room()  # get the room name for label
                 search = room_name + str(schedule.get_schedule_id())  # room name + scheduleID (for multiple open times in the same room)
 
@@ -1228,6 +1250,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                 # dash_countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                 if dash_countdown is not None:  # only show dash_countdown if it's not empty
+                    dash_countdown = datetime.datetime.strptime(str(dash_countdown), "%H:%M:%S").strftime("%H:%M:%S")
                     label = room_name + '         ' + 'In: ' + str(dash_countdown)  # text for the label
                     find_child = self.frameUpcomingRooms.findChild(QtWidgets.QLabel, search)
 
@@ -1259,7 +1282,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                             label_test = QtWidgets.QLabel(str(countdown), self)
                             label_test.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                             label_test.setObjectName('all_' + focus.get_room())  # set the object name so it's searchable later
-                            layout.addWidget(label_test, j[1], 2)
+                            layout.addWidget(label_test, j[1], 3)
                         else:  # the widget exists already so just update it
                             find_child.setText(str(countdown))
 
@@ -1273,6 +1296,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 room_name = schedule.get_room()  # get the room name for label
                 search = room_name + str(schedule.get_schedule_id())  # room name + i (for multiple open times in the same room)
                 find_child = self.frameUpcomingOpenLabs.findChild(QtWidgets.QLabel, search)
+
                 # dash_open_countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                 if dash_open_countdown is not None:  # only show dash_open_countdown if it's not empty
                     label = room_name + '         ' + 'In: ' + str(dash_open_countdown)  # text for the label
@@ -1298,73 +1322,96 @@ class LogBook(MainWindowBase, MainWindowUI):
     # for handling creation and deletion of checkboxes for labs that are vacant
     def duration_handler(self):
         schedules = self.schedules
+        open_lab_schedules = self.open_lab_schedules
 
-        if schedules is not None and range(len(schedules) != 0):  # ensuring we're not looping an empty list
-            for i in range(len(schedules)):  # loop through all of today's schedules
-                dash_countdown = self.lab_checker.calculate_duration(schedules[i])  # calculate the dash_countdown using the current schedule object
-                room_name = schedules[i].get_room()  # get the room name for label
-                search = room_name + 'duration' + str(i)  # room name + i (for multiple open times in the same room)
+        if schedules is not None and len(schedules) != 0:
+            for schedule in schedules:  # loop through all of today's schedules
+                dash_countdown = schedule.get_countdown().get_duration()
+                room_name = schedule.get_room()  # get the room name for label
+                search = room_name + 'duration' + str(schedule.get_schedule_id())  # room name + i (for multiple open times in the same room)
+                find_child = self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search)
 
                 # dash_countdown = (datetime.timedelta(seconds=2230) + self.staticDate) - datetime.datetime.now()  # for testing (will dash_countdown from 30 seconds)
                 if dash_countdown is not None:
                     label = room_name + '         ' + 'Vacant for: ' + str(dash_countdown)
 
-                    if self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search) is None:  # check to see if the widget exists already
-                        checkBox = QtWidgets.QCheckBox(label, self)  # create a new checkbox and append the room name + dash_countdown
+                    if find_child is None:  # check to see if the widget exists already
+                        checkBox = QtWidgets.QCheckBox(self)  # create a new checkbox and append the room name + dash_countdown
                         checkBox.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         checkBox.setObjectName(search)
                         checkBox.stateChanged.connect(self.remove_countdown)
-                        checkBox.clicked.connect(self.open_image)
-                        checkBox.setAccessibleName(str(schedules[i].get_schedule_id()))  # to link the schedule ID
-                        self.frameEmptyRooms.layout().addWidget(checkBox)  # add the checkbox to the frame
+                        checkBox.setWhatsThis(room_name)
+                        checkBox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                        checkBox.setAccessibleName(str(schedule.get_schedule_id()))  # to link the schedule ID
 
+                        checkbox_label = QtWidgets.QPushButton(label, self)
+                        checkbox_label.setObjectName('label' + search)
+                        checkbox_label.setAccessibleDescription('checkBoxRoom')
+                        checkbox_label.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+                        checkbox_label.setFlat(True)
+                        checkbox_label.setWhatsThis(room_name)
+                        checkbox_label.clicked.connect(lambda: self.open_image(checkbox_label.whatsThis()))
+                        current_row = self.true_row_count(self.frameEmptyRooms)
+                        # checkBox.released.connect(lambda: self.open_image(checkBox.whatsThis(), checkBox))
+                        self.frameEmptyRooms.layout().addWidget(checkBox, current_row, 0)  # add the checkbox to the frame
+                        self.frameEmptyRooms.layout().addWidget(checkbox_label, current_row, 1)  # add the checkbox to the frame
                     else:  # if the widget exists already, update it
-
-                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setText(label)
+                        find_child = self.frameEmptyRooms.findChild(QtWidgets.QPushButton, 'label' + search)
+                        find_child.setText(label)
                         if dash_countdown < datetime.timedelta(minutes=30):
                             if dash_countdown.seconds % 2 == 0:
-                                self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setAccessibleDescription('timerDanger')
+                                find_child.setAccessibleDescription('timerDanger')
                             else:
-                                self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setAccessibleDescription('checkBoxRoom')
-                            self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
+                                find_child.setAccessibleDescription('checkBoxRoom')
+                            find_child.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
-                    if dash_countdown <= datetime.timedelta(seconds=1):  # dash_countdown expired, so remove the widget
-                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).setVisible(False)
-                        self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search).deleteLater()
+                    if schedule.get_countdown().get_duration_expired() and find_child is not None:  # dash_countdown expired, so remove the widget
+                        find_child.setVisible(False)
+                        find_child.deleteLater()
 
-        # open labs
-        if self.open_lab_schedules is not None and range(len(self.open_lab_schedules) != 0):
-            for i in range(len(self.open_lab_schedules)):  # loop through all of today's schedules
-                dash_open_countdown = self.lab_checker.calculate_duration(self.open_lab_schedules[i])  # calculate the dash_open_countdown using the current schedule object
-                room_name = self.open_lab_schedules[i].get_room()  # get the room name for label
-                search = room_name + str(i)  # room name + i (for multiple open times in the same room)
+        if open_lab_schedules is not None and len(open_lab_schedules) != 0:
+            for schedule in open_lab_schedules:  # loop through all of today's schedules
+                dash_open_countdown = schedule.get_countdown().get_duration()  # calculate the dash_open_countdown using the current schedule object
+                room_name = schedule.get_room()  # get the room name for label
+                search = 'ol' + room_name + str(schedule.get_schedule_id())  # room name + i (for multiple open times in the same room)
+                find_child = self.frameOpenLabs.findChild(QtWidgets.QLabel, search)
 
                 # dash_open_countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                 if dash_open_countdown is not None:  # only show dash_open_countdown if it's not empty
                     label = room_name + '         ' + str(dash_open_countdown)  # text for the label
-                    if self.frameOpenLabs.findChild(QtWidgets.QLabel, search) is None:  # check to see if the widget exists already
+                    if find_child is None:  # check to see if the widget exists already
                         label_duration = QtWidgets.QLabel(label, self)  # create a new label and append the room name + dash_open_countdown
                         label_duration.setAccessibleDescription('checkBoxRoom')  # add tag for qss styling
                         label_duration.setObjectName(search)  # set the object name so it's searchable later
                         label_duration.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
                         self.frameOpenLabs.layout().addWidget(label_duration)  # add the checkbox to the frame
                     else:  # the widget exists already so just update it
-                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setText(label)
+                        find_child.setText(label)
 
-                    if dash_open_countdown <= datetime.timedelta(seconds=1):  # dash_open_countdown expired, so hide and remove the widget
-                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).setVisible(False)
-                        self.frameOpenLabs.findChild(QtWidgets.QLabel, search).deleteLater()
+                    if schedule.get_countdown().get_duration_expired() and find_child is not None:  # dash_open_countdown expired, so hide and remove the widget
+                        find_child.setVisible(False)
+                        find_child.deleteLater()
 
-    def open_image(self):
-        os.startfile('images\\timetables\\A1_61.jpg')
+    def open_image(self, room):
+        room = room.replace('-', '_')
+        os.startfile(f'images\\timetables\\{room}.jpg')
 
     def remove_countdown(self):
-        for schedule in self.schedules:
-            if schedule.get_schedule_id() == int(self.sender().accessibleName()):  # if the schedule ID is the same as the sender's accessibleName field
-                schedule.set_end_time(datetime.datetime.now().time().isoformat(timespec='seconds'))  # expire the time
+        if self.sender().isChecked():
+            for schedule in self.schedules:
+                if schedule.get_schedule_id() == int(self.sender().accessibleName()):  # if the schedule ID is the same as the sender's accessibleName field
+                    schedule.get_countdown().set_end_time(datetime.datetime.now().time().isoformat(timespec='seconds'))  # expire the time
 
-        self.sender().setVisible(False)  # hide the widget
-        self.sender().deleteLater()  # schedule the widget for deletion
+            search = 'label' + self.sender().objectName()
+            widget_child = self.frameDashboardBrief.findChildren(QtWidgets.QPushButton)
+
+            for widget in widget_child:
+                if widget.objectName() == search:
+                    widget.setVisible(False)  # hide the widget
+                    widget.deleteLater()  # schedule the widget for deletion
+
+            self.sender().setVisible(False)  # hide the widget
+            self.sender().deleteLater()  # schedule the widget for deletion
 
     def Clock(self):  # this function is called every second during runtime
         t = time.localtime()  # local system time
@@ -1389,4 +1436,4 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # call the handlers for the countdowns
         self.countdown_handler()
-        # self.duration_handler()
+        self.duration_handler()
