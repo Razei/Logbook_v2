@@ -2,6 +2,13 @@
     font-family: Segoe UI;
 }
 
+[accessibleDescription ="searchBar"] {
+    border-radius: 13px;
+    background-color: #FFFFFF;
+    color: #454547;
+    border: 1px solid qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #0055FF, stop: 1 #0083FF);
+}
+
 QProgressBar {
      border: 0px;
      border-radius: 10px;
@@ -250,6 +257,9 @@ QAbstractScrollArea::corner {
 [accessibleDescription ="checkBoxRoom"]{
     color: #454547;
     font-size: 12pt; 
+    text-align: left;
+    border-radius: 0px;
+    margin:0;
 }
 
 QCheckBox::indicator{
@@ -259,6 +269,9 @@ QCheckBox::indicator{
 [accessibleDescription ="timerDanger"]{
     color: #FF5959;
     font-size: 12pt; 
+    text-align: left;
+    border-radius: 0px;
+    margin:0;
 }
 
 QCheckBox::indicator:unchecked{
@@ -350,6 +363,12 @@ QPushButton[accessibleDescription ="dangerButton"]{
     font-weight:bold;
 }
 
+QPushButton[accessibleDescription ="checkBoxButton"]{
+    color: #454547;
+    text-align: left;
+    margin:0;
+}
+
 QLineEdit,QTextEdit{
     background-color: #FFFFFF;
     color: #454547;
@@ -360,6 +379,6 @@ QLineEdit,QTextEdit{
 
 QLabel[accessibleDescription ="LCDNumber"]{
     color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #0055FF, stop: 1 #0083FF);
-    font-size: 128pt;
+    font-size: 96pt;
     padding:8px;
 }
