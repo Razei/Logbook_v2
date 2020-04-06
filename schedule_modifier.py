@@ -13,7 +13,7 @@ def get_database_schedules():
     schedule_objects = []  # for holding a list of schedule objects
 
     # query stuff
-    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule"
+    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule ORDER BY DAY, START_TIME"
     cursor = DatabaseHandler.execute_query(query)
 
     # validate the cursor for empty results
@@ -37,7 +37,7 @@ def get_database_open_lab_schedules():
     schedule_objects = []  # for holding a list of schedule objects
 
     # query stuff
-    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule"
+    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule ORDER BY DAY, START_TIME"
     cursor = DatabaseHandler.execute_query(query)
 
     # validate the cursor for empty results
