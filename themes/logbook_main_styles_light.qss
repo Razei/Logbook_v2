@@ -152,6 +152,16 @@ QTableView::item:selected
     background-color: #EBEBEB;
 }
 
+QTableView::item:hover:selected
+{
+    background-color: #EBEBEB;
+}
+
+QTableView::item:hover:!selected
+{
+    background-color: #EBEBEB;
+}
+
 QTableWidget::item{
     color: #454547;
     background-color:#F9F9F9;
@@ -389,7 +399,7 @@ QPushButton[accessibleDescription ="neutralButton"]{
 }
 
 QPushButton[accessibleDescription ="dangerButton"]{
-    color: #454547;
+    color: #FFFFFF;
     background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #FF0505, stop: 1 #FF5959);
     border-radius: 12.4px; 
     font-weight:bold;
