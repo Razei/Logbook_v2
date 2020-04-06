@@ -13,12 +13,12 @@ QProgressBar {
      border: 0px;
      border-radius: 10px;
      background-color: #454547;
-     text-align:center;
+     text-align: center;
      color: #FFFFFF;
  }
 
  QProgressBar::chunk {
-     background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
+     background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,stop: 0 #86DA50, stop: 1 #D2DA50);
      border-radius: 10px;
      text-align:center;
  }
@@ -29,10 +29,6 @@ QDialog{
 
 QMainWindow{
     border: 0; /*remove all the line borders around the frames*/
-}
-
-QWidget#centralwidget {
-    /*background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,stop: 0 #2C2C2C, stop: 1 #D2DA50);*/
 }
 
 QDateEdit{
@@ -254,6 +250,24 @@ QAbstractScrollArea::corner {
     border-color: #FFFFFF;
 }
 
+[accessibleDescription ="allRooms"]{
+    color: #FFFFFF;
+    font-size: 12pt; 
+    font-weight:bold;
+    text-align: left;
+    border-radius: 0px;
+    margin:0;
+}
+
+[accessibleDescription ="allRooms"]::hover{
+    color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
+    font-weight:bold;
+    font-size: 12pt; 
+    text-align: left;
+    border-radius: 0px;
+    margin:0;
+}
+
 [accessibleDescription ="checkBoxRoom"]{
     color: #FFFFFF;
     font-size: 12pt; 
@@ -262,8 +276,13 @@ QAbstractScrollArea::corner {
     margin:0;
 }
 
-QCheckBox::indicator{
-    border: 1px solid qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
+[accessibleDescription ="checkBoxRoom"]::hover{
+    color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
+    font-weight:bold;
+    font-size: 12pt; 
+    text-align: left;
+    border-radius: 0px;
+    margin:0;
 }
 
 [accessibleDescription ="timerDanger"]{
@@ -272,6 +291,19 @@ QCheckBox::indicator{
     text-align: left;
     border-radius: 0px;
     margin:0;
+}
+
+[accessibleDescription ="timerDanger"]::hover{
+    color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
+    font-weight:bold;
+    font-size: 12pt; 
+    text-align: left;
+    border-radius: 0px;
+    margin:0;
+}
+
+QCheckBox::indicator{
+    border: 1px solid qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #86DA50, stop: 1 #D2DA50);
 }
 
 QCheckBox::indicator:unchecked{
