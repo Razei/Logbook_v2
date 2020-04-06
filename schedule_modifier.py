@@ -194,6 +194,9 @@ class ScheduleModifier:
                             widget.setChecked(False)
                             state = False
 
+                        if (time_search == "22:30") and (entry.get_day().strip() == res[0]) and (time_search == t_compare):
+                            widget.setChecked(True)
+
     @staticmethod
     def check_all(frame):
         for widget in frame.findChildren(QtWidgets.QCheckBox):
