@@ -1400,6 +1400,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 room_name = schedule.get_room()  # get the room name for label
                 search = room_name + 'duration' + str(schedule.get_schedule_id())  # room name + i (for multiple open times in the same room)
                 find_child = self.frameEmptyRooms.findChild(QtWidgets.QCheckBox, search)
+                find_child2 = self.frameEmptyRooms.findChild(QtWidgets.QPushButton, 'label' + search)
 
                 # dash_duration = (datetime.timedelta(seconds=2230) + self.staticDate) - datetime.datetime.now()  # for testing (will countdown from 30 seconds)
                 if dash_duration is not None:
@@ -1427,18 +1428,19 @@ class LogBook(MainWindowBase, MainWindowUI):
                         self.frameEmptyRooms.layout().addWidget(checkBox, current_row, 0)  # add the checkbox to the frame
                         self.frameEmptyRooms.layout().addWidget(checkbox_label, current_row, 1)  # add the checkbox to the frame
                     else:  # if the widget exists already, update it
-                        find_child = self.frameEmptyRooms.findChild(QtWidgets.QPushButton, 'label' + search)
-                        find_child.setText(label)
+                        find_child2.setText(label)
                         if dash_duration < datetime.timedelta(minutes=30):
                             if dash_duration.seconds % 2 == 0:
-                                find_child.setAccessibleDescription('timerDanger')
+                                find_child2.setAccessibleDescription('timerDanger')
                             else:
-                                find_child.setAccessibleDescription('checkBoxRoom')
-                            find_child.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
+                                find_child2.setAccessibleDescription('checkBoxRoom')
+                            find_child2.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
                     if schedule.get_countdown().get_duration_expired() and find_child is not None:  # duration expired, so remove the widget
                         find_child.setVisible(False)
+                        find_child2.setVisible(False)
                         find_child.deleteLater()
+                        find_child2.deleteLater()
 
         if open_lab_schedules is not None and len(open_lab_schedules) != 0:
             for schedule in open_lab_schedules:  # loop through all of today's schedules
