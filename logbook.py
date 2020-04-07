@@ -1,6 +1,7 @@
 import os
 import time
 import datetime
+import openpyxl
 import pandas as pd
 import urllib
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -1156,24 +1157,44 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.labelSettingsWarning.setVisible(True)
 
-    @staticmethod
-    def export_data_sheet():
+    def export_data_sheet(self):
 
         server = DatabaseHandler.get_server_string()
 
         conn_str = 'Driver={SQL Server};Server=' + server + ';Database=ReportLog;Trusted_Connection=yes;'  # connection string
         conn_str = urllib.parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
         conn_str = "mssql+pyodbc:///?odbc_connect=%s" % conn_str  # to stop sqlalchemy from complaining
-        data = pd.read_sql_query('SELECT * FROM dbo.Reports', conn_str)
+        reports_data = pd.read_sql_query('SELECT * FROM dbo.Reports', conn_str)
+        year = str(datetime.datetime.now().year)
+        path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx',filter='.xlsx')[0]
 
-        data_obj = data.select_dtypes(['object'])
-        data[data_obj.columns] = data_obj.apply(lambda x: x.str.strip())
+        book = openpyxl.Workbook()  # create new workbook
+        book.remove(book.active)  # remove the default sheet
 
-        test = str(datetime.datetime.now().year)
+        writer = pd.ExcelWriter(path, engine='openpyxl')
+        writer.book = book
 
-        path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{test}.xlsx',filter='.xlsx')
-        if path[0] != '':
-            data.to_excel(path[0])
+        if reports_data is not None:
+            reports_obj = reports_data.select_dtypes(['object'])  # get the datatypes from the result
+            reports_data[reports_obj.columns] = reports_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
+
+        lost_and_found_data = pd.read_sql_query('SELECT * FROM dbo.LostAndFound', conn_str)
+
+        if lost_and_found_data is not None:
+            lost_and_found_obj = lost_and_found_data.select_dtypes(['object'])  # get the datatypes from the result
+            lost_and_found_data[lost_and_found_obj.columns] = lost_and_found_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
+
+        if path != '':
+            try:
+                reports_data.to_excel(writer, sheet_name='Reports', index=False)  # convert data frame to excel
+                lost_and_found_data.to_excel(writer, sheet_name='Lost and Found', index=False)  # convert data frame to excel
+                writer.save()
+                writer.close()
+                os.startfile(os.path.dirname(os.path.abspath(path)))  # open the folder
+            except PermissionError:
+                message = f'Exporting failed: Permission denied'
+                info = f'If the file is open in Excel, please close it'
+                self.show_message_box(message, info)
 
     def new_log(self):
         self.lastPage = 'tableWidgetReports'
@@ -1455,18 +1476,27 @@ class LogBook(MainWindowBase, MainWindowUI):
         try:
             os.startfile(path)
         except FileNotFoundError:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Critical)
-            msg.setText(f'Oh no! Windows could not find the timetable image for {room}')
-            msg.setInformativeText(f'Path searched: \"{path}\"')
+            message = f'Oh no! Windows could not find the timetable image for {room}'
+            info = f'Path searched: \"{path}\"'
+            self.show_message_box(message, info)
+
+    def show_message_box(self, message, info, title=None):
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Critical)
+        msg.setText(message)
+        msg.setInformativeText(info)
+
+        if title is not None:
+            msg.setWindowTitle(title)
+        else:
             msg.setWindowTitle("Error")
 
-            flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-            msg.setWindowFlags(flags)
+        flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        msg.setWindowFlags(flags)
 
-            msg.setStyleSheet(self.theme)
+        msg.setStyleSheet(self.theme)
 
-            msg.exec_()
+        msg.exec_()
 
     @staticmethod
     def center_widget(widget):
