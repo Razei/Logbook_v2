@@ -1,24 +1,50 @@
 import pyodbc
+from settings_manager import SettingsManager
+
+
+def get_database_name():
+    settings = SettingsManager.import_settings()
+    return settings['database_name']
 
 
 class DatabaseHandler:
-    server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+    __server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+    __database_name = get_database_name()
     __user = 'Helpdesk'
     __password = 'b1pa55'
 
     @classmethod
+    def set_user_name(cls, user):
+        if user is not None:
+            cls.__user = user
+
+    @classmethod
+    def set_password(cls, password):
+        if password is not None:
+            cls.__password = password
+
+    @classmethod
     def get_server_string(cls):
-        return cls.server_string
+        return cls.__server_string
 
     @classmethod
     def set_server_string(cls, s_string):
         if s_string is not None:
-            cls.server_string = s_string
+            cls.__server_string = s_string
+
+    @classmethod
+    def get_database_name(cls):
+        return cls.__database_name
+
+    @classmethod
+    def set_database_name(cls, db_name):
+        if db_name is not None:
+            cls.__database_name = db_name
 
     @classmethod
     def __make_connection(cls):
         try:
-            connection = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=cls.server_string,
+            connection = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=cls.__server_string,
                                         database='ReportLog', timeout=5,
                                         trusted_connection='Yes')
             return connection
@@ -51,7 +77,7 @@ class DatabaseHandler:
         return True
 
     @classmethod
-    def create_new_database(cls, year_str=None):
+    def create_new_database(cls):
         import datetime
         year = datetime.datetime.now().year
 
