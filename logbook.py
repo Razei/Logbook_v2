@@ -66,7 +66,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.lastPage = ''
         self.stored_id = 0
         self.stored_theme = theme
-        self.db_name = None
+        self.db_name = DatabaseHandler.get_database_name()
 
         self.splash = SplashScreen(self.stored_theme)
         self.splash.show()
@@ -1152,8 +1152,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         data['time_format'] = time_format
 
         SettingsManager.export_settings(data)
-        '''with open("settings.json", "w") as jsonFile:
-            json.dump(data, jsonFile, indent=2)'''
 
         self.labelSettingsWarning.setVisible(True)
 
