@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, uic
 
 # get type from ui file
-SplashUI, SplashBase = uic.loadUiType('splash.ui')
+SplashUI, SplashBase = uic.loadUiType('views\\splash.ui')
 
 
 class SplashScreen(SplashBase, SplashUI):

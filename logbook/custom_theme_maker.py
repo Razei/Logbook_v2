@@ -7,6 +7,7 @@ class CustomThemeMaker:
         theme_path = os.path.join(os.path.split(__file__)[0], "themes//logbook_main_styles_custom.qss")
 
         self.theme_input = str(open(theme_path, "r").read()).splitlines()
+        self.size_grip_img = ''
         self.output_file_name = ''
 
         self.background_colour = ''
@@ -28,6 +29,7 @@ class CustomThemeMaker:
     def dark_theme(self):
         # path of qss stylesheet
         self.output_file_name = "logbook_main_styles_centennial_dark.qss"
+        self.size_grip_img = 'url(\'images/sizegrip_light.png\')'
 
         self.background_colour = '#454547'
         self.background_colour2 = '#585858'
@@ -50,6 +52,7 @@ class CustomThemeMaker:
     def light_theme(self):
         # path of qss stylesheet
         self.output_file_name = "logbook_main_styles_light.qss"
+        self.size_grip_img = 'url(\'images/sizegrip_dark.png\')'
 
         self.background_colour = '#EBEBEB'
         self.background_colour2 = '#E3E3E3'
@@ -72,6 +75,7 @@ class CustomThemeMaker:
     def replace_strings(self):
         output_path = os.path.join(os.path.split(__file__)[0], 'themes//' + self.output_file_name)
         theme_output = open(output_path, "w")
+
         # replace custom words with colour codes
         for line in self.theme_input:
             line = line.replace('active_text_colour', self.active_text_colour)
@@ -81,6 +85,7 @@ class CustomThemeMaker:
             line = line.replace('background_colour', self.background_colour)
             line = line.replace('main_colour2', self.main_colour2)
             line = line.replace('main_colour', self.main_colour)
+            line = line.replace('sizegrip_img', self.size_grip_img)
 
             line = line.replace('accent2', self.accent2)
             line = line.replace('accent', self.accent)
