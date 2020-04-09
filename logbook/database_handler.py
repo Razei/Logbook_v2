@@ -7,6 +7,12 @@ def get_database_name():
     return settings['database_name']
 
 
+def export_database_name(db_name):
+    settings = SettingsManager.import_settings()
+    settings['database_name'] = db_name
+    SettingsManager.export_settings(settings)
+
+
 class DatabaseHandler:
     __server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
     __database_name = get_database_name()
@@ -45,7 +51,7 @@ class DatabaseHandler:
     def __make_connection(cls):
         try:
             connection = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=cls.__server_string,
-                                        database='ReportLog', timeout=5,
+                                        database=cls.__database_name, timeout=5,
                                         trusted_connection='Yes')
             return connection
         except pyodbc.Error:
@@ -212,6 +218,9 @@ class DatabaseHandler:
 
         cursor.commit()
         cursor.close()
+
+        cls.__database_name = database_name
+        export_database_name(database_name)
 
         return database_name
 
