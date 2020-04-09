@@ -1,6 +1,5 @@
 import datetime
 from schedule_modifier import ScheduleModifier
-import time
 
 
 # lab checker class
@@ -98,16 +97,3 @@ class LabChecker:
             time_left = t_delta
 
         return time_left
-
-
-if __name__ == '__main__':
-    l = LabChecker()
-    list = l.schedules
-
-    while list is not None and range(len(list) != 0):
-        for sch in list:
-            sch.countdown.calculate_duration()
-            print(sch.get_room(), sch.get_countdown().get_duration(), sch.get_countdown().get_duration_expired())
-
-        time.sleep(1)
-        print('\n\n\n')
