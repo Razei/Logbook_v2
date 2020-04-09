@@ -1,6 +1,4 @@
 import datetime
-from ScheduleObj import ScheduleObj
-from database_handler import DatabaseHandler
 from schedule_modifier import ScheduleModifier
 import time
 
