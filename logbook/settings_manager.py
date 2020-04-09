@@ -1,4 +1,6 @@
 import json
+import os
+os.chdir(os.path.dirname(__file__))
 
 
 class SettingsManager:
