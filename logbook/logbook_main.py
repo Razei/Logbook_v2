@@ -1,16 +1,26 @@
 import os
 import sys
-from logbook import LogBook
-from PyQt5 import QtGui, QtCore, QtWidgets
-from settings_manager import SettingsManager
+from logbook_class import LogBook
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
+from PyQt5 import QtGui, QtCore, QtWidgets
+from settings_manager import SettingsManager
+
 
 # Logbook v2 written in Python 3.8
 # by Jarod Lavine and Shaniquo McKenzie
 
-# get path of this python file
-path = os.path.dirname(__file__)
+# learning how to program using python for work term
+# with knowledge from COMP-229, COMP-214, COMP-125 and COMP-228
+# with help from various stackoverflow answers :)
+
+# using libraries from:
+# https://github.com/gmarull/qtmodern Version 0.2.0
+# https://www.qt.io/qt-for-python Version 5.14.1
+# https://pandas.pydata.org/ Version 1.0.1
+# https://pypi.org/project/openpyxl/ Version 3.0.3
+# https://pypi.org/project/SQLAlchemy/ Version 1.3.13
+# https://pypi.org/project/xlrd/ Version 1.2.0
 
 
 if __name__ == '__main__':
@@ -31,7 +41,7 @@ if __name__ == '__main__':
 
     # create new window of type LogBook and pass settings (calls __init__ constructor to do the rest)
     window = LogBook(settings['theme'][theme_choice], settings['time_format'])
-    window.setGeometry(QtCore.QRect(0, 0, 1280, 720))  # arbitrary size/location
+    window.setGeometry(QtCore.QRect(0, 0, 1280, 720))  # start size/location
 
     # center the window
     windowGeometry = window.frameGeometry()
