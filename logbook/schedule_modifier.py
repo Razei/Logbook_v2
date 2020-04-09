@@ -1,10 +1,6 @@
-import sys
 from datetime import datetime
 from PyQt5 import QtCore, QtGui, QtWidgets
-import qtmodern_package.styles as qtmodern_styles
-import qtmodern_package.windows as qtmodern_windows
 from database_handler import DatabaseHandler
-from settings_manager import SettingsManager
 from ScheduleObj import ScheduleObj
 
 
@@ -291,24 +287,3 @@ class ScheduleModifier:
             cls.open_lab_schedules = get_database_open_lab_schedules()
         else:
             cls.schedules = get_database_schedules()
-
-
-# for testing
-if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-
-    settings = SettingsManager.import_settings()
-    theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
-
-    if settings['theme'][theme_choice]['base_theme'] == 'dark':
-        qtmodern_styles.dark(app)  # qtmodern
-
-    if settings['theme'][theme_choice]['base_theme'] == 'light':
-        qtmodern_styles.light(app)  # qtmodern
-
-    s = ScheduleModifier(settings['theme'][theme_choice])
-
-    mw = qtmodern_windows.ModernWindow(s)  # qtmodern
-    # make the interface visible
-    mw.show()
-    sys.exit(app.exec_())
