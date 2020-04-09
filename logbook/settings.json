@@ -2,7 +2,9 @@
   "theme_choice": {
     "name": "classic_light"
   },
+  "new": "No",
   "time_format": "12 HR",
+  "database_name": "ReportLog2020",
   "theme": {
     "classic_light": {
       "theme_name": "Classic Light",
