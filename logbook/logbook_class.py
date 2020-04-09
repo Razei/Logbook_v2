@@ -14,8 +14,8 @@ from database_handler import DatabaseHandler
 from schedule_modifier import ScheduleModifier
 
 # get type from ui file
-MainWindowUI, MainWindowBase = uic.loadUiType('logbook_design.ui')
-DialogUI, DialogBase = uic.loadUiType('logbook_dialog.ui')
+MainWindowUI, MainWindowBase = uic.loadUiType('views\\logbook_design.ui')
+DialogUI, DialogBase = uic.loadUiType('views\\logbook_dialog.ui')
 
 
 class SplashScreenThread(QThread):
@@ -48,6 +48,11 @@ class Dialog(DialogBase, DialogUI):
         self.setupUi(self)
 
 
+class Window(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        super(Window, self).__init__(parent)
+
+
 class LogBook(MainWindowBase, MainWindowUI):
     def __init__(self, theme, time_format):
         super(LogBook, self).__init__()
@@ -66,7 +71,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.lastPage = ''
         self.stored_id = 0
         self.stored_theme = theme
-        self.db_name = DatabaseHandler.get_database_name()
 
         self.splash = SplashScreen(self.stored_theme)
         self.splash.show()
@@ -85,7 +89,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.default_returned_date = datetime.date(2020, 1, 1)
 
         # build a window object from the .ui file
-        self.window = uic.loadUi('logbook_design.ui')
+        self.window = uic.loadUi('views\\logbook_design.ui')
 
         # initialise variables that will hold object instances later
         self.lab_checker = None
@@ -118,6 +122,9 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # show initial frame linked to dashboard button
         self.show_linked_frame(self.pushButtonDashboard)
+
+        self.floating = None
+        self.floating_state = False
 
     def refresh_style(self):
         # clears all the QT Creator styles in favour of the QSS stylesheet
@@ -178,12 +185,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def getAllData(self):
         self.set_progress_bar(20)
-
+        db_name = DatabaseHandler.get_database_name()
         months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
         # themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
         themes = ['Classic Light', 'Centennial Dark']
         formats = ['24 HR', '12 HR']
-        rooms_query = 'SELECT ROOM FROM ReportLog.dbo.Rooms'
+        rooms_query = f'SELECT ROOM FROM dbo.Rooms'
         room_list = []
 
         self.populate_combo_box(self.comboBoxReportsMonth, months)
@@ -236,6 +243,7 @@ class LogBook(MainWindowBase, MainWindowUI):
     def add_all_events(self):
         self.pushButtonRefreshStyle.clicked.connect(self.refresh_style)
         self.labelNumberProblems.mousePressEvent = self.problems_link
+
         # reports
         self.pushButtonNew.clicked.connect(self.new_log)
         self.pushButtonFormCancel.clicked.connect(self.change_to_last_page)
@@ -270,6 +278,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonSearchLAF.clicked.connect(lambda: self.search_Buttons(self.tableWidgetLostAndFound, self.txtBoxSearchLAF))
         self.pushButtonSearchReports.clicked.connect(lambda: self.search_Buttons(self.tableWidgetReports, self.txtBoxSearchReports))
 
+        # all labs
+        self.pushButtonFloatingAllLabs.clicked.connect(self.move_to_floating_window)
+
         # schedule modifier
         self.comboBoxScheduleRooms.currentIndexChanged.connect(self.schedule_modifier_index_changed)
         self.pushButtonScheduleBack.clicked.connect(lambda: self.change_page(self.stackedWidgetSchedule, self.pageOptions))
@@ -298,6 +309,62 @@ class LogBook(MainWindowBase, MainWindowUI):
                 for member in frame.children():
                     if isinstance(member, QtWidgets.QPushButton):
                         member.clicked.connect(self.button_pressed)  # connect click event function
+
+    def restore(self, frame, parent):
+        parent.layout().addWidget(frame)
+        frame.setVisible(True)
+        self.floating_state = False  # floating window inactive
+
+    def make_floating_window(self):
+        import qtmodern_package.windows as qtmodern_windows
+
+        window = Window(self)
+        window.setCentralWidget(QtWidgets.QWidget())
+        window.setGeometry(QtCore.QRect(0, 0, 480, 720))  # start size/location
+        window.setStyleSheet(self.theme)
+        window.setWindowTitle('All Labs')
+
+        central_widget = window.centralWidget()
+        central_widget.setLayout(QtWidgets.QGridLayout())
+        central_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+        container_frame = QtWidgets.QFrame()
+        container_frame.setObjectName('container')
+        container_frame.setLayout(QtWidgets.QGridLayout())
+        container_frame.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        container_frame.setAccessibleDescription('backgroundFrame')
+        central_widget.layout().addWidget(container_frame)
+
+        self.center_widget(window)
+
+        sizegrip = QtWidgets.QSizeGrip(window)
+
+        central_widget.layout().addWidget(sizegrip, 1, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignRight)
+
+        mw = qtmodern_windows.ModernWindow(window, self)
+        mw.btnMaximize.setVisible(False)
+        mw.btnMinimize.setVisible(False)
+
+        return mw
+
+    def move_to_floating_window(self):
+        state = self.floating_state  # for determining whether a floating window is active already
+
+        if not state:  # make new floating window
+            self.floating = self.make_floating_window()
+
+        window = self.floating
+
+        frame = self.scrollAreaAllLabs
+        frame.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        find_child = window.w.centralWidget().findChild(QtWidgets.QFrame, 'container')
+        find_child.layout().addWidget(frame)
+
+        frame.setVisible(True)
+
+        window.btnClose.clicked.connect(lambda: self.restore(frame, self.frameScrollContainer))
+        self.floating_state = True  # floating window is active
+        window.show()
 
     def get_all_labs(self):
         layout = self.scrollAreaAllLabs.widget().layout()
@@ -348,7 +415,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                                 label_times.setAccessibleDescription('formLabel')
                                 label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                                label_times.setMinimumSize(200, 0)
+                                label_times.setMinimumSize(50, 0)
                                 label_times.setMaximumSize(100, 100)
 
                             if label_end_times is not None:
@@ -359,7 +426,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 label_end_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                                 label_end_times.setAccessibleDescription('formLabel')
                                 label_end_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                                label_end_times.setMinimumSize(200, 0)
+                                label_end_times.setMinimumSize(50, 0)
                                 label_end_times.setMaximumSize(100, 100)
 
                 if label_times is not None:
@@ -369,7 +436,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                     label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                     label_times.setAccessibleDescription('formLabel')
                     label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                    label_times.setMinimumSize(200, 0)
+                    label_times.setMinimumSize(50, 0)
                     label_times.setMaximumSize(100, 100)
                     layout.addWidget(label_times, current_row, 1)
 
@@ -924,9 +991,9 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.comboBoxReportsMonth.setCurrentIndex(index)
 
         reports_query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
-        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
-        lost_and_found_query = 'SELECT * FROM ReportLog.dbo.LostAndFound'
-        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM ReportLog.dbo.Reports WHERE FIXED =\'NO\''
+        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM dbo.Reports WHERE FIXED =\'NO\''
+        lost_and_found_query = 'SELECT * FROM dbo.LostAndFound'
+        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM dbo.Reports WHERE FIXED =\'NO\''
 
         self.populate_table(self.tableWidgetReports, reports_query)
         self.populate_table(self.tableWidgetProblems, problems_query, True)
@@ -1018,7 +1085,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
-            self.change_page(self.stackedWidget,self.pageReports)
+            self.change_page(self.stackedWidget, self.pageReports)
             return
 
         cursor.commit()
@@ -1031,7 +1098,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         keyword = self.txtBoxSearchLAF.text()
         if keyword is not None:
             lost_and_found_query = f"""
-                SELECT * FROM ReportLog.dbo.LostAndFound 
+                SELECT * FROM dbo.LostAndFound 
                 where ITEM_DESC like '%{keyword}%'or 
                 NAME like '%{keyword}%' or 
                 ROOM like '%{keyword}%' or 
@@ -1046,7 +1113,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         if table.objectName().find('Lost') != -1:
             query = f"""
-                SELECT * FROM ReportLog.dbo.LostAndFound 
+                SELECT * FROM dbo.LostAndFound 
                 where ITEM_DESC like '%{keyword}%'or 
                 NAME like '%{keyword}%' or 
                 ROOM like '%{keyword}%' or 
@@ -1059,7 +1126,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             if self.comboBoxReportsMonth.currentText() != 'All':
                 month = self.comboBoxReportsMonth.currentText()
                 query = f"""
-                            SELECT * FROM ReportLog.dbo.Reports 
+                            SELECT * FROM dbo.Reports 
                             where 
                             MONTH(DATE) = (SELECT MONTH('{month}' + '2020')) AND
                             (
@@ -1073,7 +1140,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         """
             else:
                 query = f"""
-                    SELECT * FROM ReportLog.dbo.Reports 
+                    SELECT * FROM dbo.Reports 
                     where ISSUE like '%{keyword}%'or 
                     NAME like '%{keyword}%' or 
                     ROOM like '%{keyword}%' or 
@@ -1158,8 +1225,9 @@ class LogBook(MainWindowBase, MainWindowUI):
     def export_data_sheet(self):
 
         server = DatabaseHandler.get_server_string()
+        db_name = DatabaseHandler.get_database_name()
 
-        conn_str = 'Driver={SQL Server};Server=' + server + ';Database=ReportLog;Trusted_Connection=yes;'  # connection string
+        conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
         conn_str = urllib.parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
         conn_str = "mssql+pyodbc:///?odbc_connect=%s" % conn_str  # to stop sqlalchemy from complaining
         reports_data = pd.read_sql_query('SELECT * FROM dbo.Reports', conn_str)
@@ -1318,8 +1386,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 btn_label_countdown.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
                                 btn_label_countdown.setFlat(True)
                                 btn_label_countdown.setWhatsThis(room_name)
-                                btn_label_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                                                  QtWidgets.QSizePolicy.Fixed)
+                                btn_label_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
                                 btn_label_countdown.clicked.connect(self.open_image)
 
                                 self.add_to_empty_row(self.frameUpcomingRooms, btn_label_countdown)
@@ -1481,22 +1548,37 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.show_message_box(message, info)
 
     def show_message_box(self, message, info, title=None):
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Critical)
-        msg.setText(message)
-        msg.setInformativeText(info)
+        find_child = False
+        if not find_child:
+            import qtmodern_package.windows as qtmodern_windows
 
-        if title is not None:
-            msg.setWindowTitle(title)
-        else:
-            msg.setWindowTitle("Error")
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Critical)
+            msg.setObjectName('Lab_Error')
+            msg.setText(message)
+            msg.setInformativeText(info)
 
-        flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        msg.setWindowFlags(flags)
+            if title is not None:
+                msg.setWindowTitle(title)
+            else:
+                msg.setWindowTitle("Error")
 
-        msg.setStyleSheet(self.theme)
+            flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+            msg.setWindowFlags(flags)
+            size = msg.sizeHint()
 
-        msg.exec_()
+            msg.setStyleSheet(self.theme)
+            msg = qtmodern_windows.ModernWindow(msg)
+
+            msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
+            msg.setGeometry(0, 0, size.width(), size.height())
+
+            self.center_widget(msg)
+
+            msg.btnMinimize.setVisible(False)
+            msg.btnMaximize.setVisible(False)
+
+            msg.show()
 
     @staticmethod
     def center_widget(widget):
