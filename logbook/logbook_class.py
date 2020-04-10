@@ -70,9 +70,10 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.lastPage = ''
         self.stored_id = 0
-        self.stored_theme = theme
+        self.stored_theme_choice = theme
+        self.stored_time_format_choice = time_format
 
-        self.splash = SplashScreen(self.stored_theme)
+        self.splash = SplashScreen(self.stored_theme_choice)
         self.splash.show()
         self.splash_screen_thread = SplashScreenThread()
         self.splash_screen_thread.countChanged.connect(self.onCountChanged)  # connect this function to the custom countChanged signal from the SplashScreenThread
@@ -98,13 +99,12 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.all_rooms = None
         self.all_labs_page_obj = None
 
-        # add all click events
-        self.getAllData()
+        self.get_all_data()
         self.add_all_events()
         self.apply_settings(theme['theme_name'], time_format)
 
         # set initial activated button
-        self.pushButtonDashboard.setAccessibleDescription('menuButtonActive')
+        self.pushButtonDashboard.clicked.emit()
         self.labelSettingsWarning.setVisible(False)
 
         # fetches the qss stylesheet path
@@ -126,64 +126,34 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.floating = None
         self.floating_state = False
 
-    def refresh_style(self):
-        # clears all the QT Creator styles in favour of the QSS stylesheet
-        self.clear_style_sheets()
-        theme = str(open(self.theme_path, "r").read())
-        self.setStyleSheet(theme)
+    ############# CORE METHODS #############
+    def Clock(self):  # this function is called every second during runtime
+        t = time.localtime()  # local system time
+        d = datetime.date.today()  # local system date
+        t_format_24hr = "%H:%M:%S"
+        t_format_12hr = "%I:%M:%S %p"
+        date_format = "%A %B %d, %Y"
 
-    # this function receives the data from the countChanged signal
-    def onCountChanged(self, value):
-        time.sleep(0.05)
-        self.splash.progressBar.setValue(value)
-        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
+        # convert time to string format
+        time_convert = time.strftime(t_format_24hr, t)
 
-    # this function receives the data from the finished signal
-    def finished(self, value):
-        time.sleep(0.1)
-        self.splash.finished(value)
+        if self.comboBoxSettingsTimeFormat.currentText() == '12 HR':
+            time_convert = time.strftime(t_format_12hr, t)
 
-    def show_schedule_modifier(self):
-        self.labelSchedule.setText('SCHEDULE MODIFIER')
-        self.pushButtonScheduleSave.setAccessibleName('Schedule')
-        self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
-        self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
+        # current time
+        self.labelCurrentTime.setText(time_convert)
 
-    def show_open_lab_schedule_modifier(self):
-        self.labelSchedule.setText('OPEN LAB SCHEDULE MODIFIER')
-        self.pushButtonScheduleSave.setAccessibleName('Open')
-        self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
-        self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
+        # assign labels with current time and date
+        self.labelCurrentDate.setText(d.strftime(date_format))
+        self.labelCurrentDate2.setText(d.strftime(date_format))
+        self.labelCurrentDate3.setText(d.strftime(date_format))
 
-    def show_dialog(self):
+        # call the handlers for the countdowns
+        self.countdown_handler()
+        self.duration_handler()
 
-        dialog = Dialog()
-        flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
-        state = True
-
-        yes_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes)
-        no_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No)
-
-        dialog.setWindowFlags(flags)
-
-        yes_button.setAccessibleDescription('successButton')
-        no_button.setAccessibleDescription('dangerButton')
-
-        yes_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        no_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-
-        yes_button.setMinimumSize(100, 25)
-        no_button.setMinimumSize(100, 25)
-
-        dialog.setStyleSheet(self.theme)
-
-        self.center_widget(dialog)
-
-        if not dialog.exec_() == 1:
-            state = False
-        return state
-
-    def getAllData(self):
+    # import all necessary data
+    def get_all_data(self):
         self.set_progress_bar(20)
         db_name = DatabaseHandler.get_database_name()
         months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -236,12 +206,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.get_all_labs()
         self.refresh_tables()
 
-    def problems_link(self, event):
-        self.pushButtonProblems.clicked.emit()
-
     # add all events
     def add_all_events(self):
         self.pushButtonRefreshStyle.clicked.connect(self.refresh_style)
+
+        # click event for the big number on the dashboard
         self.labelNumberProblems.mousePressEvent = self.problems_link
 
         # reports
@@ -275,8 +244,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormSaveLAF.clicked.connect(self.save_lost_and_found_form)
 
         # search lost and found & Reports
-        self.pushButtonSearchLAF.clicked.connect(lambda: self.search_Buttons(self.tableWidgetLostAndFound, self.txtBoxSearchLAF))
-        self.pushButtonSearchReports.clicked.connect(lambda: self.search_Buttons(self.tableWidgetReports, self.txtBoxSearchReports))
+        self.pushButtonSearchLAF.clicked.connect(lambda: self.search_buttons(self.tableWidgetLostAndFound, self.txtBoxSearchLAF))
+        self.pushButtonSearchReports.clicked.connect(lambda: self.search_buttons(self.tableWidgetReports, self.txtBoxSearchReports))
 
         # all labs
         self.pushButtonFloatingAllLabs.clicked.connect(self.move_to_floating_window)
@@ -310,252 +279,93 @@ class LogBook(MainWindowBase, MainWindowUI):
                     if isinstance(member, QtWidgets.QPushButton):
                         member.clicked.connect(self.button_pressed)  # connect click event function
 
-    def restore(self, frame, parent):
-        parent.layout().addWidget(frame)
-        frame.setVisible(True)
-        self.floating_state = False  # floating window inactive
-
-    def make_floating_window(self):
-        import qtmodern_package.windows as qtmodern_windows
-
-        window = Window(self)
-        window.setCentralWidget(QtWidgets.QWidget())
-        window.setGeometry(QtCore.QRect(0, 0, 480, 720))  # start size/location
-        window.setStyleSheet(self.theme)
-        window.setWindowTitle('All Labs')
-
-        central_widget = window.centralWidget()
-        central_widget.setLayout(QtWidgets.QGridLayout())
-        central_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-        container_frame = QtWidgets.QFrame()
-        container_frame.setObjectName('container')
-        container_frame.setLayout(QtWidgets.QGridLayout())
-        container_frame.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        container_frame.setAccessibleDescription('backgroundFrame')
-        central_widget.layout().addWidget(container_frame)
-
-        self.center_widget(window)
-
-        sizegrip = QtWidgets.QSizeGrip(window)
-
-        central_widget.layout().addWidget(sizegrip, 1, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignRight)
-
-        mw = qtmodern_windows.ModernWindow(window, self)
-        mw.btnMaximize.setVisible(False)
-        mw.btnMinimize.setVisible(False)
-
-        return mw
-
-    def move_to_floating_window(self):
-        state = self.floating_state  # for determining whether a floating window is active already
-
-        if not state:  # make new floating window
-            self.floating = self.make_floating_window()
-
-        window = self.floating
-
-        frame = self.scrollAreaAllLabs
-        frame.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        find_child = window.w.centralWidget().findChild(QtWidgets.QFrame, 'container')
-        find_child.layout().addWidget(frame)
-
-        frame.setVisible(True)
-
-        window.btnClose.clicked.connect(lambda: self.restore(frame, self.frameScrollContainer))
-        self.floating_state = True  # floating window is active
-        window.show()
-
-    def get_all_labs(self):
-        layout = self.scrollAreaAllLabs.widget().layout()
-        column_count = layout.columnCount()
-        row_count = layout.rowCount()
-        schedules = self.schedules
-
-        if layout is not None:
-            for i in range(column_count):  # loop through all columns
-                for j in range(1, row_count):  # loop starting at row 1
-                    item = layout.itemAtPosition(j, i)
-                    if item is not None:
-                        widget = item.widget()
-                        if widget is not None:
-                            widget.deleteLater()
-                            widget.setParent(None)
-                            del widget
-
-        current_row = 1
-        if self.all_rooms is not None and range(len(self.all_rooms) != 0):
-            for room in self.all_rooms:  # loop through all rooms
-                label_times = None
-                label_end_times = None
-
-                # label creation
-                label_room = QtWidgets.QPushButton(room)
-                label_room.setAccessibleDescription('allRooms')
-                label_room.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-                label_room.setFlat(True)
-                label_room.setWhatsThis(room)
-                label_room.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                label_room.clicked.connect(self.open_image)
-                label_room.setMinimumSize(0, 30)
-                label_room.setMaximumSize(100, 100)
-
-                # adding to layout
-                layout.addWidget(label_room, current_row, 0)
-
-                if self.schedules is not None and range(len(self.schedules) != 0):  # not empty validation
-                    for schedule in self.schedules:  # loop through all schedules
-                        if schedule.get_room() == room:
-
-                            if label_times is not None:
-                                label_times.setText(label_times.text() + '\n' + schedule.get_start_time())
-                            else:
-                                # label creation
-                                label_times = QtWidgets.QLabel(schedule.get_start_time())
-                                label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                                label_times.setAccessibleDescription('formLabel')
-                                label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                                label_times.setMinimumSize(50, 0)
-                                label_times.setMaximumSize(100, 100)
-
-                            if label_end_times is not None:
-                                label_end_times.setText(label_end_times.text() + '\n' + schedule.get_end_time())
-                            else:
-                                # label creation
-                                label_end_times = QtWidgets.QLabel(schedule.get_end_time())
-                                label_end_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                                label_end_times.setAccessibleDescription('formLabel')
-                                label_end_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                                label_end_times.setMinimumSize(50, 0)
-                                label_end_times.setMaximumSize(100, 100)
-
-                if label_times is not None:
-                    layout.addWidget(label_times, current_row, 1)
-                else:
-                    label_times = QtWidgets.QLabel('None')
-                    label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                    label_times.setAccessibleDescription('formLabel')
-                    label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                    label_times.setMinimumSize(50, 0)
-                    label_times.setMaximumSize(100, 100)
-                    layout.addWidget(label_times, current_row, 1)
-
-                if label_end_times is not None:
-                    layout.addWidget(label_end_times, current_row, 2)
-
-                current_row += 1
-
-        self.all_labs_page_obj = self.get_all_labs_obj()
-
-    def schedule_modifier_index_changed(self):
-        mode = self.pushButtonScheduleSave.accessibleName()
-        self.label_schedule_room.setText(self.comboBoxScheduleRooms.currentText())
-        ScheduleModifier.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, mode)
-        self.show_room_schedule(self.comboBoxScheduleRooms.currentText(), mode)
-
-    def show_room_schedule(self, room, mode):
-        layout = self.frameCurrentSchedule.layout()
-
-        if mode == 'Open':
-            schedules = ScheduleModifier.get_open_lab_schedules()
-        else:
-            schedules = ScheduleModifier.get_schedules()
-
-        if layout is not None:
-            column_count = layout.columnCount()
-            row_count = layout.rowCount()
-            for i in range(column_count):  # loop through all columns
-                for j in range(row_count):  # loop starting at row 1
-                    item = layout.itemAtPosition(j, i)
-                    if item is not None:
-                        widget = item.widget()
-                        if widget is not None:
-                            widget.deleteLater()
-                            widget.setParent(None)
-
-        current_row = layout.rowCount()  # this will always be an empty row index
-
-        # label creation
-        header_day = QtWidgets.QLabel('DAY')
-        header_start_time = QtWidgets.QLabel('START TIME')
-        header_end_time = QtWidgets.QLabel('END TIME')
-
-        header_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        header_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        header_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-
-        # accessible description for qss styling
-        header_day.setAccessibleDescription('titleLabel')
-        header_start_time.setAccessibleDescription('titleLabel')
-        header_end_time.setAccessibleDescription('titleLabel')
-
-        header_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        header_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        header_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-        header_day.setMinimumSize(0, 30)
-        header_start_time.setMinimumSize(0, 30)
-        header_end_time.setMinimumSize(0, 30)
-
-        layout.addWidget(header_day, current_row, 0)
-        layout.addWidget(header_start_time, current_row, 1)
-        layout.addWidget(header_end_time, current_row, 2)
-
-        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-        for schedule_day in days:  # loop through all schedule days
-            current_row = layout.rowCount()  # this will always be an empty row index
-            label_start_time = None
-            label_end_time = None
-
-            # label creation
-            label_day = QtWidgets.QLabel(schedule_day)
-            label_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-            label_day.setAccessibleDescription('formLabel')
-            label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-            label_day.setMinimumSize(0, 30)
-
-            layout.addWidget(label_day, current_row, 0)
-
-            if schedules is not None and range(len(schedules) != 0):  # not empty validation
-                for schedule in schedules:  # loop through all schedules
-                    if schedule.get_room() == room and schedule.get_day() == schedule_day:
-                        # label creation
-                        if label_start_time is not None:
-                            label_start_time.setText(label_start_time.text() + '\n' + schedule.get_start_time())
-                        else:
-                            label_start_time = QtWidgets.QLabel(schedule.get_start_time())
-                            label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                            label_start_time.setAccessibleDescription('formLabel')
-                            label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-                        # label creation
-                        if label_end_time is not None:
-                            label_end_time.setText(label_end_time.text() + '\n' + schedule.get_end_time())
-                        else:
-                            label_end_time = QtWidgets.QLabel(schedule.get_end_time())
-                            label_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                            label_end_time.setAccessibleDescription('formLabel')
-                            label_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-            if label_start_time is not None:
-                layout.addWidget(label_start_time, current_row, 1)
-            else:
-                label_start_time = QtWidgets.QLabel('None')
-                label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                label_start_time.setAccessibleDescription('formLabel')
-                label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                label_start_time.setMinimumSize(200, 0)
-                layout.addWidget(label_start_time, current_row, 1)
-
-            if label_end_time is not None:
-                layout.addWidget(label_end_time, current_row, 2)
-
+    ############# SPLASH SCREEN #############
     def set_progress_bar(self, value):
         self.splash_screen_thread.count = value
         QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
 
-    # if you want to test something else and get a database error comment out this function and the function call(I'll do exception handling later lol)
+    # this function receives the data from the countChanged signal in the SplashScreenThread
+    def onCountChanged(self, value):
+        time.sleep(0.05)
+        self.splash.progressBar.setValue(value)
+        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
+
+    # this function receives the data from the finished signal
+    def finished(self, value):
+        time.sleep(0.1)
+        self.splash.finished(value)
+
+    ############# ONE SHOT METHODS #############
+    # clears all the QT Creator styles in favour of the QSS stylesheet
+    def clear_style_sheets(self):
+        widget_child = self.centralwidget.findChildren(QtWidgets.QWidget)
+
+        for widget in widget_child:
+            widget.setStyleSheet('')
+
+    ############# STATIC METHODS #############
+    # limit the amount of characters allowed in a QTextEdit
+    @staticmethod
+    def max_txt_input(txt_edit):
+        text_content = txt_edit.toPlainText()
+        length = len(text_content)
+
+        max_length = 1000
+
+        if length > max_length:
+            position = txt_edit.textCursor().position()
+            text_cursor = txt_edit.textCursor()
+            text_content = text_content[:max_length]
+            txt_edit.setText(text_content)
+            text_cursor.setPosition(position - (length - max_length))
+            txt_edit.setTextCursor(text_cursor)
+
+    @staticmethod
+    def validate_field(text_edit):
+        if text_edit.text() == '':
+            text_edit.setPlaceholderText('Cannot be blank')
+            return False
+        return True
+
+    @staticmethod
+    def cleanup_empty_cells(table):
+        if table.item(0, 0) is None:
+            table.clear()
+            table.setRowCount(0)
+
+    @staticmethod
+    def true_row_count(frame):
+        layout = frame.layout()
+        count = 1
+        if layout is not None:
+            column_count = layout.columnCount()
+            row_count = layout.rowCount()
+            for i in range(column_count):  # loop through all columns
+                for j in range(row_count):  # loop through all rows
+                    if layout.itemAtPosition(j, i) is not None:
+                        count += 1
+        return count
+
+    @staticmethod
+    def change_page(stacked_widget, name):
+        widget = name
+
+        # if the widget is in the stackedWidget
+        if stacked_widget.indexOf(widget) != -1:
+            stacked_widget.setCurrentIndex(stacked_widget.indexOf(widget))  # change the page to the widget
+
+    @staticmethod
+    def clear_layout(widget):
+        layout = widget.layout()
+
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                    widget.setParent(None)
+
     @staticmethod
     def populate_table(table, query, t_problems=None):
 
@@ -621,21 +431,25 @@ class LogBook(MainWindowBase, MainWindowUI):
         comboBox.addItems(items)
         comboBox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
-    # clears all the QT Creator styles in favour of the QSS stylesheet
-    def clear_style_sheets(self):
-        widget_child = self.centralwidget.findChildren(QtWidgets.QWidget)
+    @staticmethod
+    def center_widget(widget):
 
-        for widget in widget_child:
-            widget.setStyleSheet('')
+        # center the window
+        window_geometry_dialog = widget.frameGeometry()
+        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+        window_geometry_dialog.moveCenter(center_point)
+        widget.move(window_geometry_dialog.topLeft())
 
-    # use the button's name to find the linked frame (deliberately named this way)
-    def show_linked_frame(self, member):
-        search = str(member.objectName()).replace('pushButton', '')
+    @staticmethod
+    def time_convert(string, mode):
+        if mode == '12 HR':
+            time_string = datetime.datetime.strptime(string, "%H:%M:%S").strftime("%I:%M %p")
+        else:
+            time_string = datetime.datetime.strptime(string, "%H:%M:%S").strftime("%H:%M")
+        return time_string
 
-        for widget in self.stackedWidget.children():
-            if search in widget.objectName():
-                self.change_page(self.stackedWidget,widget)
-
+    ############# MENU #############
     # this function loops through the buttons in the menu to find the active QPushButton and set it to the active colour (green)
     def button_pressed(self):
         self.change_page(self.stackedWidgetSchedule, self.pageOptions)
@@ -651,6 +465,19 @@ class LogBook(MainWindowBase, MainWindowUI):
     def is_push_button(self, member):
         # if object is a QPushButton
         if isinstance(member, QtWidgets.QPushButton):
+            icon_name = member.accessibleName()
+
+            if self.stored_theme_choice['base_theme'] == 'dark':
+                icon_normal = QtGui.QIcon()
+                icon_active = QtGui.QIcon()
+
+                icon_normal.addPixmap(QtGui.QPixmap(f'images\\icons\\light_theme\\{icon_name}_light.png'))
+                icon_active.addPixmap(QtGui.QPixmap(f'images\\icons\\dark_theme\\{icon_name}_dark.png'))
+            else:
+                icon_normal = QtGui.QIcon()
+                icon_active = QtGui.QIcon()
+                icon_normal.addPixmap(QtGui.QPixmap(f'images\\icons\\dark_theme\\{icon_name}_dark.png'))
+                icon_active.addPixmap(QtGui.QPixmap(f'images\\icons\\light_theme\\{icon_name}_light.png'))
 
             # if the button that called this function is the same as the member encountered:
             if member.objectName() == self.sender().objectName():
@@ -658,659 +485,30 @@ class LogBook(MainWindowBase, MainWindowUI):
                 # change button's colour to active green
                 member.setAccessibleDescription('menuButtonActive')
 
-                # use the button's name to find the linked frame (deliberately named this way)
+                member.setIcon(icon_active)
+
+                # use the button's name to find the linked frame
                 self.show_linked_frame(member)
+
                 member.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
             else:
                 # set all other buttons' colour to white
                 member.setAccessibleDescription('menuButton')
+                member.setIcon(icon_normal)
                 member.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
-    def save_schedules(self, frame, combo_box):
-        mode = self.pushButtonScheduleSave.accessibleName()
-        ScheduleModifier.save_schedules(frame, combo_box, mode)
-        self.schedules = self.lab_checker.get_today_schedule()
-        self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
-        self.get_all_labs()
-        self.show_room_schedule(combo_box.currentText(), mode)
-
-        self.clear_layout(self.frameEmptyRooms)
-        self.clear_layout(self.frameUpcomingRooms)
-        self.clear_layout(self.frameOpenLabs)
-        self.clear_layout(self.frameUpcomingOpenLabs)
-
-    @staticmethod
-    def clear_layout(widget):
-        layout = widget.layout()
-
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-                    widget.setParent(None)
-
-    def view_selection(self, table):
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1 and table.item(0, 0) is not None:
-            self.lastPage = table.objectName()
-            row_index = table.currentRow()  # get index of current row
-            data = []  # data list
-            labels = []
-            layout = self.frameViewDataForm.layout()
-
-            for i in range(table.columnCount()):  # loop through all columns
-                data.append(table.item(row_index, i).text())  # add each field to the list
-                labels.append(table.horizontalHeaderItem(i).text())
-
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
-                    widget = item.widget()
-                    if widget is not None:
-                        widget.deleteLater()
-                        widget.setParent(None)
-
-            for j in range(len(data)):
-
-                replaced = labels[j].replace('_', ' ')
-                data_widget = None
-
-                if replaced == 'NOTE' or replaced == 'RESOLUTION':
-                    data_widget = QtWidgets.QTextEdit(f"{data[j]}")
-                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                    data_widget.setAccessibleDescription('textEdit')
-                    data_widget.setReadOnly(True)
-                    data_widget.setTextInteractionFlags(Qt.NoTextInteraction)
-                    data_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
-                    data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-                    data_widget.setAcceptRichText(False)
-                    data_widget.document().setDocumentMargin(0)
-                else:
-                    data_widget = QtWidgets.QLabel(f"{data[j]}")
-                    data_widget.setScaledContents(True)
-                    data_widget.setWordWrap(True)
-                    data_widget.setAccessibleDescription('formLabelNormal')
-                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-
-                data_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                data_widget.setMaximumSize(500, 150)
-
-                label_widget = QtWidgets.QLabel(f"{replaced}:")
-                label_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-                label_widget.setAccessibleDescription('formLabel')
-                label_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                label_widget.setMinimumSize(200, 0)
-                label_widget.setMaximumSize(500, 100)
-
-                self.frameViewDataForm.layout().addRow(label_widget, data_widget)
-
-            # change to view page
-            self.change_page(self.stackedWidget,self.pageViewData)
-
-    def delete_selection(self, table, table_name):
-
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1 and table.item(0, 0) is not None:
-            if self.show_dialog():
-                row_index = table.currentRow()  # get index of current row
-                column_index = table.item(row_index, 0).text()
-                first_column = DatabaseHandler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
-                delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
-                DatabaseHandler.execute_query(delete_query).commit()
-                self.refresh_tables()
-
-    def clear_form(self):
-        self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
-        self.dateEditNewLog.setCurrentSectionIndex(2)
-        self.textBoxNewLogIssue.setText('')
-        self.textBoxNewLogNote.setText('')
-        self.textBoxNewLogName.setText('')
-        self.checkBoxFixed.setCheckState(False)
-        self.textBoxNewLogResolution.setText('')
-        self.comboBoxRoom.setCurrentIndex(0)
-
-    def new_lost_and_found(self):
-        self.stored_id = 0
-        self.clear_lost_and_found_form()
-        self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
-        self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
-        self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
-
-        self.frameReturnedLAF.hide()
-        self.refresh_tables()
-        self.change_page(self.stackedWidget,self.pageNewLAF)
-
-    def clear_lost_and_found_form(self):
-        self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
-        self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
-        self.comboBoxNewLostAndFoundRoom.setCurrentIndex(0)
-        self.textBoxNewLostAndFoundBy.clear()
-        self.textBoxNewLostAndFoundItemDescription.clear()
-        self.textBoxNewLostAndFoundNote.clear()
-        self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
-        self.checkBoxNewLostAndFoundReturned.setCheckState(False)
-        self.textBoxNewLostAndFoundStudentName.clear()
-        self.textBoxNewLostAndFoundStudentNumber.clear()
-        self.show_frame_returned_laf()
-
-    def save_lost_and_found_form(self):
-        date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
-        room = self.comboBoxNewLostAndFoundRoom.currentText()
-        found_by = self.textBoxNewLostAndFoundBy.text()
-        item_description = self.textBoxNewLostAndFoundItemDescription.text()
-        note = self.textBoxNewLostAndFoundNote.toPlainText()
-        list_objects = None
-        state = True
-
-        # empty field validation
-        if not (self.validate_field(self.textBoxNewLostAndFoundBy)):
-            state = False
-
-        if not state:
-            return
-
-        if self.stored_id == 0:  # id of 0 means it's a new entry
-            returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
-            student_name = self.textBoxNewLostAndFoundStudentName.text()
-            student_number = self.textBoxNewLostAndFoundStudentNumber.text()
-
-            if self.checkBoxNewLostAndFoundReturned.isChecked():
-                returned = 'YES'
-                query = f'''
-                            INSERT INTO dbo.LostAndFound
-                                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
-                            VALUES 
-                                (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
-
-            else:
-                returned = 'NO'
-                query = f'''
-                            INSERT INTO dbo.LostAndFound
-                                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED) 
-                            VALUES 
-                                (?, ?, ?, ?, ?, ?, ?, ?)'''
-                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
-
-        else:  # already has an id, meaning it's an update
-            if self.checkBoxNewLostAndFoundReturned.isChecked():
-                returned = 'YES'
-                returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
-                student_name = self.textBoxNewLostAndFoundStudentName.text()
-                student_number = self.textBoxNewLostAndFoundStudentNumber.text()
-
-                query = f'''
-                UPDATE dbo.LostAndFound 
-                SET 
-                    DATE_FOUND = ?, 
-                    ROOM = ?, 
-                    NAME = ?, 
-                    ITEM_DESC = ?, 
-                    NOTE = ?, 
-                    STUDENT_NAME = ?, 
-                    STUDENT_NUMBER = ?, 
-                    RETURNED_DATE = ?, 
-                    RETURNED = ?
-                WHERE 
-                    ENTRY_ID = {self.stored_id};'''
-
-                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned_date, returned]
-            else:
-                returned = 'NO'
-                student_name = ''
-                student_number = ''
-                query = f'''
-                UPDATE dbo.LostAndFound 
-                SET 
-                    DATE_FOUND = ?, 
-                    ROOM = ?, 
-                    NAME = ?, 
-                    ITEM_DESC = ?, 
-                    NOTE = ?, 
-                    STUDENT_NAME = ?, 
-                    STUDENT_NUMBER = ?, 
-                    RETURNED_DATE = null, 
-                    RETURNED = ?
-                WHERE 
-                    ENTRY_ID = {self.stored_id};'''
-                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
-
-        cursor = DatabaseHandler.execute_query(query, list_objects)
-
-        # validate the cursor for empty results
-        if not DatabaseHandler.validate_cursor(cursor):
-            self.change_to_last_page()
-            return
-
-        cursor.commit()
-        self.refresh_tables()
-        self.change_page(self.stackedWidget,self.pageLostAndFound)
-
-    def edit_laf_form(self):
-        table = self.tableWidgetLostAndFound
-
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1 and table.item(0, 0) is not None:
-            row_index = table.currentRow()  # get index of current row
-            entry_id = table.item(row_index, 0).text()
-            self.stored_id = entry_id
-
-            query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM dbo.LostAndFound WHERE ENTRY_ID = {entry_id};'
-            cursor = DatabaseHandler.execute_query(query)
-
-            # validate the cursor for empty results
-            if not DatabaseHandler.validate_cursor(cursor):
-                self.change_to_last_page()
-                return
-
-            laf = cursor.fetchall()
-            self.clear_form()
-            self.labelNewLostAndFound.setText('EDIT LOST AND FOUND')
-            self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
-            self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
-
-            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE or self.default_returned_date)
-            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
-
-            self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
-            self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
-            self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
-
-            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
-            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
-
-            index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
-            if index >= 0:
-                self.comboBoxNewLostAndFoundRoom.setCurrentIndex(index)
-
-            if str(laf[0].RETURNED).strip() == 'YES':
-                self.checkBoxNewLostAndFoundReturned.setChecked(True)
-                self.show_frame_returned_laf()
-            else:
-                self.checkBoxNewLostAndFoundReturned.setChecked(False)
-                self.show_frame_returned_laf()
-
-            self.change_page(self.stackedWidget,self.pageNewLAF)
-
-    def show_frame_returned_laf(self):
-        if self.checkBoxNewLostAndFoundReturned.isChecked():
-            self.frameReturnedLAF.show()
-        else:
-            self.frameReturnedLAF.hide()
-
-    def returned_checkbox_changed(self):  # this way it only happens if the state was changed
-        if self.checkBoxNewLostAndFoundReturned.isChecked():
-            self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
-            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
-
-        self.show_frame_returned_laf()
-
-    # limit the amount of characters allowed in a QTextEdit
-    @staticmethod
-    def max_txt_input(txt_edit):
-        text_content = txt_edit.toPlainText()
-        length = len(text_content)
-
-        max_length = 1000
-
-        if length > max_length:
-            position = txt_edit.textCursor().position()
-            text_cursor = txt_edit.textCursor()
-            text_content = text_content[:max_length]
-            txt_edit.setText(text_content)
-            text_cursor.setPosition(position - (length - max_length))
-            txt_edit.setTextCursor(text_cursor)
-
-    def change_to_last_page(self):
-        # remove the 'tableWidget' from the string (this is why everything is named this way lol)
-        name = self.lastPage.replace('tableWidget', '')
-        page_name = 'page' + name  # add page to the modified string
-        self.change_page(self.stackedWidget,self.findChild(QtWidgets.QWidget, page_name))  # change to last page
-
-    def change_page(self,stacked_widget, name):
-        widget = name
-
-        # if the widget is in the stackedWidget
-        if stacked_widget.indexOf(widget) != -1:
-            stacked_widget.setCurrentIndex(stacked_widget.indexOf(widget))  # change the page to the widget
-
-    @staticmethod
-    def validate_field(text_edit):
-        if text_edit.text() == '':
-            text_edit.setPlaceholderText('Cannot be blank')
-            return False
-        return True
-
-    def refresh_tables(self):
-        import calendar
-        month = calendar.month_name[datetime.datetime.now().month]  # converting the month number to a string
-        index = self.comboBoxReportsMonth.findText(month)
-        if index >= 0:
-            self.comboBoxReportsMonth.setCurrentIndex(index)
-
-        reports_query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
-        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM dbo.Reports WHERE FIXED =\'NO\''
-        lost_and_found_query = 'SELECT * FROM dbo.LostAndFound'
-        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM dbo.Reports WHERE FIXED =\'NO\''
-
-        self.populate_table(self.tableWidgetReports, reports_query)
-        self.populate_table(self.tableWidgetProblems, problems_query, True)
-        self.populate_table(self.tableWidgetLostAndFound, lost_and_found_query)
-
-        self.cleanup_empty_cells(self.tableWidgetReports)
-        self.cleanup_empty_cells(self.tableWidgetProblems)
-        self.cleanup_empty_cells(self.tableWidgetLostAndFound)
-
-        cursor = DatabaseHandler.execute_query(problems_count_query)
-
-        # validate the cursor for empty results
-        if not DatabaseHandler.validate_cursor(cursor):
-            return
-
-        self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
-
-    @staticmethod
-    def cleanup_empty_cells(table):
-        if table.item(0, 0) is None:
-            table.clear()
-            table.setRowCount(0)
-
-    def sort_by_month(self, input_month=None):  # setting an optional argument to null since python has no overloading
-        if input_month is not None:
-            query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
-        else:
-            month = self.sender().currentText()  # receive the combobox's current text
-            if month == 'All':
-                query = f"SELECT * FROM dbo.Reports"
-            else:
-                query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
-        self.populate_table(self.tableWidgetReports, query)
-        self.cleanup_empty_cells(self.tableWidgetReports)
-
-    def save_new_log(self):
-
-        state = True
-        list_objects = None
-
-        # empty field validation
-        if not (self.validate_field(self.textBoxNewLogIssue)):
-            state = False
-
-        if not (self.validate_field(self.textBoxNewLogName)):
-            state = False
-
-        if not state:
-            return
-
-        date = self.dateEditNewLog.date().toString('yyyy-MM-dd')
-        issue = self.textBoxNewLogIssue.text().strip()
-        note = self.textBoxNewLogNote.toPlainText()
-        name = self.textBoxNewLogName.text().strip()
-        room = self.comboBoxRoom.currentText().strip()
-        fixed = ' '
-
-        if self.checkBoxFixed.isChecked():
-            fixed = 'YES'
-        else:
-            fixed = 'NO'
-
-        resolution = self.textBoxNewLogResolution.toPlainText().strip()
-
-        if self.stored_id == 0:
-            query = f'''
-            INSERT INTO dbo.Reports
-                (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) 
-            VALUES 
-                (?, ?, ?, ?, ?, ?, ?)'''
-            list_objects = [date, name, room, issue, note, resolution, fixed]
-        else:
-            query = f'''
-            UPDATE dbo.Reports 
-            SET 
-                DATE = ?, 
-                NAME = ?, 
-                ROOM = ?, 
-                ISSUE = ?, 
-                NOTE = ?, 
-                RESOLUTION = ?, 
-                FIXED = ? 
-            WHERE 
-                REPORT_ID = {self.stored_id};'''
-
-            list_objects = [date, name, room, issue, note, resolution, fixed]
-
-        cursor = DatabaseHandler.execute_query(query, list_objects)
-
-        # validate the cursor for empty results
-        if not DatabaseHandler.validate_cursor(cursor):
-            self.change_page(self.stackedWidget, self.pageReports)
-            return
-
-        cursor.commit()
-
-        self.refresh_tables()
-        self.change_to_last_page()
-        self.clear_form()
-
-    '''def search_LAF(self):
-        keyword = self.txtBoxSearchLAF.text()
-        if keyword is not None:
-            lost_and_found_query = f"""
-                SELECT * FROM dbo.LostAndFound 
-                where ITEM_DESC like '%{keyword}%'or 
-                NAME like '%{keyword}%' or 
-                ROOM like '%{keyword}%' or 
-                NOTE like '%{keyword}%';
-                """
-            self.populate_table(self.tableWidgetLostAndFound, lost_and_found_query)
-            self.cleanup_empty_cells(self.tableWidgetLostAndFound)
-    '''
-
-    def search_Buttons(self, table, button):
-        keyword = button.text()
-
-        if table.objectName().find('Lost') != -1:
-            query = f"""
-                SELECT * FROM dbo.LostAndFound 
-                where ITEM_DESC like '%{keyword}%'or 
-                NAME like '%{keyword}%' or 
-                ROOM like '%{keyword}%' or 
-                NOTE like '%{keyword}%';
-            """
-            self.populate_table(table, query)
-            self.cleanup_empty_cells(table)
-
-        elif table.objectName().find('Reports') != -1:
-            if self.comboBoxReportsMonth.currentText() != 'All':
-                month = self.comboBoxReportsMonth.currentText()
-                query = f"""
-                            SELECT * FROM dbo.Reports 
-                            where 
-                            MONTH(DATE) = (SELECT MONTH('{month}' + '2020')) AND
-                            (
-                                ISSUE like '%{keyword}%'or 
-                                NAME like '%{keyword}%' or 
-                                ROOM like '%{keyword}%' or 
-                                RESOLUTION like '%{keyword}%' or
-                                FIXED like '%{keyword}%' or 
-                                NOTE like '%{keyword}%'
-                            );
-                        """
-            else:
-                query = f"""
-                    SELECT * FROM dbo.Reports 
-                    where ISSUE like '%{keyword}%'or 
-                    NAME like '%{keyword}%' or 
-                    ROOM like '%{keyword}%' or 
-                    RESOLUTION like '%{keyword}%' or
-                    FIXED like '%{keyword}%' or 
-                    NOTE like '%{keyword}%';
-                """
-            self.populate_table(table, query)
-            self.cleanup_empty_cells(table)
-
-    def edit_log(self, table):
-        self.lastPage = table.objectName()
-
-        # if a row is selected (having no rows selected returns -1)
-        if table.currentRow() != -1 and table.item(0, 0) is not None:
-            row_index = table.currentRow()  # get index of current row
-            report_id = table.item(row_index, 0).text()
-            self.stored_id = report_id
-
-            query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from dbo.Reports WHERE REPORT_ID = {report_id};'
-            cursor = DatabaseHandler.execute_query(query)
-
-            # validate the cursor for empty results
-            if not DatabaseHandler.validate_cursor(cursor):
-                self.change_to_last_page()
-                return
-
-            log = cursor.fetchall()
-            self.clear_form()
-            self.labelNewLog.setText('EDIT LOG')
-            self.dateEditNewLog.setDate(log[0].DATE)
-            self.dateEditNewLog.setCurrentSectionIndex(2)
-            self.textBoxNewLogName.setText(str(log[0].NAME).strip())
-            self.textBoxNewLogIssue.setText(str(log[0].ISSUE).strip())
-            self.textBoxNewLogNote.setText(str(log[0].NOTE.strip()))
-            self.textBoxNewLogResolution.setText(str(log[0].RESOLUTION).strip())
-
-            index = self.comboBoxRoom.findText(log[0].ROOM, QtCore.Qt.MatchFixedString)
-            if index >= 0:
-                self.comboBoxRoom.setCurrentIndex(index)
-
-            if str(log[0].FIXED).strip() == 'YES':
-                self.checkBoxFixed.setChecked(True)
-            else:
-                self.checkBoxFixed.setChecked(False)
-
-            self.change_page(self.stackedWidget,self.pageNewLog)
-
-    def apply_settings(self, theme, time_format):
-        if theme == "Classic Light":
-            self.comboBoxSettingsTheme.setCurrentIndex(0)
-
-        if theme == "Classic Dark":
-            self.comboBoxSettingsTheme.setCurrentIndex(1)
-
-        if theme == "Centennial Light":
-            self.comboBoxSettingsTheme.setCurrentIndex(2)
-
-        if theme == "Centennial Dark":
-            self.comboBoxSettingsTheme.setCurrentIndex(1)
-            # self.comboBoxSettingsTheme.setCurrentIndex(3)
-
-        if time_format == "12 HR":
-            self.comboBoxSettingsTimeFormat.setCurrentIndex(1)
-        else:
-            self.comboBoxSettingsTimeFormat.setCurrentIndex(0)
-
-    def save_settings(self):
-        theme = self.comboBoxSettingsTheme.currentText()
-        time_format = self.comboBoxSettingsTimeFormat.currentText()
-
-        output = SettingsManager.settings_theme_switch(theme)
-        data = SettingsManager.import_settings()
-
-        data['theme_choice']['name'] = output
-        data['time_format'] = time_format
-
-        SettingsManager.export_settings(data)
-
-        self.labelSettingsWarning.setVisible(True)
-
-    def export_data_sheet(self):
-
-        server = DatabaseHandler.get_server_string()
-        db_name = DatabaseHandler.get_database_name()
-
-        conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
-        conn_str = urllib.parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
-        conn_str = "mssql+pyodbc:///?odbc_connect=%s" % conn_str  # to stop sqlalchemy from complaining
-        reports_data = pd.read_sql_query('SELECT * FROM dbo.Reports', conn_str)
-        year = str(datetime.datetime.now().year)
-        path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx',filter='.xlsx')[0]
-
-        book = openpyxl.Workbook()  # create new workbook
-        book.remove(book.active)  # remove the default sheet
-
-        writer = pd.ExcelWriter(path, engine='openpyxl')
-        writer.book = book
-
-        if reports_data is not None:
-            reports_obj = reports_data.select_dtypes(['object'])  # get the datatypes from the result
-            reports_data[reports_obj.columns] = reports_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
-
-        lost_and_found_data = pd.read_sql_query('SELECT * FROM dbo.LostAndFound', conn_str)
-
-        if lost_and_found_data is not None:
-            lost_and_found_obj = lost_and_found_data.select_dtypes(['object'])  # get the datatypes from the result
-            lost_and_found_data[lost_and_found_obj.columns] = lost_and_found_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
-
-        if path != '':
-            try:
-                reports_data.to_excel(writer, sheet_name='Reports', index=False)  # convert data frame to excel
-                lost_and_found_data.to_excel(writer, sheet_name='Lost and Found', index=False)  # convert data frame to excel
-                writer.save()
-                writer.close()
-                os.startfile(os.path.dirname(os.path.abspath(path)))  # open the folder
-            except PermissionError:
-                message = f'Exporting failed: Permission denied'
-                info = f'If the file is open in Excel, please close it'
-                self.show_message_box(message, info)
-
-    def new_log(self):
-        self.lastPage = 'tableWidgetReports'
-        self.clear_form()
-        self.stored_id = 0
-        self.labelNewLog.setText('NEW LOG')
-        self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
-        self.dateEditNewLog.setCurrentSectionIndex(2)
-        self.change_page(self.stackedWidget, self.pageNewLog)
-
-    def get_all_labs_obj(self):
-        layout = self.scrollAreaAllLabs.widget().layout()
-        row_count = layout.rowCount()
-        data = []
-        if layout is not None or row_count != 0:
-            for j in range(1, row_count):
-                widget = layout.itemAtPosition(j, 0).widget()
-                data.append([widget.text(), j])
-        return data
-
-    def add_to_empty_row(self, frame, widget):
-        layout = frame.layout()
-
-        if layout is not None:
-            column = 0
-            row_count = self.true_row_count(frame)
-            max = 11
-
-            for j in range(row_count):  # loop through all rows
-                item = layout.itemAtPosition(j, column)
-                if item is None:
-                    if row_count > max:
-                        layout.addWidget(widget, j-max, column + 1)  # new column
-                    else:
-                        layout.addWidget(widget, j, column)
-
-            if row_count == 0:
-                layout.addWidget(widget, 0, 0)
-
-    def true_row_count(self, frame):
-        layout = frame.layout()
-        count = 1
-        if layout is not None:
-            column_count = layout.columnCount()
-            row_count = layout.rowCount()
-            for i in range(column_count):  # loop through all columns
-                for j in range(row_count):  # loop through all rows
-                    if layout.itemAtPosition(j, i) is not None:
-                        count += 1
-        return count
+    # use the button's name to find the linked frame (deliberately named this way)
+    def show_linked_frame(self, member):
+        search = str(member.objectName()).replace('pushButton', '')
+
+        for widget in self.stackedWidget.children():
+            if search in widget.objectName():
+                self.change_page(self.stackedWidget,widget)
+
+    ############# DASHBOARD #############
+    def problems_link(self, *args):
+        self.pushButtonProblems.clicked.emit()
 
     # for handling creation and deletion of labels for labs that are soon going to be vacant
     def countdown_handler(self):
@@ -1373,8 +571,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                         # dash_countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                         if countdown is not None:  # only show countdown if it's not empty
-                            countdown = datetime.datetime.strptime(str(countdown), "%H:%M:%S").strftime(
-                                "%H:%M:%S")
+                            countdown = datetime.datetime.strptime(str(countdown), "%H:%M:%S").strftime("%H:%M:%S")
                             label = room_name + '         ' + 'In: ' + str(countdown)  # text for the label
                             find_child = self.frameUpcomingRooms.findChild(QtWidgets.QPushButton, search)
 
@@ -1548,47 +745,32 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.show_message_box(message, info)
 
     def show_message_box(self, message, info, title=None):
-        find_child = False
-        if not find_child:
-            import qtmodern_package.windows as qtmodern_windows
 
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Critical)
-            msg.setObjectName('Lab_Error')
-            msg.setText(message)
-            msg.setInformativeText(info)
+        msg = QtWidgets.QMessageBox()
+        import qtmodern_package.windows as qtmodern_windows
+        msg.setObjectName('Lab_Error')
+        msg.setText(message)
+        msg.setInformativeText(info)
+        size = msg.sizeHint()
 
-            if title is not None:
-                msg.setWindowTitle(title)
-            else:
-                msg.setWindowTitle("Error")
+        if title is not None:
+            msg.setWindowTitle(title)
+        else:
+            msg.setWindowTitle("Error")
 
-            flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-            msg.setWindowFlags(flags)
-            size = msg.sizeHint()
+        flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        msg.setWindowFlags(flags)
+        msg.setStyleSheet(self.theme)
+        msg = qtmodern_windows.ModernWindow(msg)
+        msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
+        msg.setGeometry(0, 0, size.width(), size.height())
 
-            msg.setStyleSheet(self.theme)
-            msg = qtmodern_windows.ModernWindow(msg)
+        self.center_widget(msg)
 
-            msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
-            msg.setGeometry(0, 0, size.width(), size.height())
+        msg.btnMinimize.setVisible(False)
+        msg.btnMaximize.setVisible(False)
 
-            self.center_widget(msg)
-
-            msg.btnMinimize.setVisible(False)
-            msg.btnMaximize.setVisible(False)
-
-            msg.show()
-
-    @staticmethod
-    def center_widget(widget):
-
-        # center the window
-        window_geometry_dialog = widget.frameGeometry()
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        window_geometry_dialog.moveCenter(center_point)
-        widget.move(window_geometry_dialog.topLeft())
+        msg.show()
 
     def remove_countdown(self):
         if self.sender().isChecked():
@@ -1607,27 +789,897 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.sender().setVisible(False)  # hide the widget
             self.sender().deleteLater()  # schedule the widget for deletion
 
-    def Clock(self):  # this function is called every second during runtime
-        t = time.localtime()  # local system time
-        d = datetime.date.today()  # local system date
-        t_format_24hr = "%H:%M:%S"
-        t_format_12hr = "%I:%M:%S %p"
-        date_format = "%A %B %d, %Y"
+    def refresh_style(self):
+        # clears all the QT Creator styles in favour of the QSS stylesheet
+        self.clear_style_sheets()
+        theme = str(open(self.theme_path, "r").read())
+        self.setStyleSheet(theme)
 
-        # convert time to string format
-        time_convert = time.strftime(t_format_24hr, t)
+    def show_schedule_modifier(self):
+        self.labelSchedule.setText('SCHEDULE MODIFIER')
+        self.pushButtonScheduleSave.setAccessibleName('Schedule')
+        self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
+        self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
 
-        if self.comboBoxSettingsTimeFormat.currentText() == '12 HR':
-            time_convert = time.strftime(t_format_12hr, t)
+    def show_open_lab_schedule_modifier(self):
+        self.labelSchedule.setText('OPEN LAB SCHEDULE MODIFIER')
+        self.pushButtonScheduleSave.setAccessibleName('Open')
+        self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
+        self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
 
-        # current time
-        self.labelCurrentTime.setText(time_convert)
+    def show_dialog(self):
 
-        # assign labels with current time and date
-        self.labelCurrentDate.setText(d.strftime(date_format))
-        self.labelCurrentDate2.setText(d.strftime(date_format))
-        self.labelCurrentDate3.setText(d.strftime(date_format))
+        dialog = Dialog()
+        flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        state = True
 
-        # call the handlers for the countdowns
-        self.countdown_handler()
-        self.duration_handler()
+        yes_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes)
+        no_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No)
+
+        dialog.setWindowFlags(flags)
+
+        yes_button.setAccessibleDescription('successButton')
+        no_button.setAccessibleDescription('dangerButton')
+
+        yes_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        no_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+        yes_button.setMinimumSize(100, 25)
+        no_button.setMinimumSize(100, 25)
+
+        dialog.setStyleSheet(self.theme)
+
+        self.center_widget(dialog)
+
+        if not dialog.exec_() == 1:
+            state = False
+        return state
+
+    def restore(self, frame, parent):
+        parent.layout().addWidget(frame)
+        frame.setVisible(True)
+        self.floating_state = False  # floating window inactive
+
+    def make_floating_window(self):
+        import qtmodern_package.windows as qtmodern_windows
+
+        window = Window(self)
+        window.setCentralWidget(QtWidgets.QWidget())
+        window.setGeometry(QtCore.QRect(0, 0, 480, 720))  # start size/location
+        window.setStyleSheet(self.theme)
+        window.setWindowTitle('All Labs')
+
+        central_widget = window.centralWidget()
+        central_widget.setLayout(QtWidgets.QGridLayout())
+        central_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+        container_frame = QtWidgets.QFrame()
+        container_frame.setObjectName('container')
+        container_frame.setLayout(QtWidgets.QGridLayout())
+        container_frame.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        container_frame.setAccessibleDescription('backgroundFrame')
+        central_widget.layout().addWidget(container_frame)
+
+        self.center_widget(window)
+
+        sizegrip = QtWidgets.QSizeGrip(window)
+
+        central_widget.layout().addWidget(sizegrip, 1, 0, QtCore.Qt.AlignBottom | QtCore.Qt.AlignRight)
+
+        mw = qtmodern_windows.ModernWindow(window, self)
+        mw.btnMaximize.setVisible(False)
+        mw.btnMinimize.setVisible(False)
+
+        return mw
+
+    def move_to_floating_window(self):
+        state = self.floating_state  # for determining whether a floating window is active already
+
+        if not state:  # make new floating window
+            self.floating = self.make_floating_window()
+
+        window = self.floating
+
+        frame = self.scrollAreaAllLabs
+        frame.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        find_child = window.w.centralWidget().findChild(QtWidgets.QFrame, 'container')
+        find_child.layout().addWidget(frame)
+
+        frame.setVisible(True)
+
+        window.btnClose.clicked.connect(lambda: self.restore(frame, self.frameScrollContainer))
+        self.floating_state = True  # floating window is active
+        window.show()
+
+    ############# PROBLEMS, REPORTS, LOST AND FOUND #############
+
+    def view_selection(self, table):
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            self.lastPage = table.objectName()
+            row_index = table.currentRow()  # get index of current row
+            data = []  # data list
+            labels = []
+            layout = self.frameViewDataForm.layout()
+
+            for i in range(table.columnCount()):  # loop through all columns
+                data.append(table.item(row_index, i).text())  # add each field to the list
+                labels.append(table.horizontalHeaderItem(i).text())
+
+            if layout is not None:
+                while layout.count():
+                    item = layout.takeAt(0)
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.deleteLater()
+                        widget.setParent(None)
+
+            for j in range(len(data)):
+
+                replaced = labels[j].replace('_', ' ')
+                data_widget = None
+
+                if replaced == 'NOTE' or replaced == 'RESOLUTION':
+                    data_widget = QtWidgets.QTextEdit(f"{data[j]}")
+                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                    data_widget.setAccessibleDescription('textEdit')
+                    data_widget.setReadOnly(True)
+                    data_widget.setTextInteractionFlags(Qt.NoTextInteraction)
+                    data_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+                    data_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                    data_widget.setAcceptRichText(False)
+                    data_widget.document().setDocumentMargin(0)
+                else:
+                    data_widget = QtWidgets.QLabel(f"{data[j]}")
+                    data_widget.setScaledContents(True)
+                    data_widget.setWordWrap(True)
+                    data_widget.setAccessibleDescription('formLabelNormal')
+                    data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+                data_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                data_widget.setMaximumSize(500, 150)
+
+                label_widget = QtWidgets.QLabel(f"{replaced}:")
+                label_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_widget.setAccessibleDescription('formLabel')
+                label_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_widget.setMinimumSize(200, 0)
+                label_widget.setMaximumSize(500, 100)
+
+                self.frameViewDataForm.layout().addRow(label_widget, data_widget)
+
+            # change to view page
+            self.change_page(self.stackedWidget,self.pageViewData)
+
+    def delete_selection(self, table, table_name):
+
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            if self.show_dialog():
+                row_index = table.currentRow()  # get index of current row
+                column_index = table.item(row_index, 0).text()
+                first_column = DatabaseHandler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
+                delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
+                DatabaseHandler.execute_query(delete_query).commit()
+                self.refresh_tables()
+
+    def clear_form(self):
+        self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
+        self.dateEditNewLog.setCurrentSectionIndex(2)
+        self.textBoxNewLogIssue.setText('')
+        self.textBoxNewLogNote.setText('')
+        self.textBoxNewLogName.setText('')
+        self.checkBoxFixed.setCheckState(False)
+        self.textBoxNewLogResolution.setText('')
+        self.comboBoxRoom.setCurrentIndex(0)
+
+    def save_new_log(self):
+
+        state = True
+        list_objects = None
+
+        # empty field validation
+        if not (self.validate_field(self.textBoxNewLogIssue)):
+            state = False
+
+        if not (self.validate_field(self.textBoxNewLogName)):
+            state = False
+
+        if not state:
+            return
+
+        date = self.dateEditNewLog.date().toString('yyyy-MM-dd')
+        issue = self.textBoxNewLogIssue.text().strip()
+        note = self.textBoxNewLogNote.toPlainText()
+        name = self.textBoxNewLogName.text().strip()
+        room = self.comboBoxRoom.currentText().strip()
+        fixed = ' '
+
+        if self.checkBoxFixed.isChecked():
+            fixed = 'YES'
+        else:
+            fixed = 'NO'
+
+        resolution = self.textBoxNewLogResolution.toPlainText().strip()
+
+        if self.stored_id == 0:
+            query = f'''
+            INSERT INTO dbo.Reports
+                (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) 
+            VALUES 
+                (?, ?, ?, ?, ?, ?, ?)'''
+            list_objects = [date, name, room, issue, note, resolution, fixed]
+        else:
+            query = f'''
+            UPDATE dbo.Reports 
+            SET 
+                DATE = ?, 
+                NAME = ?, 
+                ROOM = ?, 
+                ISSUE = ?, 
+                NOTE = ?, 
+                RESOLUTION = ?, 
+                FIXED = ? 
+            WHERE 
+                REPORT_ID = {self.stored_id};'''
+
+            list_objects = [date, name, room, issue, note, resolution, fixed]
+
+        cursor = DatabaseHandler.execute_query(query, list_objects)
+
+        # validate the cursor for empty results
+        if not DatabaseHandler.validate_cursor(cursor):
+            self.change_page(self.stackedWidget, self.pageReports)
+            return
+
+        cursor.commit()
+
+        self.refresh_tables()
+        self.change_to_last_page()
+        self.clear_form()
+
+    def search_buttons(self, table, button):
+        keyword = button.text()
+
+        if table.objectName().find('Lost') != -1:
+            query = f"""
+                SELECT * FROM dbo.LostAndFound 
+                where ITEM_DESC like '%{keyword}%'or 
+                NAME like '%{keyword}%' or 
+                ROOM like '%{keyword}%' or 
+                NOTE like '%{keyword}%';
+            """
+            self.populate_table(table, query)
+            self.cleanup_empty_cells(table)
+
+        elif table.objectName().find('Reports') != -1:
+            if self.comboBoxReportsMonth.currentText() != 'All':
+                month = self.comboBoxReportsMonth.currentText()
+                query = f"""
+                            SELECT * FROM dbo.Reports 
+                            where 
+                            MONTH(DATE) = (SELECT MONTH('{month}' + '2020')) AND
+                            (
+                                ISSUE like '%{keyword}%'or 
+                                NAME like '%{keyword}%' or 
+                                ROOM like '%{keyword}%' or 
+                                RESOLUTION like '%{keyword}%' or
+                                FIXED like '%{keyword}%' or 
+                                NOTE like '%{keyword}%'
+                            );
+                        """
+            else:
+                query = f"""
+                    SELECT * FROM dbo.Reports 
+                    where ISSUE like '%{keyword}%'or 
+                    NAME like '%{keyword}%' or 
+                    ROOM like '%{keyword}%' or 
+                    RESOLUTION like '%{keyword}%' or
+                    FIXED like '%{keyword}%' or 
+                    NOTE like '%{keyword}%';
+                """
+            self.populate_table(table, query)
+            self.cleanup_empty_cells(table)
+
+    def edit_log(self, table):
+        self.lastPage = table.objectName()
+
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            row_index = table.currentRow()  # get index of current row
+            report_id = table.item(row_index, 0).text()
+            self.stored_id = report_id
+
+            query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from dbo.Reports WHERE REPORT_ID = {report_id};'
+            cursor = DatabaseHandler.execute_query(query)
+
+            # validate the cursor for empty results
+            if not DatabaseHandler.validate_cursor(cursor):
+                self.change_to_last_page()
+                return
+
+            log = cursor.fetchall()
+            self.clear_form()
+            self.labelNewLog.setText('EDIT LOG')
+            self.dateEditNewLog.setDate(log[0].DATE)
+            self.dateEditNewLog.setCurrentSectionIndex(2)
+            self.textBoxNewLogName.setText(str(log[0].NAME).strip())
+            self.textBoxNewLogIssue.setText(str(log[0].ISSUE).strip())
+            self.textBoxNewLogNote.setText(str(log[0].NOTE.strip()))
+            self.textBoxNewLogResolution.setText(str(log[0].RESOLUTION).strip())
+
+            index = self.comboBoxRoom.findText(log[0].ROOM, QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.comboBoxRoom.setCurrentIndex(index)
+
+            if str(log[0].FIXED).strip() == 'YES':
+                self.checkBoxFixed.setChecked(True)
+            else:
+                self.checkBoxFixed.setChecked(False)
+
+            self.change_page(self.stackedWidget,self.pageNewLog)
+
+    def returned_checkbox_changed(self):  # this way it only happens if the state was changed
+        if self.checkBoxNewLostAndFoundReturned.isChecked():
+            self.dateEditReturnedNewLostAndFound.setDate(QtCore.QDate.currentDate())
+            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+
+        self.show_frame_returned_laf()
+
+    def change_to_last_page(self):
+        # remove the 'tableWidget' from the string (this is why everything is named this way lol)
+        name = self.lastPage.replace('tableWidget', '')
+        page_name = 'page' + name  # add page to the modified string
+        self.change_page(self.stackedWidget,self.findChild(QtWidgets.QWidget, page_name))  # change to last page
+
+    def refresh_tables(self):
+        import calendar
+        month = calendar.month_name[datetime.datetime.now().month]  # converting the month number to a string
+        index = self.comboBoxReportsMonth.findText(month)
+        if index >= 0:
+            self.comboBoxReportsMonth.setCurrentIndex(index)
+
+        reports_query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
+        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM dbo.Reports WHERE FIXED =\'NO\''
+        lost_and_found_query = 'SELECT * FROM dbo.LostAndFound'
+        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM dbo.Reports WHERE FIXED =\'NO\''
+
+        self.populate_table(self.tableWidgetReports, reports_query)
+        self.populate_table(self.tableWidgetProblems, problems_query, True)
+        self.populate_table(self.tableWidgetLostAndFound, lost_and_found_query)
+
+        self.cleanup_empty_cells(self.tableWidgetReports)
+        self.cleanup_empty_cells(self.tableWidgetProblems)
+        self.cleanup_empty_cells(self.tableWidgetLostAndFound)
+
+        cursor = DatabaseHandler.execute_query(problems_count_query)
+
+        # validate the cursor for empty results
+        if not DatabaseHandler.validate_cursor(cursor):
+            return
+
+        self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
+
+    def sort_by_month(self, input_month=None):  # setting an optional argument to null since python has no overloading
+        if input_month is not None:
+            query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
+        else:
+            month = self.sender().currentText()  # receive the combobox's current text
+            if month == 'All':
+                query = f"SELECT * FROM dbo.Reports"
+            else:
+                query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
+        self.populate_table(self.tableWidgetReports, query)
+        self.cleanup_empty_cells(self.tableWidgetReports)
+
+    def new_lost_and_found(self):
+        self.stored_id = 0
+        self.clear_lost_and_found_form()
+        self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
+        self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
+        self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
+
+        self.frameReturnedLAF.hide()
+        self.refresh_tables()
+        self.change_page(self.stackedWidget,self.pageNewLAF)
+
+    def clear_lost_and_found_form(self):
+        self.dateEditNewLostAndFound.setDate(QtCore.QDate.currentDate())
+        self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
+        self.comboBoxNewLostAndFoundRoom.setCurrentIndex(0)
+        self.textBoxNewLostAndFoundBy.clear()
+        self.textBoxNewLostAndFoundItemDescription.clear()
+        self.textBoxNewLostAndFoundNote.clear()
+        self.dateEditReturnedNewLostAndFound.setDate(self.default_returned_date)
+        self.checkBoxNewLostAndFoundReturned.setCheckState(False)
+        self.textBoxNewLostAndFoundStudentName.clear()
+        self.textBoxNewLostAndFoundStudentNumber.clear()
+        self.show_frame_returned_laf()
+
+    def save_lost_and_found_form(self):
+        date = self.dateEditNewLostAndFound.date().toString('yyyy-MM-dd')
+        room = self.comboBoxNewLostAndFoundRoom.currentText()
+        found_by = self.textBoxNewLostAndFoundBy.text()
+        item_description = self.textBoxNewLostAndFoundItemDescription.text()
+        note = self.textBoxNewLostAndFoundNote.toPlainText()
+        list_objects = None
+        state = True
+
+        # empty field validation
+        if not (self.validate_field(self.textBoxNewLostAndFoundBy)):
+            state = False
+
+        if not state:
+            return
+
+        if self.stored_id == 0:  # id of 0 means it's a new entry
+            returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
+            student_name = self.textBoxNewLostAndFoundStudentName.text()
+            student_number = self.textBoxNewLostAndFoundStudentNumber.text()
+
+            if self.checkBoxNewLostAndFoundReturned.isChecked():
+                returned = 'YES'
+                query = f'''
+                            INSERT INTO dbo.LostAndFound
+                                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
+                            VALUES 
+                                (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+
+            else:
+                returned = 'NO'
+                query = f'''
+                            INSERT INTO dbo.LostAndFound
+                                (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED) 
+                            VALUES 
+                                (?, ?, ?, ?, ?, ?, ?, ?)'''
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
+
+        else:  # already has an id, meaning it's an update
+            if self.checkBoxNewLostAndFoundReturned.isChecked():
+                returned = 'YES'
+                returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
+                student_name = self.textBoxNewLostAndFoundStudentName.text()
+                student_number = self.textBoxNewLostAndFoundStudentNumber.text()
+
+                query = f'''
+                UPDATE dbo.LostAndFound 
+                SET 
+                    DATE_FOUND = ?, 
+                    ROOM = ?, 
+                    NAME = ?, 
+                    ITEM_DESC = ?, 
+                    NOTE = ?, 
+                    STUDENT_NAME = ?, 
+                    STUDENT_NUMBER = ?, 
+                    RETURNED_DATE = ?, 
+                    RETURNED = ?
+                WHERE 
+                    ENTRY_ID = {self.stored_id};'''
+
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned_date, returned]
+            else:
+                returned = 'NO'
+                student_name = ''
+                student_number = ''
+                query = f'''
+                UPDATE dbo.LostAndFound 
+                SET 
+                    DATE_FOUND = ?, 
+                    ROOM = ?, 
+                    NAME = ?, 
+                    ITEM_DESC = ?, 
+                    NOTE = ?, 
+                    STUDENT_NAME = ?, 
+                    STUDENT_NUMBER = ?, 
+                    RETURNED_DATE = null, 
+                    RETURNED = ?
+                WHERE 
+                    ENTRY_ID = {self.stored_id};'''
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
+
+        cursor = DatabaseHandler.execute_query(query, list_objects)
+
+        # validate the cursor for empty results
+        if not DatabaseHandler.validate_cursor(cursor):
+            self.change_to_last_page()
+            return
+
+        cursor.commit()
+        self.refresh_tables()
+        self.change_page(self.stackedWidget,self.pageLostAndFound)
+
+    def edit_laf_form(self):
+        table = self.tableWidgetLostAndFound
+
+        # if a row is selected (having no rows selected returns -1)
+        if table.currentRow() != -1 and table.item(0, 0) is not None:
+            row_index = table.currentRow()  # get index of current row
+            entry_id = table.item(row_index, 0).text()
+            self.stored_id = entry_id
+
+            query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM dbo.LostAndFound WHERE ENTRY_ID = {entry_id};'
+            cursor = DatabaseHandler.execute_query(query)
+
+            # validate the cursor for empty results
+            if not DatabaseHandler.validate_cursor(cursor):
+                self.change_to_last_page()
+                return
+
+            laf = cursor.fetchall()
+            self.clear_form()
+            self.labelNewLostAndFound.setText('EDIT LOST AND FOUND')
+            self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
+            self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
+
+            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE or self.default_returned_date)
+            self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
+
+            self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
+            self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
+            self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
+
+            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
+            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
+
+            index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
+            if index >= 0:
+                self.comboBoxNewLostAndFoundRoom.setCurrentIndex(index)
+
+            if str(laf[0].RETURNED).strip() == 'YES':
+                self.checkBoxNewLostAndFoundReturned.setChecked(True)
+                self.show_frame_returned_laf()
+            else:
+                self.checkBoxNewLostAndFoundReturned.setChecked(False)
+                self.show_frame_returned_laf()
+
+            self.change_page(self.stackedWidget,self.pageNewLAF)
+
+    def show_frame_returned_laf(self):
+        if self.checkBoxNewLostAndFoundReturned.isChecked():
+            self.frameReturnedLAF.show()
+        else:
+            self.frameReturnedLAF.hide()
+
+    ############# ALL LABS #############
+
+    def get_all_labs(self):
+        layout = self.scrollAreaAllLabs.widget().layout()
+        column_count = layout.columnCount()
+        row_count = layout.rowCount()
+        schedules = self.schedules
+
+        if layout is not None:
+            for i in range(column_count):  # loop through all columns
+                for j in range(1, row_count):  # loop starting at row 1
+                    item = layout.itemAtPosition(j, i)
+                    if item is not None:
+                        widget = item.widget()
+                        if widget is not None:
+                            widget.deleteLater()
+                            widget.setParent(None)
+                            del widget
+
+        current_row = 1
+        if self.all_rooms is not None and range(len(self.all_rooms) != 0):
+            for room in self.all_rooms:  # loop through all rooms
+                label_times = None
+                label_end_times = None
+
+                # label creation
+                label_room = QtWidgets.QPushButton(room)
+                label_room.setAccessibleDescription('allRooms')
+                label_room.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+                label_room.setFlat(True)
+                label_room.setWhatsThis(room)
+                label_room.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_room.clicked.connect(self.open_image)
+                label_room.setMinimumSize(0, 30)
+                label_room.setMaximumSize(100, 100)
+
+                # adding to layout
+                layout.addWidget(label_room, current_row, 0)
+
+                if self.schedules is not None and range(len(self.schedules) != 0):  # not empty validation
+                    for schedule in self.schedules:  # loop through all schedules
+                        if schedule.get_room() == room:
+                            mode = self.stored_time_format_choice
+
+                            start_time = self.time_convert(str(schedule.get_start_time()), mode)
+                            end_time = self.time_convert(str(schedule.get_end_time()), mode)
+
+                            if label_times is not None:
+                                label_times.setText(label_times.text() + '\n' + start_time)
+                            else:
+                                # label creation
+                                label_times = QtWidgets.QLabel(start_time)
+                                label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                                label_times.setAccessibleDescription('formLabel')
+                                label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                                label_times.setMinimumSize(50, 0)
+                                label_times.setMaximumSize(100, 100)
+
+                            if label_end_times is not None:
+                                label_end_times.setText(label_end_times.text() + '\n' + end_time)
+                            else:
+                                # label creation
+                                label_end_times = QtWidgets.QLabel(end_time)
+                                label_end_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                                label_end_times.setAccessibleDescription('formLabel')
+                                label_end_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                                label_end_times.setMinimumSize(50, 0)
+                                label_end_times.setMaximumSize(100, 100)
+
+                if label_times is not None:
+                    layout.addWidget(label_times, current_row, 1)
+                else:
+                    label_times = QtWidgets.QLabel('None')
+                    label_times.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                    label_times.setAccessibleDescription('formLabel')
+                    label_times.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                    label_times.setMinimumSize(50, 0)
+                    label_times.setMaximumSize(100, 100)
+                    layout.addWidget(label_times, current_row, 1)
+
+                if label_end_times is not None:
+                    layout.addWidget(label_end_times, current_row, 2)
+
+                current_row += 1
+
+        self.all_labs_page_obj = self.get_all_labs_obj()
+
+    ############# SCHEDULE MODIFIER #############
+
+    def schedule_modifier_index_changed(self):
+        mode = self.pushButtonScheduleSave.accessibleName()
+        self.label_schedule_room.setText(self.comboBoxScheduleRooms.currentText())
+        ScheduleModifier.update_checkboxes(self.frameScheduleMod, self.comboBoxScheduleRooms, mode)
+        self.show_room_schedule(self.comboBoxScheduleRooms.currentText(), mode)
+
+    def show_room_schedule(self, room, mode):
+        layout = self.frameCurrentSchedule.layout()
+
+        if mode == 'Open':
+            schedules = ScheduleModifier.get_open_lab_schedules()
+        else:
+            schedules = ScheduleModifier.get_schedules()
+
+        if layout is not None:
+            column_count = layout.columnCount()
+            row_count = layout.rowCount()
+            for i in range(column_count):  # loop through all columns
+                for j in range(row_count):  # loop starting at row 1
+                    item = layout.itemAtPosition(j, i)
+                    if item is not None:
+                        widget = item.widget()
+                        if widget is not None:
+                            widget.deleteLater()
+                            widget.setParent(None)
+
+        current_row = layout.rowCount()  # this will always be an empty row index
+
+        # label creation
+        header_day = QtWidgets.QLabel('DAY')
+        header_start_time = QtWidgets.QLabel('START TIME')
+        header_end_time = QtWidgets.QLabel('END TIME')
+
+        header_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        header_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        header_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # accessible description for qss styling
+        header_day.setAccessibleDescription('titleLabel')
+        header_start_time.setAccessibleDescription('titleLabel')
+        header_end_time.setAccessibleDescription('titleLabel')
+
+        header_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        header_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        header_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+        header_day.setMinimumSize(0, 30)
+        header_start_time.setMinimumSize(0, 30)
+        header_end_time.setMinimumSize(0, 30)
+
+        layout.addWidget(header_day, current_row, 0)
+        layout.addWidget(header_start_time, current_row, 1)
+        layout.addWidget(header_end_time, current_row, 2)
+
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+        for schedule_day in days:  # loop through all schedule days
+            current_row = layout.rowCount()  # this will always be an empty row index
+            label_start_time = None
+            label_end_time = None
+
+            # label creation
+            label_day = QtWidgets.QLabel(schedule_day)
+            label_day.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            label_day.setAccessibleDescription('formLabel')
+            label_day.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            label_day.setMinimumSize(0, 30)
+
+            layout.addWidget(label_day, current_row, 0)
+
+            if schedules is not None and range(len(schedules) != 0):  # not empty validation
+                for schedule in schedules:  # loop through all schedules
+                    if schedule.get_room() == room and schedule.get_day() == schedule_day:
+                        mode = self.stored_time_format_choice
+
+                        start_time = self.time_convert(str(schedule.get_start_time()), mode)
+                        end_time = self.time_convert(str(schedule.get_end_time()), mode)
+
+                        # label creation
+                        if label_start_time is not None:
+                            label_start_time.setText(label_start_time.text() + '\n' + start_time)
+                        else:
+                            label_start_time = QtWidgets.QLabel(start_time)
+                            label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                            label_start_time.setAccessibleDescription('formLabel')
+                            label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+                        # label creation
+                        if label_end_time is not None:
+                            label_end_time.setText(label_end_time.text() + '\n' + end_time)
+                        else:
+                            label_end_time = QtWidgets.QLabel(end_time)
+                            label_end_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                            label_end_time.setAccessibleDescription('formLabel')
+                            label_end_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+            if label_start_time is not None:
+                layout.addWidget(label_start_time, current_row, 1)
+            else:
+                label_start_time = QtWidgets.QLabel('None')
+                label_start_time.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label_start_time.setAccessibleDescription('formLabel')
+                label_start_time.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+                label_start_time.setMinimumSize(200, 0)
+                layout.addWidget(label_start_time, current_row, 1)
+
+            if label_end_time is not None:
+                layout.addWidget(label_end_time, current_row, 2)
+
+    def save_schedules(self, frame, combo_box):
+        mode = self.pushButtonScheduleSave.accessibleName()
+        ScheduleModifier.save_schedules(frame, combo_box, mode)
+        self.schedules = self.lab_checker.get_today_schedule()
+        self.open_lab_schedules = self.lab_checker.get_today_open_lab_schedule()
+        self.get_all_labs()
+        self.show_room_schedule(combo_box.currentText(), mode)
+
+        self.clear_layout(self.frameEmptyRooms)
+        self.clear_layout(self.frameUpcomingRooms)
+        self.clear_layout(self.frameOpenLabs)
+        self.clear_layout(self.frameUpcomingOpenLabs)
+
+    ############# SETTINGS #############
+    def apply_settings(self, theme, time_format):
+        if theme == "Classic Light":
+            self.comboBoxSettingsTheme.setCurrentIndex(0)
+
+            # use dark versions of icons for contrast
+            self.pushButtonDashboard.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\dashboard_dark.png'))
+            self.pushButtonProblems.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\problems_dark.png'))
+            self.pushButtonReports.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\reports_dark.png'))
+            self.pushButtonLostAndFound.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\lost_and_found_dark.png'))
+            self.pushButtonAllLabs.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\all_labs_dark.png'))
+            self.pushButtonSchedule.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\schedule_mod_dark.png'))
+            self.pushButtonSettings.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\settings_dark.png'))
+            self.pushButtonUserGuide.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\guide_dark.png'))
+
+            self.pushButtonFloatingAllLabs.setIcon(QtGui.QIcon('images\\icons\\light_theme\\new_window_light.png'))
+            self.pushButtonScheduleMod.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\schedule_mod_edit_dark.png'))
+            self.pushButtonOpenLabScheduleMod.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\schedule_mod_edit_open_dark.png'))
+
+        if theme == "Centennial Dark":
+            self.comboBoxSettingsTheme.setCurrentIndex(1)
+
+            # use light versions of icons for contrast
+            self.pushButtonDashboard.setIcon(QtGui.QIcon('images\\icons\\light_theme\\dashboard_light.png'))
+            self.pushButtonProblems.setIcon(QtGui.QIcon('images\\icons\\light_theme\\problems_light.png'))
+            self.pushButtonReports.setIcon(QtGui.QIcon('images\\icons\\light_theme\\reports_light.png'))
+            self.pushButtonLostAndFound.setIcon(QtGui.QIcon('images\\icons\\light_theme\\lost_and_found_light.png'))
+            self.pushButtonAllLabs.setIcon(QtGui.QIcon('images\\icons\\light_theme\\all_labs_light.png'))
+            self.pushButtonSchedule.setIcon(QtGui.QIcon('images\\icons\\light_theme\\schedule_mod_light.png'))
+            self.pushButtonSettings.setIcon(QtGui.QIcon('images\\icons\\light_theme\\settings_light.png'))
+            self.pushButtonUserGuide.setIcon(QtGui.QIcon('images\\icons\\light_theme\\guide_light.png'))
+
+            self.pushButtonFloatingAllLabs.setIcon(QtGui.QIcon('images\\icons\\dark_theme\\new_window_dark.png'))
+            self.pushButtonScheduleMod.setIcon(QtGui.QIcon('images\\icons\\light_theme\\schedule_mod_edit_light.png'))
+            self.pushButtonOpenLabScheduleMod.setIcon(QtGui.QIcon('images\\icons\\light_theme\\schedule_mod_edit_open_light.png'))
+
+        if time_format == "12 HR":
+            self.comboBoxSettingsTimeFormat.setCurrentIndex(1)
+        else:
+            self.comboBoxSettingsTimeFormat.setCurrentIndex(0)
+
+    def export_data_sheet(self):
+
+        server = DatabaseHandler.get_server_string()
+        db_name = DatabaseHandler.get_database_name()
+
+        conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
+        conn_str = urllib.parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
+        conn_str = "mssql+pyodbc:///?odbc_connect=%s" % conn_str  # to stop sqlalchemy from complaining
+        reports_data = pd.read_sql_query('SELECT * FROM dbo.Reports', conn_str)
+        year = str(datetime.datetime.now().year)
+        path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx',filter='.xlsx')[0]
+
+        book = openpyxl.Workbook()  # create new workbook
+        book.remove(book.active)  # remove the default sheet
+
+        writer = pd.ExcelWriter(path, engine='openpyxl')
+        writer.book = book
+
+        if reports_data is not None:
+            reports_obj = reports_data.select_dtypes(['object'])  # get the datatypes from the result
+            reports_data[reports_obj.columns] = reports_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
+
+        lost_and_found_data = pd.read_sql_query('SELECT * FROM dbo.LostAndFound', conn_str)
+
+        if lost_and_found_data is not None:
+            lost_and_found_obj = lost_and_found_data.select_dtypes(['object'])  # get the datatypes from the result
+            lost_and_found_data[lost_and_found_obj.columns] = lost_and_found_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
+
+        if path != '':
+            try:
+                reports_data.to_excel(writer, sheet_name='Reports', index=False)  # convert data frame to excel
+                lost_and_found_data.to_excel(writer, sheet_name='Lost and Found', index=False)  # convert data frame to excel
+                writer.save()
+                writer.close()
+                os.startfile(os.path.dirname(os.path.abspath(path)))  # open the folder
+            except PermissionError:
+                message = f'Exporting failed: Permission denied'
+                info = f'If the file is open in Excel, please close it'
+                self.show_message_box(message, info)
+
+    def save_settings(self):
+        theme = self.comboBoxSettingsTheme.currentText()
+        time_format = self.comboBoxSettingsTimeFormat.currentText()
+
+        output = SettingsManager.settings_theme_switch(theme)
+        data = SettingsManager.import_settings()
+
+        data['theme_choice']['name'] = output
+        data['time_format'] = time_format
+
+        SettingsManager.export_settings(data)
+
+        self.labelSettingsWarning.setVisible(True)
+
+    def new_log(self):
+        self.lastPage = 'tableWidgetReports'
+        self.clear_form()
+        self.stored_id = 0
+        self.labelNewLog.setText('NEW LOG')
+        self.dateEditNewLog.setDate(QtCore.QDate.currentDate())
+        self.dateEditNewLog.setCurrentSectionIndex(2)
+        self.change_page(self.stackedWidget, self.pageNewLog)
+
+    def get_all_labs_obj(self):
+        layout = self.scrollAreaAllLabs.widget().layout()
+        row_count = layout.rowCount()
+        data = []
+        if layout is not None or row_count != 0:
+            for j in range(1, row_count):
+                widget = layout.itemAtPosition(j, 0).widget()
+                data.append([widget.text(), j])
+        return data
+
+    def add_to_empty_row(self, frame, widget):
+        layout = frame.layout()
+
+        if layout is not None:
+            column = 0
+            row_count = self.true_row_count(frame)
+            max = 11
+
+            for j in range(row_count):  # loop through all rows
+                item = layout.itemAtPosition(j, column)
+                if item is None:
+                    if row_count > max:
+                        layout.addWidget(widget, j-max, column + 1)  # new column
+                    else:
+                        layout.addWidget(widget, j, column)
+
+            if row_count == 0:
+                layout.addWidget(widget, 0, 0)
