@@ -2,6 +2,12 @@ from datetime import datetime
 from PyQt5 import QtCore, QtGui, QtWidgets
 from database_handler import DatabaseHandler
 from ScheduleObj import ScheduleObj
+from settings_manager import SettingsManager
+
+
+def get_time_format():
+    setting = SettingsManager.import_settings()['time_format']
+    return setting
 
 
 def get_database_schedules():
@@ -89,8 +95,16 @@ class ScheduleModifier:
 
             layout.addWidget(headers, 0, i)
 
+        t_format = get_time_format()
+
         for i in range(22 - 7):
-            time = QtWidgets.QLabel(f'{start_time}:30')
+
+            if t_format == '12 HR':
+                time_string = datetime.strptime(f'{start_time}:30', "%H:%M").strftime("%I:%M %p")
+            else:
+                time_string = f'{start_time}:30'
+
+            time = QtWidgets.QLabel(time_string)
             time.setAccessibleDescription('normalLabel')
             layout.addWidget(time, i+1, 0)
             start_time += 1
