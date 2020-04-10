@@ -20,7 +20,8 @@ QProgressBar {
      border-radius: 10px;
      background-color: #FFFFFF;
      text-align: center;
-     color: #454547;
+     font-weight: bold;
+     color: #FFFFFF;
  }
 
  QProgressBar::chunk {
@@ -42,7 +43,7 @@ QDateEdit{
     width:100px;
     padding-left:5px;
     border:0;
-    border-radius:0px;
+    border: 1px solid #454547;
     color: #454547;
     background-color: #FFFFFF;
 }
@@ -74,7 +75,7 @@ QComboBox {
     font-weight:bold;
     color:#454547;
     background: #FFFFFF;
-    border-radius:0px;
+    border: 1px solid #454547;
     padding:8px;
 }
 
@@ -422,7 +423,7 @@ QLineEdit,QTextEdit{
     background-color: #FFFFFF;
     color: #454547;
     padding: 4px;
-    border: 0px;
+    border: 1px solid #454547;
     font-size:10pt;
 }
 
