@@ -559,7 +559,7 @@ Text-align:left</string>
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap>../images/logbook_logo.png</pixmap>
+              <pixmap>../images/icons/logbook_logo.png</pixmap>
              </property>
              <property name="scaledContents">
               <bool>true</bool>
@@ -910,7 +910,7 @@ Text-align:left;</string>
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>9</number>
+       <number>7</number>
       </property>
       <widget class="QWidget" name="pageDashboard">
        <property name="sizePolicy">
@@ -2065,6 +2065,12 @@ color: rgb(0, 0, 0);</string>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="accessibleDescription">
            <string>backgroundFrame</string>
           </property>
@@ -2079,6 +2085,9 @@ border-radius: 10px;</string>
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_14">
+           <property name="sizeConstraint">
+            <enum>QLayout::SetDefaultConstraint</enum>
+           </property>
            <property name="leftMargin">
             <number>24</number>
            </property>
@@ -2094,37 +2103,41 @@ border-radius: 10px;</string>
            <property name="verticalSpacing">
             <number>16</number>
            </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="labeReports">
-             <property name="font">
-              <font>
-               <family>Segoe UI</family>
-               <pointsize>12</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
+           <item row="3" column="5">
+            <widget class="QPushButton" name="pushButtonReportsView">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>25</height>
+              </size>
              </property>
              <property name="cursor">
-              <cursorShape>ArrowCursor</cursorShape>
+              <cursorShape>PointingHandCursor</cursorShape>
              </property>
              <property name="accessibleDescription">
-              <string>titleLabel</string>
+              <string>neutralButton</string>
              </property>
-             <property name="styleSheet">
-              <string notr="true">
-	color: rgb(0, 255, 108);</string>
-             </property>
-             <property name="text">
-              <string>REPORTS</string>
-             </property>
-             <property name="scaledContents">
-              <bool>true</bool>
-             </property>
-             <property name="openExternalLinks">
+             <property name="autoFillBackground">
               <bool>false</bool>
              </property>
-             <property name="textInteractionFlags">
-              <set>Qt::LinksAccessibleByMouse</set>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+             </property>
+             <property name="text">
+              <string>View</string>
+             </property>
+             <property name="default">
+              <bool>false</bool>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -2166,41 +2179,6 @@ border-radius: 10px;</string>
               <set>Qt::LinksAccessibleByMouse</set>
              </property>
             </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="comboBoxReportsMonth">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="sizeAdjustPolicy">
-              <enum>QComboBox::AdjustToContents</enum>
-             </property>
-             <property name="frame">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <spacer name="horizontalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
            </item>
            <item row="2" column="0" colspan="6">
             <widget class="QTableWidget" name="tableWidgetReports">
@@ -2296,8 +2274,8 @@ color: rgb(255,255,255);</string>
              <column/>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QPushButton" name="pushButtonNew">
+           <item row="1" column="5">
+            <widget class="QPushButton" name="pushButtonSearchReports">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -2310,26 +2288,66 @@ color: rgb(255,255,255);</string>
                <height>25</height>
               </size>
              </property>
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
-             </property>
              <property name="accessibleDescription">
-              <string>neutralButton</string>
-             </property>
-             <property name="autoFillBackground">
-              <bool>false</bool>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(255, 255, 255);
-color: rgb(0, 0, 0);</string>
+              <string>successButton</string>
              </property>
              <property name="text">
-              <string>New</string>
+              <string>Search</string>
              </property>
-             <property name="default">
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labeReports">
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>12</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="cursor">
+              <cursorShape>ArrowCursor</cursorShape>
+             </property>
+             <property name="accessibleDescription">
+              <string>titleLabel</string>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
+	color: rgb(0, 255, 108);</string>
+             </property>
+             <property name="text">
+              <string>REPORTS</string>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
+             <property name="openExternalLinks">
               <bool>false</bool>
              </property>
-             <property name="flat">
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="comboBoxReportsMonth">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QComboBox::AdjustToContents</enum>
+             </property>
+             <property name="frame">
               <bool>false</bool>
              </property>
             </widget>
@@ -2363,6 +2381,44 @@ color: rgb(0, 0, 0);</string>
              </property>
              <property name="text">
               <string>Edit</string>
+             </property>
+             <property name="default">
+              <bool>false</bool>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QPushButton" name="pushButtonNew">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="accessibleDescription">
+              <string>neutralButton</string>
+             </property>
+             <property name="autoFillBackground">
+              <bool>false</bool>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+             </property>
+             <property name="text">
+              <string>New</string>
              </property>
              <property name="default">
               <bool>false</bool>
@@ -2410,71 +2466,17 @@ color: rgb(255, 255, 255);</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="5">
-            <widget class="QPushButton" name="pushButtonReportsView">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>25</height>
-              </size>
-             </property>
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
-             </property>
-             <property name="accessibleDescription">
-              <string>neutralButton</string>
-             </property>
-             <property name="autoFillBackground">
-              <bool>false</bool>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(255, 255, 255);
-color: rgb(0, 0, 0);</string>
-             </property>
-             <property name="text">
-              <string>View</string>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-             <property name="flat">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="5">
-            <widget class="QPushButton" name="pushButtonSearchReports">
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>25</height>
-              </size>
-             </property>
-             <property name="accessibleDescription">
-              <string>successButton</string>
-             </property>
-             <property name="text">
-              <string>Search</string>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="4">
             <widget class="QLineEdit" name="txtBoxSearchReports">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
              <property name="minimumSize">
               <size>
-               <width>200</width>
+               <width>100</width>
                <height>0</height>
               </size>
              </property>
@@ -2491,6 +2493,19 @@ color: rgb(0, 0, 0);</string>
               <string notr="true">background-color: rgb(0, 0, 0);</string>
              </property>
             </widget>
+           </item>
+           <item row="1" column="2">
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -2563,88 +2578,45 @@ border-radius: 10px;</string>
            <property name="verticalSpacing">
             <number>16</number>
            </property>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="labeLostAndFound">
+           <item row="4" column="0">
+            <widget class="QPushButton" name="pushButtonNewLAF">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="font">
-              <font>
-               <family>Segoe UI</family>
-               <pointsize>12</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="cursor">
-              <cursorShape>ArrowCursor</cursorShape>
-             </property>
-             <property name="accessibleDescription">
-              <string>titleLabel</string>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">
-	color: rgb(0, 255, 108);</string>
-             </property>
-             <property name="text">
-              <string>LOST AND FOUND</string>
-             </property>
-             <property name="scaledContents">
-              <bool>true</bool>
-             </property>
-             <property name="openExternalLinks">
-              <bool>false</bool>
-             </property>
-             <property name="textInteractionFlags">
-              <set>Qt::LinksAccessibleByMouse</set>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="1" column="3">
-            <widget class="QLineEdit" name="txtBoxSearchLAF">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
              <property name="minimumSize">
               <size>
-               <width>200</width>
-               <height>0</height>
+               <width>100</width>
+               <height>25</height>
               </size>
              </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>16777215</height>
-              </size>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
              </property>
              <property name="accessibleDescription">
-              <string>searchBar</string>
+              <string>neutralButton</string>
+             </property>
+             <property name="autoFillBackground">
+              <bool>false</bool>
              </property>
              <property name="styleSheet">
-              <string notr="true">background-color: rgb(255, 255, 255);</string>
+              <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+             </property>
+             <property name="text">
+              <string>New</string>
+             </property>
+             <property name="default">
+              <bool>false</bool>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
-           <item row="1" column="4">
+           <item row="2" column="5">
             <widget class="QPushButton" name="pushButtonSearchLAF">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -2666,7 +2638,7 @@ border-radius: 10px;</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0" colspan="5">
+           <item row="3" column="0" colspan="6">
             <widget class="QTableWidget" name="tableWidgetLostAndFound">
              <property name="sizePolicy">
               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -2784,8 +2756,48 @@ color: rgb(255,255,255);</string>
              <column/>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QPushButton" name="pushButtonNewLAF">
+           <item row="0" column="0" colspan="3">
+            <widget class="QLabel" name="labeLostAndFound">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>12</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="cursor">
+              <cursorShape>ArrowCursor</cursorShape>
+             </property>
+             <property name="accessibleDescription">
+              <string>titleLabel</string>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
+	color: rgb(0, 255, 108);</string>
+             </property>
+             <property name="text">
+              <string>LOST AND FOUND</string>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
+             <property name="openExternalLinks">
+              <bool>false</bool>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse</set>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="5">
+            <widget class="QPushButton" name="pushButtonViewLAF">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -2804,25 +2816,12 @@ color: rgb(255,255,255);</string>
              <property name="accessibleDescription">
               <string>neutralButton</string>
              </property>
-             <property name="autoFillBackground">
-              <bool>false</bool>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(255, 255, 255);
-color: rgb(0, 0, 0);</string>
-             </property>
              <property name="text">
-              <string>New</string>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-             <property name="flat">
-              <bool>false</bool>
+              <string>View</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
+           <item row="4" column="1">
             <widget class="QPushButton" name="pushButtonEditLAF">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -2863,7 +2862,7 @@ color: rgb(0, 0, 0);</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="2">
+           <item row="4" column="2">
             <widget class="QPushButton" name="pushButtonDeleteLAF">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -2901,10 +2900,10 @@ color: rgb(255, 255, 255);</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="4">
-            <widget class="QPushButton" name="pushButtonViewLAF">
+           <item row="2" column="4">
+            <widget class="QLineEdit" name="txtBoxSearchLAF">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -2912,19 +2911,35 @@ color: rgb(255, 255, 255);</string>
              <property name="minimumSize">
               <size>
                <width>100</width>
-               <height>25</height>
+               <height>0</height>
               </size>
              </property>
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
              </property>
              <property name="accessibleDescription">
-              <string>neutralButton</string>
+              <string>searchBar</string>
              </property>
-             <property name="text">
-              <string>View</string>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(255, 255, 255);</string>
              </property>
             </widget>
+           </item>
+           <item row="2" column="2">
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -3742,8 +3757,8 @@ color: rgb(0, 0, 0);</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>493</width>
-                          <height>517</height>
+                          <width>169</width>
+                          <height>16</height>
                          </rect>
                         </property>
                         <layout class="QGridLayout" name="gridLayout_38">
@@ -4316,6 +4331,44 @@ color: rgb(0, 0, 0);</string>
                 </property>
                </spacer>
               </item>
+              <item row="3" column="1">
+               <widget class="QPushButton" name="pushButtonTimetables">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="accessibleDescription">
+                 <string>neutralButton</string>
+                </property>
+                <property name="autoFillBackground">
+                 <bool>false</bool>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+                </property>
+                <property name="text">
+                 <string>Timetable Folder</string>
+                </property>
+                <property name="default">
+                 <bool>false</bool>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
@@ -4425,46 +4478,79 @@ color: rgb(0, 0, 0);</string>
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <widget class="QLabel" name="labelUserGuide">
-           <property name="geometry">
-            <rect>
-             <x>25</x>
-             <y>20</y>
-             <width>140</width>
-             <height>20</height>
-            </rect>
+          <layout class="QGridLayout" name="gridLayout_47">
+           <property name="leftMargin">
+            <number>24</number>
            </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>12</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
+           <property name="topMargin">
+            <number>24</number>
            </property>
-           <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
+           <property name="rightMargin">
+            <number>24</number>
            </property>
-           <property name="accessibleDescription">
-            <string>titleLabel</string>
+           <property name="bottomMargin">
+            <number>24</number>
            </property>
-           <property name="styleSheet">
-            <string notr="true">
+           <property name="verticalSpacing">
+            <number>24</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelUserGuide">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <family>Segoe UI</family>
+               <pointsize>12</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="cursor">
+              <cursorShape>ArrowCursor</cursorShape>
+             </property>
+             <property name="accessibleDescription">
+              <string>titleLabel</string>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
 	color: rgb(0, 255, 108);</string>
-           </property>
-           <property name="text">
-            <string>USER GUIDE</string>
-           </property>
-           <property name="scaledContents">
-            <bool>true</bool>
-           </property>
-           <property name="openExternalLinks">
-            <bool>false</bool>
-           </property>
-           <property name="textInteractionFlags">
-            <set>Qt::LinksAccessibleByMouse</set>
-           </property>
-          </widget>
+             </property>
+             <property name="text">
+              <string>USER GUIDE</string>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
+             <property name="openExternalLinks">
+              <bool>false</bool>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::LinksAccessibleByMouse</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QFrame" name="frameUserGuideContent_2">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -4628,7 +4714,7 @@ color: rgb(0, 0, 0);</string>
                <enum>QLayout::SetDefaultConstraint</enum>
               </property>
               <property name="fieldGrowthPolicy">
-               <enum>QFormLayout::ExpandingFieldsGrow</enum>
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
               </property>
               <property name="rowWrapPolicy">
                <enum>QFormLayout::DontWrapRows</enum>
@@ -4643,7 +4729,7 @@ color: rgb(0, 0, 0);</string>
                <number>16</number>
               </property>
               <property name="verticalSpacing">
-               <number>24</number>
+               <number>16</number>
               </property>
               <property name="leftMargin">
                <number>16</number>
@@ -4756,7 +4842,7 @@ color: rgb(0, 0, 0);</string>
               <item row="1" column="1">
                <widget class="QLabel" name="labelViewDataDate">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
@@ -4843,63 +4929,6 @@ color: rgb(0, 0, 0);</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                </property>
-                <property name="openExternalLinks">
-                 <bool>false</bool>
-                </property>
-                <property name="textInteractionFlags">
-                 <set>Qt::LinksAccessibleByMouse</set>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QLabel" name="labelViewDataIssue">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>500</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Segoe UI</family>
-                  <pointsize>12</pointsize>
-                  <weight>50</weight>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="cursor">
-                 <cursorShape>ArrowCursor</cursorShape>
-                </property>
-                <property name="accessibleDescription">
-                 <string>formLabel</string>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">color:white;</string>
-                </property>
-                <property name="text">
-                 <string>n\a</string>
-                </property>
-                <property name="scaledContents">
-                 <bool>true</bool>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                </property>
-                <property name="wordWrap">
-                 <bool>true</bool>
                 </property>
                 <property name="openExternalLinks">
                  <bool>false</bool>
@@ -5478,6 +5507,66 @@ color: rgb(0, 0, 0);</string>
                 </property>
                </widget>
               </item>
+              <item row="2" column="1">
+               <widget class="QLabel" name="labelViewDataIssue">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>500</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Segoe UI</family>
+                  <pointsize>12</pointsize>
+                  <weight>50</weight>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="cursor">
+                 <cursorShape>ArrowCursor</cursorShape>
+                </property>
+                <property name="accessibleDescription">
+                 <string>formLabel</string>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">color:white;</string>
+                </property>
+                <property name="text">
+                 <string>n\a</string>
+                </property>
+                <property name="textFormat">
+                 <enum>Qt::PlainText</enum>
+                </property>
+                <property name="scaledContents">
+                 <bool>true</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+                <property name="openExternalLinks">
+                 <bool>false</bool>
+                </property>
+                <property name="textInteractionFlags">
+                 <set>Qt::LinksAccessibleByMouse</set>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
@@ -5704,6 +5793,9 @@ color: black;
                 <property name="styleSheet">
                  <string notr="true">background-color:white;</string>
                 </property>
+                <property name="maxLength">
+                 <number>150</number>
+                </property>
                </widget>
               </item>
               <item row="3" column="0">
@@ -5868,7 +5960,7 @@ color: black;
                  <string notr="true">background-color:white;</string>
                 </property>
                 <property name="maxLength">
-                 <number>35</number>
+                 <number>70</number>
                 </property>
                </widget>
               </item>
@@ -6519,7 +6611,11 @@ color: rgb(0, 0, 0);</string>
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QLineEdit" name="textBoxNewLostAndFoundStudentName"/>
+                  <widget class="QLineEdit" name="textBoxNewLostAndFoundStudentName">
+                   <property name="maxLength">
+                    <number>70</number>
+                   </property>
+                  </widget>
                  </item>
                  <item row="0" column="0">
                   <widget class="QLabel" name="labelNewLostAndReturnedDate">
@@ -6573,7 +6669,11 @@ color: rgb(0, 0, 0);</string>
                   </widget>
                  </item>
                  <item row="3" column="1">
-                  <widget class="QLineEdit" name="textBoxNewLostAndFoundStudentNumber"/>
+                  <widget class="QLineEdit" name="textBoxNewLostAndFoundStudentNumber">
+                   <property name="maxLength">
+                    <number>9</number>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -6811,6 +6911,9 @@ color: black;
                 <property name="styleSheet">
                  <string notr="true">background-color:white;</string>
                 </property>
+                <property name="maxLength">
+                 <number>1000</number>
+                </property>
                </widget>
               </item>
               <item row="0" column="0">
@@ -6864,7 +6967,7 @@ color: black;
                  <string notr="true">background-color:white;</string>
                 </property>
                 <property name="maxLength">
-                 <number>35</number>
+                 <number>70</number>
                 </property>
                </widget>
               </item>
@@ -6872,7 +6975,7 @@ color: black;
                <widget class="QTextEdit" name="textBoxNewLostAndFoundNote">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>5</horstretch>
+                  <horstretch>0</horstretch>
                   <verstretch>1</verstretch>
                  </sizepolicy>
                 </property>
@@ -6910,6 +7013,8 @@ color: black;
      </widget>
     </item>
    </layout>
+   <zorder>stackedWidget</zorder>
+   <zorder>frameMenu</zorder>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
