@@ -1,11 +1,10 @@
 import os
 import sys
-from logbook_class import LogBook
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
+from scripts.logbook_class import LogBook
 from PyQt5 import QtGui, QtCore, QtWidgets
-from settings_manager import SettingsManager
-
+from scripts.settings_manager import SettingsManager
 
 # Logbook v2 written in Python 3.8
 # by Jarod Lavine and Shaniquo McKenzie
@@ -31,8 +30,7 @@ if __name__ == '__main__':
 
     # create new application
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon("images/appicon.ico"))
-
+    app.setWindowIcon(QtGui.QIcon("images/icons/appicon.ico"))
     if settings['theme'][theme_choice]['base_theme'] == 'dark':
         qtmodern_styles.dark(app)  # qtmodern
 
@@ -56,7 +54,7 @@ if __name__ == '__main__':
     mw.show()
 
     timer = QtCore.QTimer()
-    timer.timeout.connect(window.Clock)  # call clock function every second
+    timer.timeout.connect(window.clock)  # call clock function every second
     timer.start(1000)
 
     sys.exit(app.exec_())
