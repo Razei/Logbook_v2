@@ -3,7 +3,7 @@
 --CREATE DATABASE ReportLog;
 
 --To make sure SQL Server is using the ReportLog database and not master
-USE ReportLog;
+USE ReportLog2020;
 
 --drop if table exists
 DROP TABLE dbo.Reports;
@@ -103,6 +103,7 @@ VALUES
 	('CNET231','WAN Technologies'),
 	('CNET232','Introduction to Programming'),
 	('CNET239','Computer Forensics');
+
 
 CREATE TABLE dbo.LostAndFound (
 	ENTRY_ID INT IDENTITY(1,1) PRIMARY KEY,
