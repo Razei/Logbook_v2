@@ -5,13 +5,20 @@ block_cipher = None
 import importlib
 from pathlib import Path
 
-added_file = [('logbook_design.ui','.'),('logbook_dialog.ui','.'),('splash.ui','.'), ('themes', 'themes'), ('images', 'images'),('qtmodern_package','qtmodern_package'),('settings.json','.')]
+added_file = [
+    ('views', 'views'),
+    ('scripts','scripts'),
+    ('themes', 'themes'), 
+    ('images', 'images'),
+    ('qtmodern_package','qtmodern_package'),
+    ('settings.json','.')
+    ]
 
 a = Analysis(['logbook_main.py'],
              pathex=['\\logbook_main.spec'],
              binaries=[],
              datas=added_file,
-             hiddenimports=[],
+             hiddenimports=['openpyxl', 'PyQt5.uic','pyodbc'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -25,18 +32,16 @@ pyz = PYZ(a.pure, a.zipped_data,
 
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          [],
-          name='logbook_main',
-          debug=False,
+          exclude_binaries=True,
+          name='Logbook_v2',
+          debug=True,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='images\\appicon.ico')
+          console=True , 
+          icon='images\\icons\\appicon.ico')
 
 coll = COLLECT(exe,
                a.binaries,
