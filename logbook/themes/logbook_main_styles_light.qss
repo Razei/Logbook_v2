@@ -3,7 +3,7 @@
 }
 
 QSizeGrip{
-    image: url('images/sizegrip_dark.png');
+    image: url(images/icons/sizegrip_dark.png);
     width: 16px;
     height: 16px;
 }
@@ -54,11 +54,11 @@ QDateEdit::up-arrow, QDateEdit::down-arrow {
 }
 
 QDateEdit::down-arrow {
-    border-image: url(images/downarrow.png);
+    border-image: url(images/icons/downarrow.png);
 }
 
 QDateEdit::up-arrow {
-    border-image: url(images/uparrow.png);
+    border-image: url(images/icons/uparrow.png);
 }
 
 QDateEdit::up-button, QDateEdit::down-button {
@@ -81,6 +81,15 @@ QComboBox {
 
 QComboBox::drop-down:button{
     background-color: #454547;
+}
+
+QComboBox::down-arrow{
+    background:transparent;
+    border-image: url(images/icons/downarrow.png);
+}
+
+QComboBox::drop-down:on { /* shift the arrow when popup is open */
+    background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #0055FF, stop: 1 #0083FF);
 }
 
 QListView::item{
@@ -114,15 +123,6 @@ QListView::item:!selected:hover{
     color: #454547;
 }
 
-QComboBox::down-arrow{
-    background:transparent;
-    border-image: url(images/downarrow.png);
-}
-
-QComboBox::drop-down:on { /* shift the arrow when popup is open */
-    background-color:qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0.5,stop: 0 #0055FF, stop: 1 #0083FF);
-}
-
 QFrame{
     border:0;
 }
@@ -132,7 +132,7 @@ QFrame{
     background-color: #F9F9F9;
 }
 
- QScrollArea, QAbstractScrollArea, QScrollArea QWidget {
+QScrollArea, QAbstractScrollArea, QScrollArea QWidget {
     background-color: transparent;
 }
 
@@ -348,7 +348,7 @@ QLabel[accessibleDescription ="normalLabel"]{
     color:#454547;
 }
 
-QLabel[accessibleDescription ="formLabel"]{
+[accessibleDescription ="formLabel"]{
     color:#454547;
     font-weight:bold;
     font-family: Segoe UI;
