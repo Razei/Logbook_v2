@@ -106,7 +106,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         theme_path = resource_path(theme['theme_path'])
 
         # read the qss stylesheet and apply it to the window
-        self.theme = str(open(theme_path, "r").read())
+        self.theme = str(open(theme_path, 'r').read())
         self.theme_path = theme_path
 
         # clears all the QT Creator styles in favour of the QSS stylesheet
@@ -126,9 +126,9 @@ class LogBook(MainWindowBase, MainWindowUI):
     def clock(self):  # this function is called every second during runtime
         t = time.localtime()  # local system time
         d = datetime.date.today()  # local system date
-        t_format_24hr = "%H:%M:%S"
-        t_format_12hr = "%I:%M:%S %p"
-        date_format = "%A %B %d, %Y"
+        t_format_24hr = '%H:%M:%S'
+        t_format_12hr = '%I:%M:%S %p'
+        date_format = '%A %B %d, %Y'
 
         # convert time to string format
         time_convert = time.strftime(t_format_24hr, t)
@@ -151,15 +151,14 @@ class LogBook(MainWindowBase, MainWindowUI):
     # import all necessary data
     def get_all_data(self):
         self.set_progress_bar(20)
-        db_name = DatabaseHandler.get_database_name()
         months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        # themes = ['Classic Light', 'Classic Dark', 'Centennial Light', 'Centennial Dark']
         themes = ['Classic Light', 'Centennial Dark']
         formats = ['24 HR', '12 HR']
         rooms_query = f'SELECT ROOM FROM dbo.Rooms'
         room_list = []
 
         self.populate_combo_box(self.comboBoxReportsMonth, months)
+        self.populate_combo_box(self.comboBoxLostAndFoundMonth, months)
         self.populate_combo_box(self.comboBoxSettingsTheme, themes)
         self.populate_combo_box(self.comboBoxSettingsTimeFormat, formats)
 
@@ -204,7 +203,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     # add all events
     def add_all_events(self):
-        self.pushButtonRefreshStyle.clicked.connect(self.refresh_style)
+        self.pushButtonRefreshDashboard.clicked.connect(self.refresh_dashboard)
 
         # click event for the big number on the dashboard
         self.labelNumberProblems.mousePressEvent = self.problems_link
@@ -214,7 +213,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.pushButtonFormCancel.clicked.connect(self.change_to_last_page)
         self.pushButtonExportData.clicked.connect(self.export_data_sheet)
         self.pushButtonEditReports.clicked.connect(lambda: self.edit_log(self.tableWidgetReports))
-        self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month(None))
+        self.comboBoxReportsMonth.currentIndexChanged.connect(lambda: self.sort_by_month('Reports'))
+        self.comboBoxLostAndFoundMonth.currentIndexChanged.connect(lambda: self.sort_by_month('LostAndFound'))
 
         # problems
         # self.pushButtonRefreshProblems.clicked.connect(self.refreshTables)
@@ -340,12 +340,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         layout = frame.layout()
         count = 1
         if layout is not None:
-            column_count = layout.columnCount()
             row_count = layout.rowCount()
-            for i in range(column_count):  # loop through all columns
-                for j in range(row_count):  # loop through all rows
-                    if layout.itemAtPosition(j, i) is not None:
-                        count += 1
+            for j in range(row_count):  # loop through all rows
+                if layout.itemAtPosition(j, 0) is not None:
+                    count += 1
         return count
 
     @staticmethod
@@ -446,9 +444,9 @@ class LogBook(MainWindowBase, MainWindowUI):
     @staticmethod
     def time_convert(string, mode):
         if mode == '12 HR':
-            time_string = datetime.datetime.strptime(string, "%H:%M:%S").strftime("%I:%M %p")
+            time_string = datetime.datetime.strptime(string, '%H:%M:%S').strftime('%I:%M %p')
         else:
-            time_string = datetime.datetime.strptime(string, "%H:%M:%S").strftime("%H:%M")
+            time_string = datetime.datetime.strptime(string, '%H:%M:%S').strftime('%H:%M')
         return time_string
 
     ############# MENU #############
@@ -555,7 +553,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                             # countdown = (datetime.timedelta(seconds=5) + self.staticDate) - datetime.datetime.now()  # for testing
                             if countdown is not None:  # only show countdown if it's not empty
-                                countdown = datetime.datetime.strptime(str(countdown), "%H:%M:%S").strftime("%H:%M:%S")
+                                countdown = datetime.datetime.strptime(str(countdown), '%H:%M:%S').strftime('%H:%M:%S')
                                 label = room_name + '\t' + 'In: ' + str(countdown)  # text for the label
                                 find_child = self.frameUpcomingRooms.findChild(QtWidgets.QPushButton, search)
 
@@ -609,7 +607,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 label_all_labs_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
                             elif all_countdown is not None:
-                                all_countdown = datetime.datetime.strptime(str(all_countdown), "%H:%M:%S").strftime("%H:%M:%S")
+                                all_countdown = datetime.datetime.strptime(str(all_countdown), '%H:%M:%S').strftime('%H:%M:%S')
                                 label_all_labs_countdown = QtWidgets.QLabel(all_countdown, self)
                                 label_all_labs_countdown.setAccessibleDescription('formLabel')
                                 label_all_labs_countdown.setWhatsThis(room)
@@ -618,7 +616,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                             if schedule.get_countdown().get_countdown_expired():  # if the first countdown for this room expired
                                 label_all_labs_countdown.setText(label_all_labs_countdown.text() + '\n' + 'expired')
                             elif all_countdown is not None:
-                                all_countdown = datetime.datetime.strptime(str(all_countdown), "%H:%M:%S").strftime("%H:%M:%S")
+                                all_countdown = datetime.datetime.strptime(str(all_countdown), '%H:%M:%S').strftime('%H:%M:%S')
                                 label_all_labs_countdown.setText(label_all_labs_countdown.text() + '\n' + all_countdown)
 
             if label_all_labs_countdown is not None:
@@ -675,7 +673,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
                 # dash_duration = (datetime.timedelta(seconds=2230) + self.staticDate) - datetime.datetime.now()  # for testing (will countdown from 30 seconds)
                 if dash_duration is not None:
-                    label = room_name + '         ' + 'Vacant for: ' + str(dash_duration)
+                    label = room_name + '       ' + str(dash_duration)
 
                     if find_child is None:  # check to see if the widget exists already
                         checkBox = QtWidgets.QCheckBox(self)  # create a new checkbox and append the room name + dash_duration
@@ -694,18 +692,20 @@ class LogBook(MainWindowBase, MainWindowUI):
                         checkbox_label.setFlat(True)
                         checkbox_label.setWhatsThis(room_name)
                         checkbox_label.clicked.connect(self.open_image)
-                        current_row = self.true_row_count(self.frameEmptyRooms)
 
-                        self.frameEmptyRooms.layout().addWidget(checkBox, current_row, 0)  # add the checkbox to the frame
-                        self.frameEmptyRooms.layout().addWidget(checkbox_label, current_row, 1)  # add the checkbox to the frame
+                        self.add_to_empty_row(self.frameEmptyRooms, checkBox, checkbox_label)
+
+                        # self.frameEmptyRooms.layout().addWidget(checkBox, current_row, 0)  # add the checkbox to the frame
+                        # self.frameEmptyRooms.layout().addWidget(checkbox_label, current_row, 1)  # add the checkbox to the frame
                     else:  # if the widget exists already, update it
-                        find_child2.setText(label)
-                        if dash_duration < datetime.timedelta(minutes=30):
-                            if dash_duration.seconds % 2 == 0:
-                                find_child2.setAccessibleDescription('timerDanger')
-                            else:
-                                find_child2.setAccessibleDescription('checkBoxRoom')
-                            find_child2.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
+                        if find_child2 is not None:
+                            find_child2.setText(label)
+                            if dash_duration < datetime.timedelta(minutes=30):
+                                if dash_duration.seconds % 2 == 0:  # change the style to red every other second
+                                    find_child2.setAccessibleDescription('timerDanger')
+                                else:
+                                    find_child2.setAccessibleDescription('checkBoxRoom')
+                                find_child2.setStyleSheet('')  # force a stylesheet refresh (faster than reapplying the style sheet)
 
                     if schedule.get_countdown().get_duration_expired() and find_child is not None:  # duration expired, so remove the widget
                         find_child.setVisible(False)
@@ -750,7 +750,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             os.startfile(path)
         except FileNotFoundError:
             message = f'Oh no! Windows could not find the timetable image for {room}'
-            info = f'Path searched: \"{path}\"'
+            info = f'Path searched: \'{path}\''
             self.show_message_box(message, info)
 
     def show_message_box(self, message, info, title=None):
@@ -765,7 +765,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if title is not None:
             msg.setWindowTitle(title)
         else:
-            msg.setWindowTitle("Error")
+            msg.setWindowTitle('Error')
 
         flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         msg.setWindowFlags(flags)
@@ -797,12 +797,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             self.sender().setVisible(False)  # hide the widget
             self.sender().deleteLater()  # schedule the widget for deletion
-
-    def refresh_style(self):
-        # clears all the QT Creator styles in favour of the QSS stylesheet
-        self.clear_style_sheets()
-        theme = str(open(self.theme_path, "r").read())
-        self.setStyleSheet(theme)
+        self.clear_layout(self.frameEmptyRooms)
 
     def show_schedule_modifier(self):
         self.labelSchedule.setText('SCHEDULE MODIFIER')
@@ -900,24 +895,44 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.floating_state = True  # floating window is active
         window.show()
 
-    def add_to_empty_row(self, frame, widget):
+    def add_to_empty_row(self, frame, widget, label=None):
         layout = frame.layout()
 
         if layout is not None:
-            column = 0
             row_count = self.true_row_count(frame)
             max = 11
 
             for j in range(row_count):  # loop through all rows
-                item = layout.itemAtPosition(j, column)
-                if item is None:
-                    if row_count > max:
-                        layout.addWidget(widget, j-max, column + 1)  # new column
+                if row_count >= max:
+                    if label is not None:
+                        item = layout.itemAtPosition(j, 2)
+                        if item is None:
+                            if label is not None:
+                                layout.addWidget(widget, j, 2)  # add to new column in same row
+                                layout.addWidget(label, j, 3)  # add to new column in same row
+                                return
                     else:
-                        layout.addWidget(widget, j, column)
+                        item = layout.itemAtPosition(j, 1)
+                        if item is None:
+                            layout.addWidget(widget, j, 1)  # add to new column in same row
+                            return
+                else:
+                    item = layout.itemAtPosition(j, 0)
+                    if item is None:
+                        if label is not None:
+                            layout.addWidget(widget, j, 0)
+                            layout.addWidget(label, j, 1)  # add to new column in same row
+                            return
+                        else:
+                            layout.addWidget(widget, j, 0)
+                            return
 
-            if row_count == 0:
+            if row_count == 0:  # if the layout has nothing in it
                 layout.addWidget(widget, 0, 0)
+                if label is not None:
+                    layout.addWidget(label, 0, 1)  # add to new column in same row
+
+                return
 
     ############# PROBLEMS, REPORTS, LOST AND FOUND #############
 
@@ -947,7 +962,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 replaced = labels[j].replace('_', ' ')
 
                 if replaced == 'NOTE' or replaced == 'RESOLUTION':
-                    data_widget = QtWidgets.QTextEdit(f"{data[j]}")
+                    data_widget = QtWidgets.QTextEdit(f'{data[j]}')
                     data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                     data_widget.setAccessibleDescription('textEdit')
                     data_widget.setReadOnly(True)
@@ -957,16 +972,15 @@ class LogBook(MainWindowBase, MainWindowUI):
                     data_widget.setAcceptRichText(False)
                     data_widget.document().setDocumentMargin(0)
                 else:
-                    data_widget = QtWidgets.QLabel(f"{data[j]}")
+                    data_widget = QtWidgets.QLabel(f'{data[j]}')
                     data_widget.setScaledContents(True)
                     data_widget.setWordWrap(True)
                     data_widget.setAccessibleDescription('formLabelNormal')
                     data_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
                 data_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-                # data_widget.setMaximumSize(16777215, 16777215)
 
-                label_widget = QtWidgets.QLabel(f"{replaced}:")
+                label_widget = QtWidgets.QLabel(f'{replaced}:')
                 label_widget.setAlignment(Qt.AlignLeft | Qt.AlignTop)
                 label_widget.setAccessibleDescription('formLabel')
                 label_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -1069,20 +1083,43 @@ class LogBook(MainWindowBase, MainWindowUI):
         keyword = button.text()
 
         if table.objectName().find('Lost') != -1:
-            query = f"""
-                SELECT * FROM dbo.LostAndFound 
-                where ITEM_DESC like '%{keyword}%'or 
-                NAME like '%{keyword}%' or 
-                ROOM like '%{keyword}%' or 
-                NOTE like '%{keyword}%';
-            """
+            if self.comboBoxLostAndFoundMonth.currentText() != 'All':
+                month = self.comboBoxLostAndFoundMonth.currentText()
+                query = f'''
+                    SELECT * FROM dbo.LostAndFound 
+                    where 
+                    MONTH(DATE_FOUND) = (SELECT MONTH('{month}' + '2020')) AND
+                    (
+                        ITEM_DESC like '%{keyword}%'or 
+                        NAME like '%{keyword}%' or 
+                        ROOM like '%{keyword}%' or 
+                        NOTE like '%{keyword}%' or 
+                        STUDENT_NAME like '%{keyword}%' or 
+                        STUDENT_NUMBER like '%{keyword}%' or 
+                        RETURNED_DATE like '%{keyword}%' or 
+                        RETURNED like '%{keyword}%'
+                    );
+                '''
+            else:
+                query = f'''
+                    SELECT * FROM dbo.LostAndFound 
+                    where 
+                        ITEM_DESC like '%{keyword}%'or 
+                        NAME like '%{keyword}%' or 
+                        ROOM like '%{keyword}%' or 
+                        NOTE like '%{keyword}%' or
+                        STUDENT_NAME like '%{keyword}%' or 
+                        STUDENT_NUMBER like '%{keyword}%' or 
+                        RETURNED_DATE like '%{keyword}%' or 
+                        RETURNED like '%{keyword}%';
+                '''
             self.populate_table(table, query)
             self.cleanup_empty_cells(table)
 
         elif table.objectName().find('Reports') != -1:
             if self.comboBoxReportsMonth.currentText() != 'All':
                 month = self.comboBoxReportsMonth.currentText()
-                query = f"""
+                query = f'''
                             SELECT * FROM dbo.Reports 
                             where 
                             MONTH(DATE) = (SELECT MONTH('{month}' + '2020')) AND
@@ -1094,9 +1131,9 @@ class LogBook(MainWindowBase, MainWindowUI):
                                 FIXED like '%{keyword}%' or 
                                 NOTE like '%{keyword}%'
                             );
-                        """
+                        '''
             else:
-                query = f"""
+                query = f'''
                     SELECT * FROM dbo.Reports 
                     where ISSUE like '%{keyword}%'or 
                     NAME like '%{keyword}%' or 
@@ -1104,7 +1141,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                     RESOLUTION like '%{keyword}%' or
                     FIXED like '%{keyword}%' or 
                     NOTE like '%{keyword}%';
-                """
+                '''
             self.populate_table(table, query)
             self.cleanup_empty_cells(table)
 
@@ -1187,17 +1224,30 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
 
-    def sort_by_month(self, input_month=None):  # setting an optional argument to null since python has no overloading
-        if input_month is not None:
-            query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
-        else:
-            month = self.sender().currentText()  # receive the combobox's current text
-            if month == 'All':
-                query = f"SELECT * FROM dbo.Reports"
+    def sort_by_month(self, mode, input_month=None):  # setting an optional argument to null since python has no overloading
+        if mode == 'Reports':
+            if input_month is not None:
+                query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
             else:
-                query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
-        self.populate_table(self.tableWidgetReports, query)
-        self.cleanup_empty_cells(self.tableWidgetReports)
+                month = self.sender().currentText()  # receive the combobox's current text
+                if month == 'All':
+                    query = f"SELECT * FROM dbo.Reports"
+                else:
+                    query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
+            self.populate_table(self.tableWidgetReports, query)
+            self.cleanup_empty_cells(self.tableWidgetReports)
+
+        if mode == 'LostAndFound':
+            if input_month is not None:
+                query = f"SELECT * FROM dbo.LostAndFound WHERE MONTH(DATE_FOUND) = (SELECT MONTH('{input_month}' + '2020'))"
+            else:
+                month = self.sender().currentText()  # receive the combobox's current text
+                if month == 'All':
+                    query = f"SELECT * FROM dbo.LostAndFound"
+                else:
+                    query = f"SELECT * FROM dbo.LostAndFound WHERE MONTH(DATE_FOUND) = (SELECT MONTH('{month}' + '2020'))"
+            self.populate_table(self.tableWidgetLostAndFound, query)
+            self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
     def new_lost_and_found(self):
         self.stored_id = 0
@@ -1240,18 +1290,18 @@ class LogBook(MainWindowBase, MainWindowUI):
             return
 
         if self.stored_id == 0:  # id of 0 means it's a new entry
-            returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
             student_name = self.textBoxNewLostAndFoundStudentName.text()
             student_number = self.textBoxNewLostAndFoundStudentNumber.text()
 
             if self.checkBoxNewLostAndFoundReturned.isChecked():
+                returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
                 returned = 'YES'
                 query = f'''
                             INSERT INTO dbo.LostAndFound
                                 (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
                             VALUES 
                                 (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
-
+                list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned_date, returned]
             else:
                 returned = 'NO'
                 query = f'''
@@ -1584,6 +1634,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.get_all_labs()
         self.show_room_schedule(combo_box.currentText(), mode)
 
+        self.refresh_dashboard()
+
+    def refresh_dashboard(self):
         self.clear_layout(self.frameEmptyRooms)
         self.clear_layout(self.frameUpcomingRooms)
         self.clear_layout(self.frameOpenLabs)
@@ -1591,7 +1644,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     ############# SETTINGS #############
     def apply_settings(self, theme, time_format):
-        if theme == "Classic Light":
+        if theme == 'Classic Light':
             self.comboBoxSettingsTheme.setCurrentIndex(0)
 
             # use dark versions of icons for contrast
@@ -1608,7 +1661,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.pushButtonScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\schedule_mod_edit_dark.png')))
             self.pushButtonOpenLabScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\schedule_mod_edit_open_dark.png')))
 
-        if theme == "Centennial Dark":
+        if theme == 'Centennial Dark':
             self.comboBoxSettingsTheme.setCurrentIndex(1)
 
             # use light versions of icons for contrast
@@ -1625,7 +1678,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.pushButtonScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\schedule_mod_edit_light.png')))
             self.pushButtonOpenLabScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\schedule_mod_edit_open_light.png')))
 
-        if time_format == "12 HR":
+        if time_format == '12 HR':
             self.comboBoxSettingsTimeFormat.setCurrentIndex(1)
         else:
             self.comboBoxSettingsTimeFormat.setCurrentIndex(0)
@@ -1637,7 +1690,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
         conn_str = parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
-        conn_str = "mssql+pyodbc:///?odbc_connect=%s" % conn_str  # to stop sqlalchemy from complaining
+        conn_str = 'mssql+pyodbc:///?odbc_connect=%s' % conn_str  # to stop sqlalchemy from complaining
         reports_data = read_sql_query('SELECT * FROM dbo.Reports', conn_str)
         year = str(datetime.datetime.now().year)
         path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx',filter='.xlsx')[0]
