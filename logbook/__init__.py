@@ -1,1 +1,1 @@
-__all__ = ['models', 'qtmodern_package', 'themes']
+__all__ = ['models', 'scripts', 'qtmodern_package', 'themes']

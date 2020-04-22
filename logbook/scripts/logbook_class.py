@@ -14,8 +14,20 @@ from scripts.splash_screen import SplashScreen
 from scripts.settings_manager import SettingsManager
 from scripts.database_handler import DatabaseHandler
 from scripts.schedule_modifier import ScheduleModifier
+from scripts.dialog_box import Dialog
 
 os.chdir(Path(__file__).parent.parent)
+
+
+def center_widget(widget):
+    # center the window
+    window_geometry_dialog = widget.frameGeometry()
+    screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+    center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+    window_geometry_dialog.moveCenter(center_point)
+    widget.move(window_geometry_dialog.topLeft())
+
+
 # get type from ui file
 MainWindowUI, MainWindowBase = uic.loadUiType(resource_path('views\\logbook_design.ui'))
 DialogUI, DialogBase = uic.loadUiType(resource_path('views\\logbook_dialog.ui'))
@@ -45,25 +57,28 @@ class SplashScreenThread(QThread):
         self.finished.emit(True)   # emit the finished signal to close the splash screen
 
 
-class Dialog(DialogBase, DialogUI):
-    def __init__(self, parent=None):
-        super(Dialog, self).__init__(parent)
-        self.setupUi(self)
-
-
 class Window(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
 
 
 class LogBook(MainWindowBase, MainWindowUI):
-    def __init__(self, theme, time_format):
+    # class variables
+    settings = SettingsManager.get_settings()
+    theme = SettingsManager.get_theme_from_settings()
+
+    def __init__(self):
         super(LogBook, self).__init__()
+        self.setupUi(self)
         # local variables
         self.lastPage = ''
         self.stored_id = 0
-        self.stored_theme_choice = theme
-        self.stored_time_format_choice = time_format
+
+        self.theme = self.__class__.theme
+        self.chosen_theme = self.__class__.settings['theme_choice']['name']
+        self.time_format = self.__class__.settings['time_format']
+        self.theme_choice = self.__class__.settings['theme'][self.chosen_theme]
+
         self.staticDate = datetime.datetime.now()
         self.default_returned_date = datetime.date(2020, 1, 1)  # default date to set returned to
 
@@ -86,28 +101,18 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.server_string = DatabaseHandler.get_server_string()
 
-        self.splash = SplashScreen(self.stored_theme_choice)
+        self.splash = SplashScreen()
         self.splash.show()
         self.splash_screen_thread = SplashScreenThread()
-        self.splash_screen_thread.countChanged.connect(self.onCountChanged)  # connect this function to the custom countChanged signal from the SplashScreenThread
+        self.splash_screen_thread.countChanged.connect(self.on_count_changed)  # connect this function to the custom countChanged signal from the SplashScreenThread
         self.splash_screen_thread.finished.connect(self.finished)  # connect this function to the custom finished signal from the SplashScreenThread
         self.splash_screen_thread.start()  # start the thread so it will run simultaneously with the logbook
-        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
+        QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface immediately
 
         # using the setupUi function of the MainWindow
-        self.setupUi(self)
-        # self.window = uic.loadUi('views\\logbook_design.ui')  # build a window object from the .ui file
-
         self.get_all_data()
         self.add_all_events()
-        self.apply_settings(theme['theme_name'], time_format)
-
-        # fetches the qss stylesheet path
-        theme_path = resource_path(theme['theme_path'])
-
-        # read the qss stylesheet and apply it to the window
-        self.theme = str(open(theme_path, 'r').read())
-        self.theme_path = theme_path
+        self.apply_settings(self.theme_choice['theme_name'], self.time_format)
 
         # clears all the QT Creator styles in favour of the QSS stylesheet
         self.clear_style_sheets()
@@ -121,6 +126,15 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # show initial frame linked to dashboard button
         self.show_linked_frame(self.pushButtonDashboard)
+
+    ############# CLASS METHODS #############
+    @classmethod
+    def get_theme(cls):
+        return cls.theme
+
+    @classmethod
+    def get_settings(cls):
+        return cls.settings
 
     ############# CORE FUNCTIONS #############
     def clock(self):  # this function is called every second during runtime
@@ -262,6 +276,10 @@ class LogBook(MainWindowBase, MainWindowUI):
         # Settings
         self.pushButtonTimetables.clicked.connect(lambda: self.open_folder('images\\timetables'))
         self.pushButtonSaveSettings.clicked.connect(self.save_settings)
+        self.pushButtonBackupDatabase.clicked.connect(lambda: self.try_backup())
+
+        # User guide
+        self.pushButtonUserGuideDoc.clicked.connect(lambda: self.open_user_guide('logbook_user_guide.pdf'))
 
         # look through the children of the children until we find a QPushButton
         for widget in self.frameMenu.children():
@@ -282,7 +300,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
 
     # this function receives the data from the countChanged signal in the SplashScreenThread
-    def onCountChanged(self, value):
+    def on_count_changed(self, value):
         time.sleep(0.05)
         self.splash.progressBar.setValue(value)
         QtWidgets.QApplication.processEvents()  # force Qt to refresh the interface
@@ -308,6 +326,11 @@ class LogBook(MainWindowBase, MainWindowUI):
         os.startfile(path)
 
     @staticmethod
+    def open_user_guide(relative_path):
+        path = resource_path(relative_path)
+        os.startfile(path)
+
+    @staticmethod
     def max_txt_input(txt_edit):
         text_content = txt_edit.toPlainText()
         length = len(text_content)
@@ -328,6 +351,13 @@ class LogBook(MainWindowBase, MainWindowUI):
             text_edit.setPlaceholderText('Cannot be blank')
             return False
         return True
+
+    def try_backup(self):
+        import pyodbc
+        try:
+            DatabaseHandler.auto_backup()
+        except pyodbc.ProgrammingError as err:
+            self.show_message_box('Access denied, try a different location', str(err.args), 'Error')
 
     @staticmethod
     def cleanup_empty_cells(table):
@@ -432,16 +462,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         comboBox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
     @staticmethod
-    def center_widget(widget):
-
-        # center the window
-        window_geometry_dialog = widget.frameGeometry()
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        window_geometry_dialog.moveCenter(center_point)
-        widget.move(window_geometry_dialog.topLeft())
-
-    @staticmethod
     def time_convert(string, mode):
         if mode == '12 HR':
             time_string = datetime.datetime.strptime(string, '%H:%M:%S').strftime('%I:%M %p')
@@ -467,7 +487,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         if isinstance(member, QtWidgets.QPushButton):
             icon_name = member.accessibleName()
 
-            if self.stored_theme_choice['base_theme'] == 'dark':
+            if self.theme_choice['base_theme'] == 'dark':
                 icon_normal = QtGui.QIcon()
                 icon_active = QtGui.QIcon()
 
@@ -580,49 +600,50 @@ class LogBook(MainWindowBase, MainWindowUI):
         layout = self.scrollAreaAllLabs.widget().layout()
         current_row = 1
 
-        for row in all_labs:
-            room = row[0]
-            row_num = row[1]
+        if all_labs is not None and len(all_labs) != 0:  # not empty test
+            for row in all_labs:
+                room = row[0]
+                row_num = row[1]
 
-            item = layout.itemAtPosition(row_num, 3)
+                item = layout.itemAtPosition(row_num, 3)
 
-            if item is not None:  # remove existing widget
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-                    widget.setParent(None)
+                if item is not None:  # remove existing widget
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.deleteLater()
+                        widget.setParent(None)
 
-            label_all_labs_countdown = None
+                label_all_labs_countdown = None
 
-            if schedules is not None and len(schedules) != 0:
-                for schedule in schedules:  # loop through all of today's schedules
-                    if room == schedule.get_room():
-                        all_countdown = schedule.get_countdown().get_countdown()
+                if schedules is not None and len(schedules) != 0:
+                    for schedule in schedules:  # loop through all of today's schedules
+                        if room == schedule.get_room():
+                            all_countdown = schedule.get_countdown().get_countdown()
 
-                        if label_all_labs_countdown is None:  # if the object hasn't been created already
-                            if schedule.get_countdown().get_countdown_expired():  # if the first countdown for this room expired
-                                label_all_labs_countdown = QtWidgets.QLabel('expired', self)
-                                label_all_labs_countdown.setAccessibleDescription('formLabel')
-                                label_all_labs_countdown.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-                                label_all_labs_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+                            if label_all_labs_countdown is None:  # if the object hasn't been created already
+                                if schedule.get_countdown().get_countdown_expired():  # if the first countdown for this room expired
+                                    label_all_labs_countdown = QtWidgets.QLabel('expired', self)
+                                    label_all_labs_countdown.setAccessibleDescription('formLabel')
+                                    label_all_labs_countdown.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                                    label_all_labs_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
-                            elif all_countdown is not None:
-                                all_countdown = datetime.datetime.strptime(str(all_countdown), '%H:%M:%S').strftime('%H:%M:%S')
-                                label_all_labs_countdown = QtWidgets.QLabel(all_countdown, self)
-                                label_all_labs_countdown.setAccessibleDescription('formLabel')
-                                label_all_labs_countdown.setWhatsThis(room)
-                                label_all_labs_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-                        else:
-                            if schedule.get_countdown().get_countdown_expired():  # if the first countdown for this room expired
-                                label_all_labs_countdown.setText(label_all_labs_countdown.text() + '\n' + 'expired')
-                            elif all_countdown is not None:
-                                all_countdown = datetime.datetime.strptime(str(all_countdown), '%H:%M:%S').strftime('%H:%M:%S')
-                                label_all_labs_countdown.setText(label_all_labs_countdown.text() + '\n' + all_countdown)
+                                elif all_countdown is not None:
+                                    all_countdown = datetime.datetime.strptime(str(all_countdown), '%H:%M:%S').strftime('%H:%M:%S')
+                                    label_all_labs_countdown = QtWidgets.QLabel(all_countdown, self)
+                                    label_all_labs_countdown.setAccessibleDescription('formLabel')
+                                    label_all_labs_countdown.setWhatsThis(room)
+                                    label_all_labs_countdown.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+                            else:
+                                if schedule.get_countdown().get_countdown_expired():  # if the first countdown for this room expired
+                                    label_all_labs_countdown.setText(label_all_labs_countdown.text() + '\n' + 'expired')
+                                elif all_countdown is not None:
+                                    all_countdown = datetime.datetime.strptime(str(all_countdown), '%H:%M:%S').strftime('%H:%M:%S')
+                                    label_all_labs_countdown.setText(label_all_labs_countdown.text() + '\n' + all_countdown)
 
-            if label_all_labs_countdown is not None:
-                layout.addWidget(label_all_labs_countdown, current_row, 3)
+                if label_all_labs_countdown is not None:
+                    layout.addWidget(label_all_labs_countdown, current_row, 3)
 
-            current_row += 1
+                current_row += 1
 
         if open_lab_schedules is not None and len(open_lab_schedules) != 0:
             for schedule in open_lab_schedules:  # loop through all of today's schedules
@@ -774,7 +795,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
         msg.setGeometry(0, 0, size.width(), size.height())
 
-        self.center_widget(msg)
+        center_widget(msg)
 
         msg.btnMinimize.setVisible(False)
         msg.btnMaximize.setVisible(False)
@@ -811,34 +832,6 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.comboBoxScheduleRooms.currentIndexChanged.emit(0)  # emit something to trigger the update_checkboxes function
         self.change_page(self.stackedWidgetSchedule, self.pageScheduleModifier)
 
-    def show_dialog(self):
-
-        dialog = Dialog()
-        flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
-        state = True
-
-        yes_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.Yes)
-        no_button = dialog.buttonBox.button(QtWidgets.QDialogButtonBox.No)
-
-        dialog.setWindowFlags(flags)
-
-        yes_button.setAccessibleDescription('successButton')
-        no_button.setAccessibleDescription('dangerButton')
-
-        yes_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        no_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-
-        yes_button.setMinimumSize(100, 25)
-        no_button.setMinimumSize(100, 25)
-
-        dialog.setStyleSheet(self.theme)
-
-        self.center_widget(dialog)
-
-        if not dialog.exec_() == 1:
-            state = False
-        return state
-
     def restore(self, frame, parent):
         parent.layout().addWidget(frame)
         frame.setVisible(True)
@@ -864,7 +857,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         container_frame.setAccessibleDescription('backgroundFrame')
         central_widget.layout().addWidget(container_frame)
 
-        self.center_widget(window)
+        center_widget(window)
 
         sizegrip = QtWidgets.QSizeGrip(window)
 
@@ -994,9 +987,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def delete_selection(self, table, table_name):
 
+        dialog = Dialog()
+        center_widget(dialog)
+
         # if a row is selected (having no rows selected returns -1)
         if table.currentRow() != -1 and table.item(0, 0) is not None:
-            if self.show_dialog():
+            if dialog.show_dialog('Are you sure?'):
                 row_index = table.currentRow()  # get index of current row
                 column_index = table.item(row_index, 0).text()
                 first_column = DatabaseHandler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
@@ -1460,7 +1456,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 if schedules is not None and range(len(schedules) != 0):  # not empty validation
                     for schedule in schedules:  # loop through all schedules
                         if schedule.get_room() == room:
-                            mode = self.stored_time_format_choice
+                            mode = self.time_format
 
                             start_time = self.time_convert(str(schedule.get_start_time()), mode)
                             end_time = self.time_convert(str(schedule.get_end_time()), mode)
@@ -1590,7 +1586,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             if schedules is not None and range(len(schedules) != 0):  # not empty validation
                 for schedule in schedules:  # loop through all schedules
                     if schedule.get_room() == room and schedule.get_day() == schedule_day:
-                        mode = self.stored_time_format_choice
+                        mode = self.time_format
 
                         start_time = self.time_convert(str(schedule.get_start_time()), mode)
                         end_time = self.time_convert(str(schedule.get_end_time()), mode)
@@ -1656,10 +1652,12 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.pushButtonSchedule.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\schedule_mod_dark.png')))
             self.pushButtonSettings.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\settings_dark.png')))
             self.pushButtonUserGuide.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\guide_dark.png')))
-
-            self.pushButtonFloatingAllLabs.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\new_window_light.png')))
             self.pushButtonScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\schedule_mod_edit_dark.png')))
             self.pushButtonOpenLabScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\schedule_mod_edit_open_dark.png')))
+            self.pushButtonBackupDatabase.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\database_backup_dark.png')))
+
+            self.pushButtonFloatingAllLabs.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\new_window_light.png')))
+            self.pushButtonRefreshDashboard.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\dashboard_refresh_light.png')))
 
         if theme == 'Centennial Dark':
             self.comboBoxSettingsTheme.setCurrentIndex(1)
@@ -1673,10 +1671,12 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.pushButtonSchedule.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\schedule_mod_light.png')))
             self.pushButtonSettings.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\settings_light.png')))
             self.pushButtonUserGuide.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\guide_light.png')))
-
-            self.pushButtonFloatingAllLabs.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\new_window_dark.png')))
             self.pushButtonScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\schedule_mod_edit_light.png')))
             self.pushButtonOpenLabScheduleMod.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\schedule_mod_edit_open_light.png')))
+            self.pushButtonBackupDatabase.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\database_backup_light.png')))
+
+            self.pushButtonFloatingAllLabs.setIcon(QtGui.QIcon(resource_path('images\\icons\\dark_theme\\new_window_dark.png')))
+            self.pushButtonRefreshDashboard.setIcon(QtGui.QIcon(resource_path('images\\icons\\light_theme\\dashboard_refresh_light.png')))
 
         if time_format == '12 HR':
             self.comboBoxSettingsTimeFormat.setCurrentIndex(1)
@@ -1728,7 +1728,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         time_format = self.comboBoxSettingsTimeFormat.currentText()
 
         output = SettingsManager.settings_theme_switch(theme)
-        data = SettingsManager.import_settings()
+        data = SettingsManager.get_settings()
 
         data['theme_choice']['name'] = output
         data['time_format'] = time_format

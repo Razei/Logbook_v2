@@ -6,7 +6,7 @@ from scripts.settings_manager import SettingsManager
 
 
 def get_time_format():
-    setting = SettingsManager.import_settings()['time_format']
+    setting = SettingsManager.get_settings()['time_format']
     return setting
 
 

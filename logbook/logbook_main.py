@@ -2,7 +2,12 @@ import os
 import sys
 import qtmodern_package.styles as qtmodern_styles
 import qtmodern_package.windows as qtmodern_windows
-from scripts.logbook_class import LogBook
+from datetime import datetime
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
+from scripts.database_handler import DatabaseHandler
+from scripts.dialog_box import Dialog
+from scripts import logbook_class
 from PyQt5 import QtGui, QtCore, QtWidgets
 from scripts.settings_manager import SettingsManager
 
@@ -22,14 +27,69 @@ from scripts.settings_manager import SettingsManager
 # https://pypi.org/project/xlrd/ Version 1.2.0
 
 
+def message(message, info, title=None):
+    msg = QtWidgets.QMessageBox()
+    msg.setText(message)
+    msg.setInformativeText(info)
+    size = msg.sizeHint()
+
+    if title is not None:
+        msg.setWindowTitle(title)
+    else:
+        msg.setWindowTitle('Error')
+
+    flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+    msg.setWindowFlags(flags)
+    msg.setStyleSheet(logbook_class.LogBook.get_theme())
+    msg = qtmodern_windows.ModernWindow(msg)
+    msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
+    msg.setGeometry(0, 0, size.width(), size.height())
+
+    logbook_class.center_widget(msg)
+
+    msg.btnMinimize.setVisible(False)
+    msg.btnMaximize.setVisible(False)
+
+    msg.show()
+    QtWidgets.QApplication.processEvents()
+
+
+def pre_run_check(settings):
+    db_name = settings['database_name']
+    query = f'SELECT NAME from sys.databases WHERE NAME = \'{db_name}\''
+    cursor = DatabaseHandler.execute_query(query)
+    year = str(datetime.now().year)
+
+    if not DatabaseHandler.validate_cursor(cursor):
+        dialog = Dialog()
+        if dialog.show_dialog('It seems a database doesn\'t exist. \nWould you like to create a new one?'):
+            DatabaseHandler.create_new_database()
+
+    db_year = db_name.replace('ReportLog', '')
+    if int(year) > int(db_year):
+        dialog = Dialog()
+        dialog.buttonBox.clear()
+        ok_button = QtWidgets.QPushButton(dialog.tr("&Ok"))
+        ok_button.setDefault(True)
+        ok_button.setAccessibleDescription('neutralButton')
+        ok_button.setMinimumSize(100, 25)
+        ok_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        dialog.buttonBox.addButton(ok_button, QtWidgets.QDialogButtonBox.AcceptRole)
+
+        if dialog.show_dialog('Happy New Year! Time to make a new database'):
+            db_name = DatabaseHandler.create_new_database()
+            message(f'Successfully created database {db_name}', 'Success!')
+
+
 if __name__ == '__main__':
+    # create new application
+    app = QApplication(sys.argv)
+    settings = logbook_class.LogBook.get_settings()
+    pre_run_check(settings)
 
     path = os.path.dirname(os.path.abspath(__file__))
-    settings = SettingsManager.import_settings()
     theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
 
-    # create new application
-    app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon("images/icons/appicon.ico"))
     if settings['theme'][theme_choice]['base_theme'] == 'dark':
         qtmodern_styles.dark(app)  # qtmodern
@@ -38,15 +98,11 @@ if __name__ == '__main__':
         qtmodern_styles.light(app)  # qtmodern
 
     # create new window of type LogBook and pass settings (calls __init__ constructor to do the rest)
-    window = LogBook(settings['theme'][theme_choice], settings['time_format'])
+    window = logbook_class.LogBook()
     window.setGeometry(QtCore.QRect(0, 0, 1280, 720))  # start size/location
 
     # center the window
-    windowGeometry = window.frameGeometry()
-    screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-    centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-    windowGeometry.moveCenter(centerPoint)
-    window.move(windowGeometry.topLeft())
+    logbook_class.center_widget(window)
 
     mw = qtmodern_windows.ModernWindow(window)  # qtmodern
 

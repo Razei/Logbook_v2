@@ -11,7 +11,8 @@ added_file = [
     ('themes', 'themes'), 
     ('images', 'images'),
     ('qtmodern_package','qtmodern_package'),
-    ('settings.json','.')
+    ('settings.json','.'),
+    ('logbook_user_guide.pdf','.')
     ]
 
 a = Analysis(['logbook_main.py'],
@@ -33,14 +34,14 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='Logbook_v2',
-          debug=True,
+          name='Logbookv2',
+          debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=True , 
+          console=False , 
           icon='images\\icons\\appicon.ico')
 
 coll = COLLECT(exe,
@@ -50,4 +51,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='logbook_main')
+               name='Logbook v2')

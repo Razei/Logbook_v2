@@ -1,5 +1,6 @@
 import os
 from scripts.local_pather import resource_path
+from scripts import logbook_class
 from PyQt5 import QtCore, uic
 
 # get type from ui file
@@ -7,15 +8,12 @@ SplashUI, SplashBase = uic.loadUiType(resource_path(os.path.join('views', 'splas
 
 
 class SplashScreen(SplashBase, SplashUI):
-    def __init__(self, theme):
+    def __init__(self):
         super(SplashScreen, self).__init__()
         self.setupUi(self)
 
-        # fetches the qss stylesheet path
-        theme_path = os.path.join(resource_path(theme['theme_path']))
-
         # reads the qss stylesheet and applies it to the application
-        self.theme = str(open(theme_path, "r").read())
+        self.theme = logbook_class.LogBook.get_theme()
         self.setStyleSheet(self.theme)
 
         flags = QtCore.Qt.WindowFlags(QtCore.Qt.FramelessWindowHint)
