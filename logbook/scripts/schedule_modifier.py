@@ -16,10 +16,12 @@ def get_database_schedules():
 
     # query stuff
     query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM Schedule ORDER BY DAY, ROOM, START_TIME"
-    cursor = DatabaseHandler.execute_query(query)
+
+    connection, cursor = DatabaseHandler.execute_query(query)
 
     # validate the cursor for empty results
     if not DatabaseHandler.validate_cursor(cursor):
+        connection.close()
         return
 
     schedule_data = cursor.fetchall()
@@ -36,7 +38,7 @@ def get_database_schedules():
             )
         )
 
-    cursor.close()
+    connection.close()
     return schedule_objects
 
 
@@ -46,10 +48,11 @@ def get_database_open_lab_schedules():
 
     # query stuff
     query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM OpenLabSchedule ORDER BY DAY, ROOM, START_TIME"
-    cursor = DatabaseHandler.execute_query(query)
+    connection, cursor = DatabaseHandler.execute_query(query)
 
     # validate the cursor for empty results
     if not DatabaseHandler.validate_cursor(cursor):
+        connection.close()
         return
 
     schedule_data = cursor.fetchall()
@@ -65,7 +68,7 @@ def get_database_open_lab_schedules():
                 sch_time[0]
             )
         )
-    cursor.close()
+    connection.close()
     return schedule_objects
 
 
@@ -252,12 +255,12 @@ class ScheduleModifier:
                 # if it's checked and it's not 22:30
                 if (type(widget) == QtWidgets.QCheckBox and widget.isChecked()) and not (widget_time == '22:30'):  # 22:30 cannot be a start time
                     if not state:  # self.state helps to keep track of whether there's a start time already
-                        start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30:00'
+                        start_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
                         state = True  # indicate there is now a start time waiting for an end time to complete the object below
                         continue  # skip the rest of the code
 
                 if (type(widget) == QtWidgets.QCheckBox and not widget.isChecked() and state) or (widget_time == '22:30' and state):
-                    end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30:00'
+                    end_time = widget.objectName().replace(f'checkBox{days[i-1]}', '') + ':30'
                     print(start_time, end_time, days[i - 1], room)
                     state = False
                     schedules.append(ScheduleObj(room, days[i - 1], start_time, end_time))
@@ -275,25 +278,23 @@ class ScheduleModifier:
                 table_name = 'Schedule'
 
             query = f'SELECT ROOM,DAY,START_TIME,END_TIME from {table_name}'
-            cursor = DatabaseHandler.execute_query(query)
+            connection, cursor = DatabaseHandler.execute_query(query)
 
             # validate the cursor for empty results
             if DatabaseHandler.validate_cursor(cursor):
                 data = cursor.fetchall()
-                cursor.close()
+                connection.commit()
+                connection.close()
 
                 current_room = combo_box.currentText()
 
                 # delete all existing entries for this room
                 for d in data:
-                    if d.ROOM.strip() == current_room:
-                        query = f'DELETE FROM {table_name} WHERE ROOM = ?'
-
-                        cursor = DatabaseHandler.execute_query(query, current_room)
-
-                        if DatabaseHandler.validate_cursor(cursor):
-                            DatabaseHandler.commit()
-                            cursor.close()
+                    if d[0].strip() == current_room:
+                        query = f'DELETE FROM {table_name} WHERE ROOM = (?)'
+                        connection = DatabaseHandler.execute_query(query, [current_room])[0]
+                        connection.commit()
+                        connection.close()
 
             # add new data
             if schedules is not None and len(schedules) != 0:
@@ -304,9 +305,9 @@ class ScheduleModifier:
                     VALUES 
                         (?, ?, ?, ?)'''  # query string
                     list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]  # variables to substitute '?' in the query string
-                    cursor = DatabaseHandler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
-                    DatabaseHandler.commit()
-                    cursor.close()
+                    connection = DatabaseHandler.execute_query(query, list_objects)[0] # passing both to the database handler to do the rest
+                    connection.commit()
+                    connection.close()
 
         if mode == 'Open':
             cls.open_lab_schedules = get_database_open_lab_schedules()

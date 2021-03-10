@@ -82,17 +82,24 @@ class Countdown:
     def get_local_date():
         return datetime.datetime.today()  # local system date
 
+    @staticmethod
+    def convert_time_format(time_stamp):
+        if len(time_stamp) <= 5:
+            time_stamp = time_stamp + ':00'
+
+        return datetime.datetime.strptime(time_stamp, "%H:%M:%S")
+
     def calculate_countdown(self, time_stamp):
         current_time = self.get_local_date().time().isoformat(timespec='seconds')  # return the 'time' part of the date as a string with seconds precision level
 
-        first_time = datetime.datetime.strptime(time_stamp, "%H:%M:%S")  # convert time stamp string to datetime object
+        first_time = self.convert_time_format(time_stamp)  # convert time stamp string to datetime object
         second_time = datetime.datetime.strptime(current_time, "%H:%M:%S")  # make sure the current time is formatted correctly and make it into a datetime object
         t_delta = first_time - second_time  # subtract current time from timestamp to get time difference
 
         return t_delta
 
     def compare_times(self, time_stamp):
-        if datetime.datetime.strptime(time_stamp, "%H:%M:%S").time() > self.get_local_date().time():  # if the time stamp is in the future (larger than current time)
+        if self.convert_time_format(time_stamp).time() > self.get_local_date().time():  # if the time stamp is in the future (larger than current time)
             return True
         return False
 

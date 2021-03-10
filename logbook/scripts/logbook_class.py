@@ -181,10 +181,11 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.set_progress_bar(43)
 
-        cursor = DatabaseHandler.execute_query(rooms_query)
+        connection, cursor = DatabaseHandler.execute_query(rooms_query)
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
+            connection.close()
             return
 
         rooms = cursor.fetchall()
@@ -194,7 +195,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         self.all_rooms = room_list
 
-        cursor.close()
+        connection.close()
 
         self.set_progress_bar(70)
 
@@ -397,17 +398,17 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     @staticmethod
     def populate_table(table, query, t_problems=None):
-
         table.clear()
         table.setSortingEnabled(False)  # this is necessary to avoid confusing the table widget (blank rows)
 
         # new array variables for holding column names
         header_names = []
 
-        cursor = DatabaseHandler.execute_query(query)
+        connection, cursor = DatabaseHandler.execute_query(query)
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
+            connection.close()
             return
 
         data = cursor.fetchall()
@@ -416,6 +417,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         # get all column names from the database
         for column in cursor_desc:
             header_names.append(column[0])
+
+        connection.close()
 
         table.horizontalHeader().setMaximumSectionSize(200)  # max size per column
         table.verticalHeader().setMaximumSectionSize(40)  # min size per row
@@ -998,9 +1001,14 @@ class LogBook(MainWindowBase, MainWindowUI):
             if dialog.show_dialog('Are you sure?'):
                 row_index = table.currentRow()  # get index of current row
                 column_index = table.item(row_index, 0).text()
-                first_column = DatabaseHandler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
-                delete_query = f'DELETE FROM {table_name} WHERE {str(first_column[0])} = {column_index};'
-                DatabaseHandler.execute_query(delete_query).commit()
+                cursor = DatabaseHandler.execute_query(f"SELECT * from {table_name} where 1=0;")[1]  # We just need the colums, so 1=0 is always false.
+                # first_column = DatabaseHandler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1")[1].fetchone()
+                delete_query = f'DELETE FROM {table_name} WHERE {str(cursor.description[0][0])} = {column_index};'
+
+                connection = DatabaseHandler.execute_query(delete_query)[0]
+                connection.commit()
+                connection.close()
+
                 self.refresh_tables()
 
     def clear_form(self):
@@ -1065,13 +1073,16 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             list_objects = [date, name, room, issue, note, resolution, fixed]
 
-        cursor = DatabaseHandler.execute_query(query, list_objects, commit=True)
+        connection, cursor = DatabaseHandler.execute_query(query, list_objects)
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
             self.change_page(self.stackedWidget, self.pageReports)
+            connection.close()
             return
 
+        connection.commit()
+        connection.close()
         self.refresh_tables()
         self.change_to_last_page()
         self.clear_form()
@@ -1152,11 +1163,12 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stored_id = report_id
 
             query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from Reports WHERE REPORT_ID = {report_id};'
-            cursor = DatabaseHandler.execute_query(query)
+            connection, cursor = DatabaseHandler.execute_query(query)
 
             # validate the cursor for empty results
             if not DatabaseHandler.validate_cursor(cursor):
                 self.change_to_last_page()
+                connection.close()
                 return
 
             log = cursor.fetchall()
@@ -1175,6 +1187,7 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             self.checkBoxFixed.setChecked(str(log[0][6]).strip() == 'YES')
 
+            connection.close()
             self.change_page(self.stackedWidget, self.pageNewLog)
 
     def returned_checkbox_changed(self):  # this way it only happens if the state was changed
@@ -1199,8 +1212,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         if index >= 0:
             self.comboBoxReportsMonth.setCurrentIndex(index)
 
-        reports_query = f"SELECT * FROM Reports WHERE strftime('%m', DATE) = '{month_num}'"
-        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM Reports WHERE FIXED =\'NO\''
+        reports_query = f"SELECT * FROM Reports WHERE strftime('%m', DATE) = '{month_num}';"
+        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM, ISSUE,NOTE FROM Reports WHERE FIXED =\'NO\''
         lost_and_found_query = 'SELECT * FROM LostAndFound'
         problems_count_query = 'SELECT COUNT(REPORT_ID) FROM Reports WHERE FIXED =\'NO\''
 
@@ -1212,13 +1225,15 @@ class LogBook(MainWindowBase, MainWindowUI):
         self.cleanup_empty_cells(self.tableWidgetProblems)
         self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
-        cursor = DatabaseHandler.execute_query(problems_count_query)
+        connection, cursor = DatabaseHandler.execute_query(problems_count_query)
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
+            connection.close()
             return
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
+        connection.close()
 
     def sort_by_month(self, mode, input_month=None):  # setting an optional argument to null since python has no overloading
         if mode == 'Reports':
@@ -1352,16 +1367,18 @@ class LogBook(MainWindowBase, MainWindowUI):
                     ENTRY_ID = {self.stored_id};'''
                 list_objects = [date, room, found_by, item_description, note, student_name, student_number, returned]
 
-        cursor = DatabaseHandler.execute_query(query, list_objects)
+        connection, cursor = DatabaseHandler.execute_query(query, list_objects)
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
             self.change_to_last_page()
+            connection.close()
             return
 
-        DatabaseHandler.commit()
+        connection.commit()
+        connection.close()
         self.refresh_tables()
-        self.change_page(self.stackedWidget,self.pageLostAndFound)
+        self.change_page(self.stackedWidget, self.pageLostAndFound)
 
     def edit_laf_form(self):
         table = self.tableWidgetLostAndFound
@@ -1373,41 +1390,40 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.stored_id = entry_id
 
             query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM LostAndFound WHERE ENTRY_ID = {entry_id};'
-            cursor = DatabaseHandler.execute_query(query)
+            connection, cursor = DatabaseHandler.execute_query(query)
 
             # validate the cursor for empty results
             if not DatabaseHandler.validate_cursor(cursor):
                 self.change_to_last_page()
+                connection.close()
                 return
 
             laf = cursor.fetchall()
             self.clear_form()
             self.labelNewLostAndFound.setText('EDIT LOST AND FOUND')
-            self.dateEditNewLostAndFound.setDate(laf[0].DATE_FOUND)
+            self.dateEditNewLostAndFound.setDate(datetime.datetime.strptime(laf[0][0], '%Y-%m-%d'))
             self.dateEditNewLostAndFound.setCurrentSectionIndex(2)
 
-            self.dateEditReturnedNewLostAndFound.setDate(laf[0].RETURNED_DATE or self.default_returned_date)
+            self.dateEditReturnedNewLostAndFound.setDate(datetime.datetime.strptime(laf[0][7], '%Y-%m-%d') or self.default_returned_date)
             self.dateEditReturnedNewLostAndFound.setCurrentSectionIndex(2)
 
-            self.textBoxNewLostAndFoundBy.setText(str(laf[0].NAME).strip())
-            self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0].ITEM_DESC).strip())
-            self.textBoxNewLostAndFoundNote.setText(str(laf[0].NOTE.strip()))
+            self.textBoxNewLostAndFoundBy.setText(str(laf[0][2]).strip())
+            self.textBoxNewLostAndFoundItemDescription.setText(str(laf[0][3]).strip())
+            self.textBoxNewLostAndFoundNote.setText(str(laf[0][4].strip()))
 
-            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0].STUDENT_NAME).strip())
-            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0].STUDENT_NUMBER).strip())
+            self.textBoxNewLostAndFoundStudentName.setText(str(laf[0][5]).strip())
+            self.textBoxNewLostAndFoundStudentNumber.setText(str(laf[0][6]).strip())
 
-            index = self.comboBoxNewLostAndFoundRoom.findText(laf[0].ROOM, QtCore.Qt.MatchFixedString)
+            index = self.comboBoxNewLostAndFoundRoom.findText(laf[0][1], QtCore.Qt.MatchFixedString)
             if index >= 0:
                 self.comboBoxNewLostAndFoundRoom.setCurrentIndex(index)
 
-            if str(laf[0].RETURNED).strip() == 'YES':
-                self.checkBoxNewLostAndFoundReturned.setChecked(True)
-                self.show_frame_returned_laf()
-            else:
-                self.checkBoxNewLostAndFoundReturned.setChecked(False)
-                self.show_frame_returned_laf()
+            self.checkBoxNewLostAndFoundReturned.setChecked(str(laf[0][8]).strip() == 'YES')
+            self.show_frame_returned_laf()
 
-            self.change_page(self.stackedWidget,self.pageNewLAF)
+
+            connection.close()
+            self.change_page(self.stackedWidget, self.pageNewLAF)
 
     def show_frame_returned_laf(self):
         if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -1687,15 +1703,16 @@ class LogBook(MainWindowBase, MainWindowUI):
 
     def export_data_sheet(self):
 
-        server = DatabaseHandler.get_server_string()
-        db_name = DatabaseHandler.get_database_name()
+        # server = DatabaseHandler.get_server_string()
+        # db_name = DatabaseHandler.get_database_name()
+        #
+        # conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
+        # conn_str = parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
+        # conn_str = 'mssql+pyodbc:///?odbc_connect=%s' % conn_str  # to stop sqlalchemy from complaining
 
-        conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
-        conn_str = parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
-        conn_str = 'mssql+pyodbc:///?odbc_connect=%s' % conn_str  # to stop sqlalchemy from complaining
-        reports_data = read_sql_query('SELECT * FROM Reports', conn_str)
+        reports_data = read_sql_query('SELECT * FROM Reports', DatabaseHandler.make_connection())
         year = str(datetime.datetime.now().year)
-        path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx',filter='.xlsx')[0]
+        path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx', filter='.xlsx')[0]
 
         book = Workbook()  # create new workbook
         book.remove(book.active)  # remove the default sheet
@@ -1704,13 +1721,13 @@ class LogBook(MainWindowBase, MainWindowUI):
         writer.book = book
 
         if reports_data is not None:
-            reports_obj = reports_data.select_dtypes(['object'])  # get the datatypes from the result
+            reports_obj = reports_data.select_dtypes(include=['object'])  # get the datatypes from the result
             reports_data[reports_obj.columns] = reports_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
 
-        lost_and_found_data = read_sql_query('SELECT * FROM LostAndFound', conn_str)
+        lost_and_found_data = read_sql_query('SELECT * FROM LostAndFound', DatabaseHandler.make_connection())
 
         if lost_and_found_data is not None:
-            lost_and_found_obj = lost_and_found_data.select_dtypes(['object'])  # get the datatypes from the result
+            lost_and_found_obj = lost_and_found_data.select_dtypes(include=['object'])  # get the datatypes from the result
             lost_and_found_data[lost_and_found_obj.columns] = lost_and_found_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
 
         if path != '':

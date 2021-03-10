@@ -40,7 +40,7 @@ class DatabaseHandler:
                 return
             query = f"BACKUP DATABASE [{get_database_name()}] TO DISK = N'{path}'"
 
-        connection = cls.__make_connection(True)
+        connection = cls.make_connection(True)
         cursor = connection.cursor()
         try:
             cursor.execute(query)
@@ -84,7 +84,7 @@ class DatabaseHandler:
             cls.__database_name = db_name
 
     @classmethod
-    def __make_connection(cls):
+    def make_connection(cls):
         db_file = resource_path(cls.__server_string)
         try:
             conn = sqlite3.connect(db_file)
@@ -94,9 +94,9 @@ class DatabaseHandler:
 
     # reusable query function
     @classmethod
-    def execute_query(cls, query, list_objects=None, commit=None):
+    def execute_query(cls, query, list_objects=None):
         try:
-            connection = cls.__make_connection()
+            connection = cls.make_connection()
             cursor = connection.cursor()
 
             if list_objects is not None:
@@ -104,10 +104,8 @@ class DatabaseHandler:
             else:
                 cursor.execute(query)
 
-            if commit is not None:
-                connection.commit()
-
-            return cursor
+            # returns connection and cursor as tuple [0] = connection, [1] = cursor
+            return connection, cursor
         except pyodbc.Error as err:
             # print("Couldn't connect (Connection timed out)")
             print(err)
@@ -115,7 +113,7 @@ class DatabaseHandler:
 
     @classmethod
     def commit(cls):
-        connection = cls.__make_connection()
+        connection = cls.make_connection()
         connection.commit()
 
     @staticmethod
@@ -132,7 +130,7 @@ class DatabaseHandler:
         sql_script_path = resource_path('LogbookDB.sql')
         query_create_db = open(sql_script_path, 'r').read()
 
-        connection = cls.__make_connection()
+        connection = cls.make_connection()
         cursor = connection.cursor()
         cursor.executescript(query_create_db)
         cursor.close()
@@ -270,7 +268,7 @@ class DatabaseHandler:
             );   
             '''
 
-            connection = cls.__make_connection(True)
+            connection = cls.make_connection(True)
             cursor = connection.cursor()
 
             cursor.execute(query_create_db)
