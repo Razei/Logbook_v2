@@ -86,7 +86,6 @@ class Countdown:
     def convert_time_format(time_stamp):
         if len(time_stamp) <= 5:
             time_stamp = time_stamp + ':00'
-
         return datetime.datetime.strptime(time_stamp, "%H:%M:%S")
 
     def calculate_countdown(self, time_stamp):

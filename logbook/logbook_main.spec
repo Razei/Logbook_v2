@@ -2,9 +2,6 @@
 
 block_cipher = None
 
-import importlib
-from pathlib import Path
-
 added_file = [
     ('views', 'views'),
     ('data', 'data'),
@@ -17,10 +14,10 @@ added_file = [
     ]
 
 a = Analysis(['logbook_main.py'],
-             pathex=['\\logbook_main.spec'],
+             pathex=['.\\..\\venv\\Lib\\site-packages'],
              binaries=[],
              datas=added_file,
-             hiddenimports=['openpyxl', 'PyQt5.uic','pyodbc'],
+             hiddenimports=['openpyxl', 'PyQt5.uic','pyodbc', 'qtpy'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -28,23 +25,18 @@ a = Analysis(['logbook_main.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
-
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
-
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='Logbookv2',
+          name='Logbook',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          upx_exclude=[],
-          runtime_tmpdir=None,
-          console=False , 
+          console=True,
           icon='images\\icons\\appicon.ico')
-
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -52,4 +44,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='Logbook v2')
+               name='Logbook')
