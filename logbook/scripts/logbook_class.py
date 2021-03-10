@@ -185,7 +185,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
-            connection.close()
+            if connection is not None:
+                connection.close()
             return
 
         rooms = cursor.fetchall()
@@ -408,7 +409,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
-            connection.close()
+            if connection is not None:
+                connection.close()
             return
 
         data = cursor.fetchall()
@@ -1078,7 +1080,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
             self.change_page(self.stackedWidget, self.pageReports)
-            connection.close()
+            if connection is not None:
+                connection.close()
             return
 
         connection.commit()
@@ -1168,7 +1171,8 @@ class LogBook(MainWindowBase, MainWindowUI):
             # validate the cursor for empty results
             if not DatabaseHandler.validate_cursor(cursor):
                 self.change_to_last_page()
-                connection.close()
+                if connection is not None:
+                    connection.close()
                 return
 
             log = cursor.fetchall()
@@ -1229,7 +1233,8 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
-            connection.close()
+            if connection is not None:
+                connection.close()
             return
 
         self.labelNumberProblems.setText(str(cursor.fetchone()[0]))
@@ -1372,7 +1377,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
             self.change_to_last_page()
-            connection.close()
+            if connection is not None:
+                connection.close()
             return
 
         connection.commit()
@@ -1395,7 +1401,8 @@ class LogBook(MainWindowBase, MainWindowUI):
             # validate the cursor for empty results
             if not DatabaseHandler.validate_cursor(cursor):
                 self.change_to_last_page()
-                connection.close()
+                if connection is not None:
+                    connection.close()
                 return
 
             laf = cursor.fetchall()
@@ -1709,6 +1716,9 @@ class LogBook(MainWindowBase, MainWindowUI):
         # conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
         # conn_str = parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
         # conn_str = 'mssql+pyodbc:///?odbc_connect=%s' % conn_str  # to stop sqlalchemy from complaining
+
+        if DatabaseHandler.get_offline_status():
+            return
 
         reports_data = read_sql_query('SELECT * FROM Reports', DatabaseHandler.make_connection())
         year = str(datetime.datetime.now().year)

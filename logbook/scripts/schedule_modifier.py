@@ -21,7 +21,8 @@ def get_database_schedules():
 
     # validate the cursor for empty results
     if not DatabaseHandler.validate_cursor(cursor):
-        connection.close()
+        if connection is not None:
+            connection.close()
         return
 
     schedule_data = cursor.fetchall()
@@ -52,7 +53,8 @@ def get_database_open_lab_schedules():
 
     # validate the cursor for empty results
     if not DatabaseHandler.validate_cursor(cursor):
-        connection.close()
+        if connection is not None:
+            connection.close()
         return
 
     schedule_data = cursor.fetchall()
@@ -176,6 +178,10 @@ class ScheduleModifier:
             schedules = cls.schedules
 
         layout = frame.layout()
+
+        if layout is None:
+            return
+
         column_count = layout.columnCount()
         row_count = layout.rowCount()
         room = comboBox.currentText().strip()

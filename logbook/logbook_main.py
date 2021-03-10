@@ -26,6 +26,15 @@ from scripts.settings_manager import SettingsManager
 # https://pypi.org/project/xlrd/ Version 1.2.0
 
 
+def center_widget(widget):
+    # center the window
+    window_geometry_dialog = widget.frameGeometry()
+    screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+    center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+    window_geometry_dialog.moveCenter(center_point)
+    widget.move(window_geometry_dialog.topLeft())
+
+
 def message(message, info, title=None):
     msg = QtWidgets.QMessageBox()
     msg.setText(message)
@@ -39,12 +48,12 @@ def message(message, info, title=None):
 
     flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
     msg.setWindowFlags(flags)
-    msg.setStyleSheet(logbook_class.LogBook.get_theme())
+    msg.setStyleSheet(SettingsManager.get_theme_from_settings())
     msg = qtmodern_windows.ModernWindow(msg)
     msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
     msg.setGeometry(0, 0, size.width(), size.height())
 
-    logbook_class.center_widget(msg)
+    center_widget(msg)
 
     msg.btnMinimize.setVisible(False)
     msg.btnMaximize.setVisible(False)
@@ -53,31 +62,54 @@ def message(message, info, title=None):
     QtWidgets.QApplication.processEvents()
 
 
+def open_dialog(message):
+    dialog = Dialog()
+    dialog.buttonBox.clear()
+    ok_button = QtWidgets.QPushButton(dialog.tr("&Ok"))
+    ok_button.setDefault(True)
+    ok_button.setAccessibleDescription('neutralButton')
+    ok_button.setMinimumSize(100, 25)
+    ok_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+    dialog.buttonBox.addButton(ok_button, QtWidgets.QDialogButtonBox.AcceptRole)
+    return dialog.show_dialog(message)
+
+
 def pre_run_check(settings):
     db_name = settings['database_name']
     path = os.path.dirname(os.path.abspath(__file__))
-    test = os.listdir(f"{path}\\data")
-    year = str(datetime.now().year)
+    database_files = os.listdir(f"{path}\\data")
+    year = datetime.now().year
 
-    if not any(db_name in s for s in test):
+    if not any(db_name in s for s in database_files):
         dialog = Dialog()
-        if dialog.show_dialog('It seems a database doesn\'t exist. \nWould you like to create a new one?'):
-            DatabaseHandler.create_new_database_sqlite()
+        if dialog.show_dialog('It seems the database file doesn\'t exist. \nWould you like Logbook to create it?'):
+            new_db_name = f"LogBook{year}"
+
+            try:
+                open(f"{path}\\data\\{new_db_name}.db", "x")
+            except FileExistsError:
+                pass
+
+            DatabaseHandler.set_database_name(new_db_name)
+            DatabaseHandler.create_tables_from_script()
+            open_dialog(f'Successfully created database {db_name}')
+        else:
+            DatabaseHandler.set_offline(True)
 
     db_year = db_name.replace('LogBook', '')
-    if int(year) > int(db_year):
-        dialog = Dialog()
-        dialog.buttonBox.clear()
-        ok_button = QtWidgets.QPushButton(dialog.tr("&Ok"))
-        ok_button.setDefault(True)
-        ok_button.setAccessibleDescription('neutralButton')
-        ok_button.setMinimumSize(100, 25)
-        ok_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        dialog.buttonBox.addButton(ok_button, QtWidgets.QDialogButtonBox.AcceptRole)
+    if year > int(db_year):
 
-        if dialog.show_dialog('Happy New Year! Time to make a new database'):
-            db_name = DatabaseHandler.create_new_database_sqlite()
-            message(f'Successfully created database {db_name}', 'Success!')
+        if open_dialog('Happy New Year! Time to make a new database.'):
+            new_db_name = f"LogBook{year}"
+
+            try:
+                open(f"{path}\\data\\{new_db_name}.db", "x")
+            except FileExistsError:
+                pass
+
+            DatabaseHandler.set_database_name(new_db_name)
+            db_name = DatabaseHandler.create_tables_from_script()
+            open_dialog(f'Successfully created database {db_name}.db')
 
 
 if __name__ == '__main__':

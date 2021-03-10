@@ -18,6 +18,7 @@ def get_server_string_setting():
 
 def export_database_name(db_name):
     settings = SettingsManager.get_settings()
+    settings['server_string'] = f"data\\{db_name}.db"
     settings['database_name'] = db_name
     SettingsManager.export_settings(settings)
 
@@ -26,8 +27,17 @@ class DatabaseHandler:
     __server_string = get_server_string_setting()
     __database_name = get_database_name()
     __mode = 'SQLite'
+    __offline = False
     __user = ''
     __password = ''
+
+    @classmethod
+    def get_offline_status(cls):
+        return cls.__offline
+
+    @classmethod
+    def set_offline(cls, param):
+        cls.__offline = param
 
     @classmethod
     def auto_backup(cls, default=None):
@@ -95,21 +105,24 @@ class DatabaseHandler:
     # reusable query function
     @classmethod
     def execute_query(cls, query, list_objects=None):
-        try:
-            connection = cls.make_connection()
-            cursor = connection.cursor()
+        if not cls.__offline:
+            try:
+                connection = cls.make_connection()
+                cursor = connection.cursor()
 
-            if list_objects is not None:
-                cursor.execute(query, list_objects)
-            else:
-                cursor.execute(query)
+                if list_objects is not None:
+                    cursor.execute(query, list_objects)
+                else:
+                    cursor.execute(query)
 
-            # returns connection and cursor as tuple [0] = connection, [1] = cursor
-            return connection, cursor
-        except pyodbc.Error as err:
-            # print("Couldn't connect (Connection timed out)")
-            print(err)
-            return
+                # returns connection and cursor as tuple [0] = connection, [1] = cursor
+                return connection, cursor
+            except pyodbc.Error as err:
+                # print("Couldn't connect (Connection timed out)")
+                print(err)
+                return
+        else:
+            return None, None
 
     @classmethod
     def commit(cls):
@@ -123,11 +136,9 @@ class DatabaseHandler:
         return True
 
     @classmethod
-    def create_new_database_sqlite(cls):
-        import datetime
-        year = datetime.datetime.now().year
-        database_name = 'LogBook' + str(year)
-        sql_script_path = resource_path('LogbookDB.sql')
+    def create_tables_from_script(cls):
+        database_name = cls.get_database_name()
+        sql_script_path = resource_path('data\\sql\\LogbookDB.sql')
         query_create_db = open(sql_script_path, 'r').read()
 
         connection = cls.make_connection()
@@ -135,7 +146,6 @@ class DatabaseHandler:
         cursor.executescript(query_create_db)
         cursor.close()
 
-        cls.__database_name = database_name
         export_database_name(database_name)
 
         return database_name

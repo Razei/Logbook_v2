@@ -7,6 +7,7 @@ from pathlib import Path
 
 added_file = [
     ('views', 'views'),
+    ('data', 'data'),
     ('scripts','scripts'),
     ('themes', 'themes'), 
     ('images', 'images'),
