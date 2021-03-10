@@ -95,9 +95,8 @@ class LogBook(MainWindowBase, MainWindowUI):
         '''Shaniquo's Laptop, DO NOT DELETE'''
         # self.server_string = 'DESKTOP-U3EO5IK\\SQLEXPRESS'
         # self.server_string ='DESKTOP-SIF9RD3\\SQLEXPRESS'
-
-        self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
-        DatabaseHandler.set_server_string(self.server_string)
+        # self.server_string = 'LAPTOP-L714M249\\SQLEXPRESS'
+        # DatabaseHandler.set_server_string(self.server_string)
 
         self.server_string = DatabaseHandler.get_server_string()
 
@@ -168,7 +167,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         months = ['All', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
         themes = ['Classic Light', 'Centennial Dark']
         formats = ['24 HR', '12 HR']
-        rooms_query = f'SELECT ROOM FROM dbo.Rooms'
+        rooms_query = f'SELECT ROOM FROM Rooms'
         room_list = []
 
         self.populate_combo_box(self.comboBoxReportsMonth, months)
@@ -423,7 +422,11 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         # QTableWidget requires you to set the amount of rows/columns needed before you populate it
         table.setRowCount(len(data))
-        table.setColumnCount(len(data[0]))
+
+        if len(data) != 0:
+            table.setColumnCount(len(data[0]))
+        else:
+            table.setColumnCount(0)
 
         if t_problems and t_problems is not None:
             table.setColumnHidden(0, True)
@@ -996,7 +999,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 row_index = table.currentRow()  # get index of current row
                 column_index = table.item(row_index, 0).text()
                 first_column = DatabaseHandler.execute_query(f"SELECT column_name from information_schema.columns where table_name = '{table_name}' and ordinal_position = 1").fetchone()
-                delete_query = f'DELETE FROM dbo.{table_name} WHERE {str(first_column[0])} = {column_index};'
+                delete_query = f'DELETE FROM {table_name} WHERE {str(first_column[0])} = {column_index};'
                 DatabaseHandler.execute_query(delete_query).commit()
                 self.refresh_tables()
 
@@ -1041,14 +1044,14 @@ class LogBook(MainWindowBase, MainWindowUI):
 
         if self.stored_id == 0:
             query = f'''
-            INSERT INTO dbo.Reports
+            INSERT INTO Reports
                 (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) 
             VALUES 
                 (?, ?, ?, ?, ?, ?, ?)'''
             list_objects = [date, name, room, issue, note, resolution, fixed]
         else:
             query = f'''
-            UPDATE dbo.Reports 
+            UPDATE Reports 
             SET 
                 DATE = ?, 
                 NAME = ?, 
@@ -1062,14 +1065,12 @@ class LogBook(MainWindowBase, MainWindowUI):
 
             list_objects = [date, name, room, issue, note, resolution, fixed]
 
-        cursor = DatabaseHandler.execute_query(query, list_objects)
+        cursor = DatabaseHandler.execute_query(query, list_objects, commit=True)
 
         # validate the cursor for empty results
         if not DatabaseHandler.validate_cursor(cursor):
             self.change_page(self.stackedWidget, self.pageReports)
             return
-
-        cursor.commit()
 
         self.refresh_tables()
         self.change_to_last_page()
@@ -1082,9 +1083,9 @@ class LogBook(MainWindowBase, MainWindowUI):
             if self.comboBoxLostAndFoundMonth.currentText() != 'All':
                 month = self.comboBoxLostAndFoundMonth.currentText()
                 query = f'''
-                    SELECT * FROM dbo.LostAndFound 
+                    SELECT * FROM LostAndFound 
                     where 
-                    MONTH(DATE_FOUND) = (SELECT MONTH('{month}' + '2020')) AND
+                    DATE_FOUND = (SELECT '{month}' + '2020') AND
                     (
                         ITEM_DESC like '%{keyword}%'or 
                         NAME like '%{keyword}%' or 
@@ -1098,7 +1099,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 '''
             else:
                 query = f'''
-                    SELECT * FROM dbo.LostAndFound 
+                    SELECT * FROM LostAndFound 
                     where 
                         ITEM_DESC like '%{keyword}%'or 
                         NAME like '%{keyword}%' or 
@@ -1116,9 +1117,9 @@ class LogBook(MainWindowBase, MainWindowUI):
             if self.comboBoxReportsMonth.currentText() != 'All':
                 month = self.comboBoxReportsMonth.currentText()
                 query = f'''
-                            SELECT * FROM dbo.Reports 
+                            SELECT * FROM Reports 
                             where 
-                            MONTH(DATE) = (SELECT MONTH('{month}' + '2020')) AND
+                            DATE = (SELECT '{month}' + '2020') AND
                             (
                                 ISSUE like '%{keyword}%'or 
                                 NAME like '%{keyword}%' or 
@@ -1130,7 +1131,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                         '''
             else:
                 query = f'''
-                    SELECT * FROM dbo.Reports 
+                    SELECT * FROM Reports 
                     where ISSUE like '%{keyword}%'or 
                     NAME like '%{keyword}%' or 
                     ROOM like '%{keyword}%' or 
@@ -1150,7 +1151,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             report_id = table.item(row_index, 0).text()
             self.stored_id = report_id
 
-            query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from dbo.Reports WHERE REPORT_ID = {report_id};'
+            query = f'SELECT DATE, NAME, ROOM, ISSUE, NOTE, RESOLUTION, FIXED from Reports WHERE REPORT_ID = {report_id};'
             cursor = DatabaseHandler.execute_query(query)
 
             # validate the cursor for empty results
@@ -1161,23 +1162,20 @@ class LogBook(MainWindowBase, MainWindowUI):
             log = cursor.fetchall()
             self.clear_form()
             self.labelNewLog.setText('EDIT LOG')
-            self.dateEditNewLog.setDate(log[0].DATE)
+            self.dateEditNewLog.setDate(datetime.datetime.strptime(log[0][0], '%Y-%m-%d'))
             self.dateEditNewLog.setCurrentSectionIndex(2)
-            self.textBoxNewLogName.setText(str(log[0].NAME).strip())
-            self.textBoxNewLogIssue.setText(str(log[0].ISSUE).strip())
-            self.textBoxNewLogNote.setText(str(log[0].NOTE.strip()))
-            self.textBoxNewLogResolution.setText(str(log[0].RESOLUTION).strip())
+            self.textBoxNewLogName.setText(str(log[0][1]).strip())
+            self.textBoxNewLogIssue.setText(str(log[0][3]).strip())
+            self.textBoxNewLogNote.setText(str(log[0][4].strip()))
+            self.textBoxNewLogResolution.setText(str(log[0][5].strip()))
 
-            index = self.comboBoxRoom.findText(log[0].ROOM, QtCore.Qt.MatchFixedString)
+            index = self.comboBoxRoom.findText(log[0][2], QtCore.Qt.MatchFixedString)
             if index >= 0:
                 self.comboBoxRoom.setCurrentIndex(index)
 
-            if str(log[0].FIXED).strip() == 'YES':
-                self.checkBoxFixed.setChecked(True)
-            else:
-                self.checkBoxFixed.setChecked(False)
+            self.checkBoxFixed.setChecked(str(log[0][6]).strip() == 'YES')
 
-            self.change_page(self.stackedWidget,self.pageNewLog)
+            self.change_page(self.stackedWidget, self.pageNewLog)
 
     def returned_checkbox_changed(self):  # this way it only happens if the state was changed
         if self.checkBoxNewLostAndFoundReturned.isChecked():
@@ -1195,14 +1193,16 @@ class LogBook(MainWindowBase, MainWindowUI):
     def refresh_tables(self):
         import calendar
         month = calendar.month_name[datetime.datetime.now().month]  # converting the month number to a string
+        month_num = f"{datetime.datetime.strptime(month, '%B').month:02d}"
+
         index = self.comboBoxReportsMonth.findText(month)
         if index >= 0:
             self.comboBoxReportsMonth.setCurrentIndex(index)
 
-        reports_query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
-        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM dbo.Reports WHERE FIXED =\'NO\''
-        lost_and_found_query = 'SELECT * FROM dbo.LostAndFound'
-        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM dbo.Reports WHERE FIXED =\'NO\''
+        reports_query = f"SELECT * FROM Reports WHERE strftime('%m', DATE) = '{month_num}'"
+        problems_query = 'SELECT REPORT_ID, DATE, NAME, ROOM,ISSUE,NOTE FROM Reports WHERE FIXED =\'NO\''
+        lost_and_found_query = 'SELECT * FROM LostAndFound'
+        problems_count_query = 'SELECT COUNT(REPORT_ID) FROM Reports WHERE FIXED =\'NO\''
 
         self.populate_table(self.tableWidgetReports, reports_query)
         self.populate_table(self.tableWidgetProblems, problems_query, True)
@@ -1223,25 +1223,27 @@ class LogBook(MainWindowBase, MainWindowUI):
     def sort_by_month(self, mode, input_month=None):  # setting an optional argument to null since python has no overloading
         if mode == 'Reports':
             if input_month is not None:
-                query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{input_month}' + '2020'))"
+                month_num = f"{datetime.datetime.strptime(input_month, '%B').month:02d}"
+                query = f"SELECT * FROM Reports WHERE strftime('%m', DATE) = '{month_num}'"
             else:
                 month = self.sender().currentText()  # receive the combobox's current text
                 if month == 'All':
-                    query = f"SELECT * FROM dbo.Reports"
+                    query = f"SELECT * FROM Reports"
                 else:
-                    query = f"SELECT * FROM dbo.Reports WHERE MONTH(DATE) = (SELECT MONTH('{month}' + '2020'))"
+                    month_num = f"{datetime.datetime.strptime(month, '%B').month:02d}"
+                    query = f"SELECT * FROM Reports WHERE strftime('%m', DATE) = '{month_num}'"
             self.populate_table(self.tableWidgetReports, query)
             self.cleanup_empty_cells(self.tableWidgetReports)
 
         if mode == 'LostAndFound':
             if input_month is not None:
-                query = f"SELECT * FROM dbo.LostAndFound WHERE MONTH(DATE_FOUND) = (SELECT MONTH('{input_month}' + '2020'))"
+                query = f"SELECT * FROM LostAndFound WHERE DATE_FOUND = (SELECT '{input_month}' + '2020')"
             else:
                 month = self.sender().currentText()  # receive the combobox's current text
                 if month == 'All':
-                    query = f"SELECT * FROM dbo.LostAndFound"
+                    query = f"SELECT * FROM LostAndFound"
                 else:
-                    query = f"SELECT * FROM dbo.LostAndFound WHERE MONTH(DATE_FOUND) = (SELECT MONTH('{month}' + '2020'))"
+                    query = f"SELECT * FROM LostAndFound WHERE DATE_FOUND = (SELECT '{month}' + '2020')"
             self.populate_table(self.tableWidgetLostAndFound, query)
             self.cleanup_empty_cells(self.tableWidgetLostAndFound)
 
@@ -1293,7 +1295,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 returned_date = self.dateEditReturnedNewLostAndFound.date().toString('yyyy-MM-dd')
                 returned = 'YES'
                 query = f'''
-                            INSERT INTO dbo.LostAndFound
+                            INSERT INTO LostAndFound
                                 (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) 
                             VALUES 
                                 (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
@@ -1301,7 +1303,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             else:
                 returned = 'NO'
                 query = f'''
-                            INSERT INTO dbo.LostAndFound
+                            INSERT INTO LostAndFound
                                 (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED) 
                             VALUES 
                                 (?, ?, ?, ?, ?, ?, ?, ?)'''
@@ -1315,7 +1317,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 student_number = self.textBoxNewLostAndFoundStudentNumber.text()
 
                 query = f'''
-                UPDATE dbo.LostAndFound 
+                UPDATE LostAndFound 
                 SET 
                     DATE_FOUND = ?, 
                     ROOM = ?, 
@@ -1335,7 +1337,7 @@ class LogBook(MainWindowBase, MainWindowUI):
                 student_name = ''
                 student_number = ''
                 query = f'''
-                UPDATE dbo.LostAndFound 
+                UPDATE LostAndFound 
                 SET 
                     DATE_FOUND = ?, 
                     ROOM = ?, 
@@ -1357,7 +1359,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             self.change_to_last_page()
             return
 
-        cursor.commit()
+        DatabaseHandler.commit()
         self.refresh_tables()
         self.change_page(self.stackedWidget,self.pageLostAndFound)
 
@@ -1370,7 +1372,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             entry_id = table.item(row_index, 0).text()
             self.stored_id = entry_id
 
-            query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM dbo.LostAndFound WHERE ENTRY_ID = {entry_id};'
+            query = f'SELECT DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED FROM LostAndFound WHERE ENTRY_ID = {entry_id};'
             cursor = DatabaseHandler.execute_query(query)
 
             # validate the cursor for empty results
@@ -1691,7 +1693,7 @@ class LogBook(MainWindowBase, MainWindowUI):
         conn_str = 'Driver={SQL Server};Server=' + server + ';Database=' + db_name + ';Trusted_Connection=yes;'  # connection string
         conn_str = parse.quote_plus(conn_str)  # to stop sqlalchemy from complaining
         conn_str = 'mssql+pyodbc:///?odbc_connect=%s' % conn_str  # to stop sqlalchemy from complaining
-        reports_data = read_sql_query('SELECT * FROM dbo.Reports', conn_str)
+        reports_data = read_sql_query('SELECT * FROM Reports', conn_str)
         year = str(datetime.datetime.now().year)
         path = QtWidgets.QFileDialog.getSaveFileName(QtWidgets.QFileDialog(), 'Save File', f'Reports{year}.xlsx',filter='.xlsx')[0]
 
@@ -1705,7 +1707,7 @@ class LogBook(MainWindowBase, MainWindowUI):
             reports_obj = reports_data.select_dtypes(['object'])  # get the datatypes from the result
             reports_data[reports_obj.columns] = reports_obj.apply(lambda x: x.str.strip())  # removing spaces for all columns
 
-        lost_and_found_data = read_sql_query('SELECT * FROM dbo.LostAndFound', conn_str)
+        lost_and_found_data = read_sql_query('SELECT * FROM LostAndFound', conn_str)
 
         if lost_and_found_data is not None:
             lost_and_found_obj = lost_and_found_data.select_dtypes(['object'])  # get the datatypes from the result

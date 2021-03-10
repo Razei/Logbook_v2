@@ -27,7 +27,7 @@ def read_reports():
     columns.reverse()
 
     cursor.executemany('INSERT INTO dbo.Reports (DATE,NAME,ROOM,ISSUE,NOTE,RESOLUTION,FIXED) VALUES (?, ?, ?, ?, ?, ?, ?)', columns)
-    cursor.commit()
+    DatabaseHandler.commit()
 
 
 def read_lost_and_found():
@@ -50,7 +50,7 @@ def read_lost_and_found():
             cursor.execute('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)', modified_entry)
         else:
             cursor.execute('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', entry)
-        cursor.commit()
+        DatabaseHandler.commit()
 
     # cursor.executemany('INSERT INTO dbo.LostAndFound (DATE_FOUND,ROOM,NAME,ITEM_DESC,NOTE,STUDENT_NAME,STUDENT_NUMBER,RETURNED_DATE,RETURNED) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', columns)
 

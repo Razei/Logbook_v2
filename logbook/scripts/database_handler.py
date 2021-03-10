@@ -1,4 +1,8 @@
 import pyodbc
+import sqlite3
+from sqlite3 import Error
+
+from scripts.local_pather import resource_path
 from scripts.settings_manager import SettingsManager
 
 
@@ -21,23 +25,9 @@ def export_database_name(db_name):
 class DatabaseHandler:
     __server_string = get_server_string_setting()
     __database_name = get_database_name()
-    __user = 'Helpdesk'
-    __password = 'b1pa55'
-
-    @classmethod
-    def __make_connection(cls, default=None):
-        try:
-            if default is None:
-                connection = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=cls.__server_string,
-                                            database=cls.__database_name, timeout=5,
-                                            trusted_connection='Yes')
-            else:
-                connection = pyodbc.connect(driver='{ODBC Driver 17 for SQL Server}', host=cls.__server_string,
-                                            timeout=5,
-                                            trusted_connection='Yes', autocommit=True)
-            return connection
-        except pyodbc.Error:
-            raise pyodbc.Error
+    __mode = 'SQLite'
+    __user = ''
+    __password = ''
 
     @classmethod
     def auto_backup(cls, default=None):
@@ -93,12 +83,20 @@ class DatabaseHandler:
         if db_name is not None:
             cls.__database_name = db_name
 
+    @classmethod
+    def __make_connection(cls):
+        db_file = resource_path(cls.__server_string)
+        try:
+            conn = sqlite3.connect(db_file)
+            return conn
+        except Error as e:
+            print(e)
+
     # reusable query function
     @classmethod
-    def execute_query(cls, query, list_objects=None):
+    def execute_query(cls, query, list_objects=None, commit=None):
         try:
             connection = cls.__make_connection()
-
             cursor = connection.cursor()
 
             if list_objects is not None:
@@ -106,17 +104,43 @@ class DatabaseHandler:
             else:
                 cursor.execute(query)
 
+            if commit is not None:
+                connection.commit()
+
             return cursor
         except pyodbc.Error as err:
             # print("Couldn't connect (Connection timed out)")
             print(err)
             return
 
+    @classmethod
+    def commit(cls):
+        connection = cls.__make_connection()
+        connection.commit()
+
     @staticmethod
     def validate_cursor(cursor):
         if cursor is None or cursor.rowcount == 0:
             return False
         return True
+
+    @classmethod
+    def create_new_database_sqlite(cls):
+        import datetime
+        year = datetime.datetime.now().year
+        database_name = 'LogBook' + str(year)
+        sql_script_path = resource_path('LogbookDB.sql')
+        query_create_db = open(sql_script_path, 'r').read()
+
+        connection = cls.__make_connection()
+        cursor = connection.cursor()
+        cursor.executescript(query_create_db)
+        cursor.close()
+
+        cls.__database_name = database_name
+        export_database_name(database_name)
+
+        return database_name
 
     @classmethod
     def create_new_database(cls):
@@ -135,7 +159,6 @@ class DatabaseHandler:
         # check manually I guess ¯\_(ツ)_/¯
 
         cursor = DatabaseHandler.execute_query(query_create_tables)
-
         if not DatabaseHandler.validate_cursor(cursor):  # only do this if the cursor returns no results
             query_create_db = f'CREATE DATABASE {database_name};'
 

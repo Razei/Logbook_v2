@@ -7,7 +7,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 from scripts.database_handler import DatabaseHandler
 from scripts.dialog_box import Dialog
-from scripts import logbook_class
 from PyQt5 import QtGui, QtCore, QtWidgets
 from scripts.settings_manager import SettingsManager
 
@@ -56,16 +55,16 @@ def message(message, info, title=None):
 
 def pre_run_check(settings):
     db_name = settings['database_name']
-    query = f'SELECT NAME from sys.databases WHERE NAME = \'{db_name}\''
-    cursor = DatabaseHandler.execute_query(query)
+    path = os.path.dirname(os.path.abspath(__file__))
+    test = os.listdir(f"{path}\\data")
     year = str(datetime.now().year)
 
-    if not DatabaseHandler.validate_cursor(cursor):
+    if not any(db_name in s for s in test):
         dialog = Dialog()
         if dialog.show_dialog('It seems a database doesn\'t exist. \nWould you like to create a new one?'):
-            DatabaseHandler.create_new_database()
+            DatabaseHandler.create_new_database_sqlite()
 
-    db_year = db_name.replace('ReportLog', '')
+    db_year = db_name.replace('LogBook', '')
     if int(year) > int(db_year):
         dialog = Dialog()
         dialog.buttonBox.clear()
@@ -77,16 +76,18 @@ def pre_run_check(settings):
         dialog.buttonBox.addButton(ok_button, QtWidgets.QDialogButtonBox.AcceptRole)
 
         if dialog.show_dialog('Happy New Year! Time to make a new database'):
-            db_name = DatabaseHandler.create_new_database()
+            db_name = DatabaseHandler.create_new_database_sqlite()
             message(f'Successfully created database {db_name}', 'Success!')
 
 
 if __name__ == '__main__':
     # create new application
     app = QApplication(sys.argv)
-    settings = logbook_class.LogBook.get_settings()
-    pre_run_check(settings)
+    pre_run_check(SettingsManager.get_settings())
 
+    from scripts import logbook_class
+
+    settings = logbook_class.LogBook.get_settings()
     path = os.path.dirname(os.path.abspath(__file__))
     theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
 

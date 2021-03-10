@@ -1,11 +1,11 @@
 {
   "theme_choice": {
-    "name": "centennial_dark"
+    "name": "classic_light"
   },
-  "server_string": "LAPTOP-L714M249\\SQLEXPRESS",
+  "server_string": "data\\LogBook2021.db",
   "backup_path": "",
   "time_format": "12 HR",
-  "database_name": "ReportLog2020",
+  "database_name": "LogBook2021",
   "theme": {
     "classic_light": {
       "theme_name": "Classic Light",

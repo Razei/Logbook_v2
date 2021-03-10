@@ -15,7 +15,7 @@ def get_database_schedules():
     schedule_objects = []  # for holding a list of schedule objects
 
     # query stuff
-    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.Schedule ORDER BY DAY, ROOM, START_TIME"
+    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM Schedule ORDER BY DAY, ROOM, START_TIME"
     cursor = DatabaseHandler.execute_query(query)
 
     # validate the cursor for empty results
@@ -27,9 +27,15 @@ def get_database_schedules():
     # loop through the cursor and add data to the scheduleObj class
     for sch_time in schedule_data:
         # the schedule object holds the room number, day, start time, and end time
-        schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(),
-                                            sch_time.START_TIME.isoformat(timespec='seconds'),
-                                            sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
+        schedule_objects.append(
+            ScheduleObj(
+                sch_time[1].strip(), sch_time[2].strip(),
+                datetime.strptime(sch_time[3].strip(), '%H:%M').time().isoformat(timespec='seconds'),
+                datetime.strptime(sch_time[4].strip(), '%H:%M').time().isoformat(timespec='seconds'),
+                sch_time[0]
+            )
+        )
+
     cursor.close()
     return schedule_objects
 
@@ -39,7 +45,7 @@ def get_database_open_lab_schedules():
     schedule_objects = []  # for holding a list of schedule objects
 
     # query stuff
-    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM dbo.OpenLabSchedule ORDER BY DAY, ROOM, START_TIME"
+    query = f"SELECT SCHEDULE_ID, ROOM, DAY, START_TIME, END_TIME FROM OpenLabSchedule ORDER BY DAY, ROOM, START_TIME"
     cursor = DatabaseHandler.execute_query(query)
 
     # validate the cursor for empty results
@@ -51,9 +57,14 @@ def get_database_open_lab_schedules():
     # loop through the cursor and add data to the scheduleObj class
     for sch_time in schedule_data:
         # the schedule object holds the room number, day, start time, and end time
-        schedule_objects.append(ScheduleObj(sch_time.ROOM.strip(), sch_time.DAY.strip(),
-                                            sch_time.START_TIME.isoformat(timespec='seconds'),
-                                            sch_time.END_TIME.isoformat(timespec='seconds'), sch_time.SCHEDULE_ID))
+        schedule_objects.append(
+            ScheduleObj(
+                sch_time[1].strip(), sch_time[2].strip(),
+                datetime.strptime(sch_time[3].strip(), '%H:%M').time().isoformat(timespec='seconds'),
+                datetime.strptime(sch_time[4].strip(), '%H:%M').time().isoformat(timespec='seconds'),
+                sch_time[0]
+            )
+        )
     cursor.close()
     return schedule_objects
 
@@ -259,9 +270,9 @@ class ScheduleModifier:
 
         if schedules is not None:
             if mode == 'Open':
-                table_name = 'dbo.OpenLabSchedule'
+                table_name = 'OpenLabSchedule'
             else:
-                table_name = 'dbo.Schedule'
+                table_name = 'Schedule'
 
             query = f'SELECT ROOM,DAY,START_TIME,END_TIME from {table_name}'
             cursor = DatabaseHandler.execute_query(query)
@@ -281,7 +292,7 @@ class ScheduleModifier:
                         cursor = DatabaseHandler.execute_query(query, current_room)
 
                         if DatabaseHandler.validate_cursor(cursor):
-                            cursor.commit()
+                            DatabaseHandler.commit()
                             cursor.close()
 
             # add new data
@@ -294,7 +305,7 @@ class ScheduleModifier:
                         (?, ?, ?, ?)'''  # query string
                     list_objects = [schedules[i].room, schedules[i].day, schedules[i].start_time, schedules[i].end_time]  # variables to substitute '?' in the query string
                     cursor = DatabaseHandler.execute_query(query, list_objects)  # passing both to the database handler to do the rest
-                    cursor.commit()
+                    DatabaseHandler.commit()
                     cursor.close()
 
         if mode == 'Open':
