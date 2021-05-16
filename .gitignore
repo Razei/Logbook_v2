@@ -1,4 +1,15 @@
 # Created by .ignore support plugin (hsz.mobi)
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
