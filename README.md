@@ -10,15 +10,18 @@ Made while learning how to program using Python for our Work Term, with knowledg
 
 ***
 
-
-## Building the app
-`build.bat` was written to execute the necessary commands to build the app and also immediately run the built `.exe` to test it.
-
 ## Installing Dependencies
 To install virtual environment, run `install_dependencies.bat`
 
+<br>
+
 ## Freezing Dependencies
 When new modules are added, run `store_dependencies.bat`
+
+<br>
+
+## Building the app
+`build.bat` was written to execute the necessary commands to build the app and also immediately run the built `.exe` to test it.
 
 ***
 
