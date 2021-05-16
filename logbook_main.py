@@ -7,24 +7,17 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 from scripts.database_handler import DatabaseHandler
 from scripts.dialog_box import Dialog
-from scripts import logbook_class
 from PyQt5 import QtGui, QtCore, QtWidgets
 from scripts.settings_manager import SettingsManager
 
-# Logbook v2 written in Python 3.8
-# by Jarod Lavine and Shaniquo McKenzie
 
-# learning how to program using python for work term
-# with knowledge from COMP-229, COMP-214, COMP-125 and COMP-228
-# with help from various stackoverflow answers :)
-
-# using libraries from:
-# https://github.com/gmarull/qtmodern Version 0.2.0
-# https://www.qt.io/qt-for-python Version 5.14.1
-# https://pandas.pydata.org/ Version 1.0.1
-# https://pypi.org/project/openpyxl/ Version 3.0.3
-# https://pypi.org/project/SQLAlchemy/ Version 1.3.13
-# https://pypi.org/project/xlrd/ Version 1.2.0
+def center_widget(widget):
+    # center the window
+    window_geometry_dialog = widget.frameGeometry()
+    screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
+    center_point = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
+    window_geometry_dialog.moveCenter(center_point)
+    widget.move(window_geometry_dialog.topLeft())
 
 
 def message(message, info, title=None):
@@ -40,12 +33,12 @@ def message(message, info, title=None):
 
     flags = QtCore.Qt.WindowFlags(QtCore.Qt.WindowStaysOnTopHint)
     msg.setWindowFlags(flags)
-    msg.setStyleSheet(logbook_class.LogBook.get_theme())
+    msg.setStyleSheet(SettingsManager.get_theme_from_settings())
     msg = qtmodern_windows.ModernWindow(msg)
     msg.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowSystemMenuHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.WindowModal)
     msg.setGeometry(0, 0, size.width(), size.height())
 
-    logbook_class.center_widget(msg)
+    center_widget(msg)
 
     msg.btnMinimize.setVisible(False)
     msg.btnMaximize.setVisible(False)
@@ -54,39 +47,64 @@ def message(message, info, title=None):
     QtWidgets.QApplication.processEvents()
 
 
+def open_dialog(message):
+    dialog = Dialog()
+    dialog.buttonBox.clear()
+    ok_button = QtWidgets.QPushButton(dialog.tr("&Ok"))
+    ok_button.setDefault(True)
+    ok_button.setAccessibleDescription('neutralButton')
+    ok_button.setMinimumSize(100, 25)
+    ok_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+    dialog.buttonBox.addButton(ok_button, QtWidgets.QDialogButtonBox.AcceptRole)
+    return dialog.show_dialog(message)
+
+
 def pre_run_check(settings):
     db_name = settings['database_name']
-    query = f'SELECT NAME from sys.databases WHERE NAME = \'{db_name}\''
-    cursor = DatabaseHandler.execute_query(query)
-    year = str(datetime.now().year)
+    path = os.path.dirname(os.path.abspath(__file__))
+    database_files = os.listdir(f"{path}\\data")
+    year = datetime.now().year
 
-    if not DatabaseHandler.validate_cursor(cursor):
+    if not any(db_name in s for s in database_files):
         dialog = Dialog()
-        if dialog.show_dialog('It seems a database doesn\'t exist. \nWould you like to create a new one?'):
-            DatabaseHandler.create_new_database()
+        if dialog.show_dialog('It seems the database file doesn\'t exist. \nWould you like Logbook to create it?'):
+            new_db_name = f"LogBook{year}"
 
-    db_year = db_name.replace('ReportLog', '')
-    if int(year) > int(db_year):
-        dialog = Dialog()
-        dialog.buttonBox.clear()
-        ok_button = QtWidgets.QPushButton(dialog.tr("&Ok"))
-        ok_button.setDefault(True)
-        ok_button.setAccessibleDescription('neutralButton')
-        ok_button.setMinimumSize(100, 25)
-        ok_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        dialog.buttonBox.addButton(ok_button, QtWidgets.QDialogButtonBox.AcceptRole)
+            try:
+                open(f"{path}\\data\\{new_db_name}.db", "x")
+            except FileExistsError:
+                pass
 
-        if dialog.show_dialog('Happy New Year! Time to make a new database'):
-            db_name = DatabaseHandler.create_new_database()
-            message(f'Successfully created database {db_name}', 'Success!')
+            DatabaseHandler.set_database_name(new_db_name)
+            DatabaseHandler.create_tables_from_script()
+            open_dialog(f'Successfully created database {db_name}')
+        else:
+            DatabaseHandler.set_offline(True)
+
+    db_year = db_name.replace('LogBook', '')
+    if year > int(db_year):
+
+        if open_dialog('Happy New Year! Time to make a new database.'):
+            new_db_name = f"LogBook{year}"
+
+            try:
+                open(f"{path}\\data\\{new_db_name}.db", "x")
+            except FileExistsError:
+                pass
+
+            DatabaseHandler.set_database_name(new_db_name)
+            db_name = DatabaseHandler.create_tables_from_script()
+            open_dialog(f'Successfully created database {db_name}.db')
 
 
 if __name__ == '__main__':
     # create new application
     app = QApplication(sys.argv)
-    settings = logbook_class.LogBook.get_settings()
-    pre_run_check(settings)
+    pre_run_check(SettingsManager.get_settings())
 
+    from scripts import logbook_class
+
+    settings = logbook_class.LogBook.get_settings()
     path = os.path.dirname(os.path.abspath(__file__))
     theme_choice = settings['theme_choice']['name']  # get the name of the last saved chosen theme
 
