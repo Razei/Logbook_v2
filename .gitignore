@@ -6,6 +6,7 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+.qt_for_python/*
 
 # Local History for Visual Studio Code
 .history/

@@ -1,5 +1,5 @@
 cd /D "%~dp0"
-cd dist\Logbook
+cd dist\Logbook_v2
 Logbook.exe
 
-PAUSE
+TIMEOUT /T 5
