@@ -6,7 +6,7 @@ numpy==1.20.1
 openpyxl==3.0.7
 pandas==1.2.3
 pefile==2021.5.13
-pyinstaller==4.3
+pyinstaller==5.13.1
 pyinstaller-hooks-contrib==2021.1
 pyodbc==4.0.30
 PyQt5==5.15.2
